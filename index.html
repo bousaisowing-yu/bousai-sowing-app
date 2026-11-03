@@ -53,12 +53,46 @@
 
     <section id="events-page" class="page">
       <div class="panel">
-        <h2>イベント一覧</h2>
+        <h2>イベント</h2>
         <p class="muted">
           イベントの詳細を確認し、参加予定を登録できます。
         </p>
+
+        <div class="event-view-switch">
+          <button
+            id="event-list-view-button"
+            class="primary-button"
+            type="button"
+          >
+            一覧
+          </button>
+
+          <button
+            id="event-calendar-view-button"
+            class="secondary-button"
+            type="button"
+          >
+            カレンダー
+          </button>
+        </div>
+
         <div id="events-list">
           <p class="muted">読み込み中…</p>
+        </div>
+
+        <div id="events-calendar" hidden>
+          <div class="calendar-header">
+            <button id="calendar-prev" type="button">‹</button>
+            <h3 id="calendar-month"></h3>
+            <button id="calendar-next" type="button">›</button>
+          </div>
+
+          <div id="calendar-grid" class="calendar-grid"></div>
+
+          <div class="calendar-selected-events">
+            <h3 id="calendar-selected-date">日付を選択してください</h3>
+            <div id="calendar-day-events"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -113,18 +147,10 @@
           <input id="event-date" type="date">
 
           <label for="event-time-start">開始時間</label>
-          <input
-            id="event-time-start"
-            type="time"
-            step="600"
-          >
+          <input id="event-time-start" type="time" step="600">
 
           <label for="event-time-end">終了時間</label>
-          <input
-            id="event-time-end"
-            type="time"
-            step="600"
-          >
+          <input id="event-time-end" type="time" step="600">
 
           <label for="event-location">開催場所</label>
           <input id="event-location" type="text" placeholder="開催場所">
