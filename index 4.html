@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#203f30">
+<title>防災Sowing｜会員アプリ</title>
+<style>
+:root{--forest:#203f30;--green:#315d42;--moss:#6f8752;--lime:#c5d78b;--paper:#f4f6f1;--white:#fff;--ink:#26342b;--muted:#718076;--line:#e2e8df;--shadow:0 8px 24px #1c382510}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
+header{background:var(--forest);color:#fff;padding:17px 18px 20px}
+.head{max-width:760px;margin:auto;display:flex;align-items:center;gap:13px}
+.logo{width:58px;height:58px;border:1px dashed #a9bd9e;border-radius:14px;display:grid;place-items:center;color:#dce8d4;font-size:10px;text-align:center;line-height:1.4;flex:none}
+.brand{min-width:0}.brand h1{font-size:21px;letter-spacing:.04em;margin:0;font-weight:750}.brand p{font-size:11px;color:#d5e1d2;margin:5px 0 0;letter-spacing:.06em}
+main{max-width:760px;margin:auto;padding:18px 15px 100px}.screen{display:none}.screen.active{display:block}
+.welcome{padding:23px 20px;border-radius:20px;background:linear-gradient(135deg,#315d42,#496b48);color:#fff;box-shadow:var(--shadow);margin-bottom:17px;position:relative;overflow:hidden}
+.welcome:after{content:"";position:absolute;width:170px;height:170px;border:1px solid #ffffff20;border-radius:50%;right:-55px;top:-75px;box-shadow:0 0 0 20px #ffffff0b,0 0 0 42px #ffffff08}
+.kicker{font-size:10px;letter-spacing:.18em;color:#dce9d5}.welcome h2{font-size:23px;line-height:1.45;margin:8px 0}.welcome p{font-size:12px;line-height:1.8;color:#e4ede0;margin:0;max-width:90%}
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:20px 2px 11px}.section-title h2{font-size:16px;margin:0}.section-title span{font-size:11px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+.tile{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:17px 15px;text-align:left;min-height:115px;color:var(--ink);box-shadow:0 3px 12px #1c382508}
+.tile .ico{width:37px;height:37px;border-radius:12px;background:#edf2e8;display:grid;place-items:center;font-size:19px;margin-bottom:12px}
+.tile strong{font-size:14px;display:block}.tile small{font-size:11px;color:var(--muted);display:block;margin-top:4px}
+.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:17px;margin-bottom:13px;box-shadow:var(--shadow)}
+h2{font-size:18px;margin:0 0 13px}.sub{font-size:12px;color:var(--muted);margin:-6px 0 14px}
+label{display:block;font-size:12px;font-weight:700;margin:12px 0 6px;color:#435449}
+input,textarea{width:100%;font:inherit;font-size:14px;padding:12px;border:1px solid #d6dfd4;border-radius:10px;background:#fbfcfa;color:var(--ink);outline:none}
+input:focus,textarea:focus{border-color:var(--moss);box-shadow:0 0 0 3px #6f87521c}textarea{min-height:82px;resize:vertical}
+.btn{border:0;border-radius:11px;padding:12px 16px;background:var(--green);color:white;font:inherit;font-size:13px;font-weight:700;margin-top:12px}
+.btn.light{background:#edf2e9;color:var(--green)}.btn.line{background:white;color:var(--green);border:1px solid var(--line)}
+.event{border:1px solid var(--line);border-radius:14px;padding:15px;margin:11px 0;background:#fff}
+.event h3{font-size:16px;margin:0 0 9px}.meta{font-size:12px;line-height:1.9;color:#5c6b60}.event p{font-size:13px;line-height:1.7;white-space:pre-wrap;margin:9px 0}
+.pill{display:inline-block;border-radius:30px;background:#eef3e8;color:#526c3d;padding:4px 9px;font-size:11px}
+.empty{font-size:13px;color:var(--muted);padding:12px 2px}.notice{font-size:11px;line-height:1.7;color:var(--muted);margin:12px 2px}
+.statbox{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--line);border-radius:15px;padding:15px 17px;margin-top:15px}.stat{font-size:27px;font-weight:800;color:var(--green)}
+.bottomnav{position:fixed;bottom:0;left:0;right:0;background:#fffffff2;backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:7px 5px calc(7px + env(safe-area-inset-bottom));z-index:5}
+.bottomnav button{border:0;background:transparent;color:#78847b;margin:0;padding:6px 2px;font-size:10px;font-weight:650}.bottomnav button span{display:block;font-size:19px;margin-bottom:3px}.bottomnav button.active{color:var(--green)}
+.bottomnav button.active span{background:#edf2e8;border-radius:10px;display:inline-grid;place-items:center;width:35px;height:27px}
+</style>
+</head>
+<body>
+<header><div class="head"><div class="logo">公式ロゴ<br>差し替え位置</div><div class="brand"><h1>防災Sowing</h1><p>MEMBER APP　｜　防災の種をまこう‼︎</p></div></div></header>
+<main>
+<section id="home" class="screen active">
+ <div class="welcome"><div class="kicker">WELCOME</div><h2>防災Sowing<br>会員ページ</h2><p>活動予定を確認したり、イベントへの参加を登録できます。</p></div>
+ <div class="section-title"><h2>メニュー</h2><span>MENU</span></div>
+ <div class="tiles">
+  <button class="tile" onclick="show('list')"><span class="ico">▦</span><strong>イベント一覧</strong><small>開催予定をチェック</small></button>
+  <button class="tile" onclick="show('register')"><span class="ico">＋</span><strong>イベント登録</strong><small>新しい予定を追加</small></button>
+  <button class="tile" onclick="show('people')"><span class="ico">♧</span><strong>参加者一覧</strong><small>参加予定を確認</small></button>
+  <button class="tile" onclick="show('news')"><span class="ico">◇</span><strong>お知らせ</strong><small>連絡・更新情報</small></button>
+ </div>
+ <div class="section-title"><h2>登録イベント</h2><span>EVENTS</span></div>
+ <div class="statbox"><div><div class="stat" id="homeCount">0</div><small>現在の登録数</small></div><button class="btn light" onclick="show('list')">一覧を見る　›</button></div>
+ <p class="notice">※試作版です。現在の登録情報は、この端末のブラウザ内に保存されます。他の会員との共有機能はまだありません。</p>
+</section>
+<section id="list" class="screen"><div class="card"><h2>イベント一覧</h2><p class="sub">防災Sowingの活動予定</p><div id="eventsList" class="empty">イベントはまだありません。</div></div></section>
+<section id="register" class="screen"><div class="card"><h2>イベント登録</h2><p class="sub">必要な情報を入力してください。</p>
+<label>タイトル</label><input id="title" placeholder="例：防災講習会">
+<label>日時</label><input id="date" type="datetime-local">
+<label>場所</label><input id="place" placeholder="会場・住所など">
+<label>内容</label><textarea id="content" placeholder="イベントの内容"></textarea>
+<label>募集人数（任意）</label><input id="capacity" type="number" min="1" placeholder="例：20">
+<label>追加情報（任意）</label><textarea id="extra" placeholder="持ち物・注意事項など"></textarea>
+<button class="btn" onclick="addEvent()">イベントを登録する</button></div></section>
+<section id="people" class="screen"><div class="card"><h2>参加者一覧</h2><p class="sub">イベントごとの参加予定者</p><div id="peopleList" class="empty">参加者はまだいません。</div></div></section>
+<section id="news" class="screen"><div class="card"><h2>お知らせ</h2><p>現在、お知らせはありません。</p><p class="notice">イベント作成通知や開催前の自動通知は、共有機能とあわせて今後追加する予定です。</p></div></section>
+</main>
+<nav class="bottomnav">
+<button data-screen="home" class="active" onclick="show('home')"><span>⌂</span>ホーム</button>
+<button data-screen="list" onclick="show('list')"><span>▦</span>イベント</button>
+<button data-screen="people" onclick="show('people')"><span>♧</span>参加者</button>
+<button data-screen="news" onclick="show('news')"><span>◇</span>お知らせ</button>
+</nav>
+<script>
+const KEY='sowing_events_demo_v1';
+function getEvents(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return []}}
+function saveEvents(a){localStorage.setItem(KEY,JSON.stringify(a))}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.bottomnav button').forEach(x=>x.classList.toggle('active',x.dataset.screen===id));render();window.scrollTo(0,0)}
+function addEvent(){const title=document.getElementById('title').value.trim(),date=document.getElementById('date').value,place=document.getElementById('place').value.trim(),content=document.getElementById('content').value.trim(),capacity=document.getElementById('capacity').value,extra=document.getElementById('extra').value.trim();if(!title||!date||!place||!content){alert('タイトル・日時・場所・内容を入力してね');return}const a=getEvents();a.unshift({id:Date.now(),title,date,place,content,capacity,extra,participants:[]});saveEvents(a);['title','date','place','content','capacity','extra'].forEach(id=>document.getElementById(id).value='');alert('イベントを登録しました');show('list')}
+function join(id){const name=prompt('参加する人の名前（ニックネームでもOK）');if(!name||!name.trim())return;const a=getEvents(),e=a.find(x=>x.id===id);if(!e)return;if(e.participants.some(n=>n.toLowerCase()===name.trim().toLowerCase())){alert('この名前はすでに参加登録されています');return}e.participants.push(name.trim());saveEvents(a);render()}
+function leave(id){const name=prompt('参加を取り消す名前を入力してね');if(!name)return;const a=getEvents(),e=a.find(x=>x.id===id);if(!e)return;e.participants=e.participants.filter(n=>n!==name.trim());saveEvents(a);render()}
+function del(id){if(!confirm('このイベントを削除しますか？'))return;saveEvents(getEvents().filter(x=>x.id!==id));render()}
+function card(e){return `<article class="event"><h3>${esc(e.title)}</h3><div class="meta">📅 ${esc((e.date||'').replace('T',' '))}<br>📍 ${esc(e.place)}<br>👥 参加 ${e.participants.length}人${e.capacity?' / 募集 '+esc(e.capacity)+'人':''}</div><p>${esc(e.content)}</p>${e.extra?`<p>${esc(e.extra)}</p>`:''}<span class="pill">参加者 ${e.participants.length}人</span><p>${e.participants.length?e.participants.map(esc).join('、'):'まだ参加者はいません'}</p><button class="btn" onclick="join(${e.id})">参加する</button> <button class="btn light" onclick="leave(${e.id})">参加取消</button> <button class="btn line" onclick="del(${e.id})">削除</button></article>`}
+function render(){const a=getEvents();document.getElementById('homeCount').textContent=a.length;document.getElementById('eventsList').innerHTML=a.length?a.map(card).join(''):'イベントはまだありません。';const p=a.filter(e=>e.participants.length);document.getElementById('peopleList').innerHTML=p.length?p.map(e=>`<div class="event"><h3>${esc(e.title)}</h3><div class="meta">${esc((e.date||'').replace('T',' '))}</div><p>${e.participants.map(esc).join('、')}</p></div>`).join(''):'参加者はまだいません。'}
+render();
+</script>
+</body></html>
