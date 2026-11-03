@@ -286,28 +286,39 @@ async function addEvent() {
   const description = $("event-description").value.trim();
 
   if (!title || !date || !location || !description) {
-    showMessage("event-admin-message", "イベント名・開催日・場所・内容を入力してください。", true);
+    showMessage(
+      "event-admin-message",
+      "イベント名・開催日・場所・内容を入力してください。",
+      true
+    );
     return;
   }
 
-  const { error } = await db.from("events").insert({
-    title,
-    event_date: date,
-    event_time: time,
-    location,
-    description
-  });
+  const { data, error } = await db
+    .from("events")
+    .insert({
+      title,
+      event_date: date,
+      event_time: time,
+      location,
+      description
+    })
+    .select();
 
   if (error) {
-    showMessage("event-admin-message", "登録できませんでした。", true);
-    console.error(error);
+    console.error("イベント登録エラー:", error);
+    showMessage(
+      "event-admin-message",
+      "登録エラー：" + error.message,
+      true
+    );
     return;
   }
 
   ["event-title", "event-date", "event-time", "event-location", "event-description"]
     .forEach((id) => $(id).value = "");
 
-  showMessage("event-admin-message", "イベントを登録しました。");
+  showMessage("event-admin-message", "イベントを登録しました！");
   await loadEvents();
 }
 
