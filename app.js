@@ -20,25 +20,27 @@ function escapeHTML(value) {
 
 function showMessage(id, message, error = false) {
   const element = $(id);
+  if (!element) return;
   element.textContent = message;
   element.style.color = error ? "#b42318" : "#315d42";
 }
 
 async function checkAdmin() {
-  const { data, error } = await db
-    .from("admin_users")
-    .select("user_id")
-    .eq("user_id", currentUser.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error(error);
+  if (!currentUser) {
     isAdmin = false;
   } else {
-    isAdmin = !!data;
+    const { data, error } = await db
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    isAdmin = !error && !!data;
   }
 
-  $("admin-tab").hidden = !isAdmin;
+  $("admin-functions").hidden = !isAdmin;
+  document.querySelector(".auth-panel").hidden = isAdmin;
+  $("admin-tab").hidden = false;
 }
 
 async function login() {
@@ -51,7 +53,6 @@ async function login() {
   }
 
   $("login-button").disabled = true;
-  showMessage("auth-message", "ログインしています…");
 
   const { data, error } = await db.auth.signInWithPassword({
     email,
@@ -66,33 +67,32 @@ async function login() {
   }
 
   currentUser = data.user;
-  await showApp();
+  await checkAdmin();
+
+  if (!isAdmin) {
+    await db.auth.signOut();
+    currentUser = null;
+    showMessage("auth-message", "管理者アカウントではありません。", true);
+    return;
+  }
+
+  showMessage("auth-message", "管理者としてログインしました。");
+  await loadEvents();
+  await loadAnnouncements();
 }
 
 async function logout() {
   await db.auth.signOut();
   currentUser = null;
   isAdmin = false;
-  $("app-section").hidden = true;
-  $("auth-section").hidden = false;
-  $("login-password").value = "";
-  showMessage("auth-message", "");
-}
-
-async function showApp() {
-  $("auth-section").hidden = true;
-  $("app-section").hidden = false;
-  $("member-email").textContent = currentUser.email || "";
-
   await checkAdmin();
+  showMessage("auth-message", "ログアウトしました。");
   await loadEvents();
   await loadAnnouncements();
   switchTab("events");
 }
 
 function switchTab(tab) {
-  if (tab === "admin" && !isAdmin) return;
-
   ["events", "news", "admin"].forEach((name) => {
     const page = $(name + "-page");
     if (page) page.hidden = name !== tab;
@@ -131,30 +131,15 @@ async function loadEvents() {
 
   root.innerHTML = events.map((event) => {
     const members = (responses || []).filter(
-      (response) => response.event_id === event.id && response.attendance === "参加"
-    );
-
-    const myResponse = (responses || []).find(
       (response) =>
         response.event_id === event.id &&
-        response.member_name === currentUser.email
+        response.attendance === "参加"
     );
 
-    const date = event.event_date
-      ? escapeHTML(event.event_date)
-      : "";
-
-    const time = event.event_time
-      ? escapeHTML(event.event_time)
-      : "";
-
-    const location = event.location
-      ? escapeHTML(event.location)
-      : "";
-
-    const description = event.description
-      ? escapeHTML(event.description)
-      : "";
+    const date = escapeHTML(event.event_date || "");
+    const time = escapeHTML(event.event_time || "");
+    const location = escapeHTML(event.location || "");
+    const description = escapeHTML(event.description || "");
 
     return `
       <article class="event-card">
@@ -172,11 +157,12 @@ async function loadEvents() {
             : "まだ参加者はいません"}
         </div>
         <div class="event-actions">
-          ${
-            myResponse
-              ? `<button class="secondary-button" data-action="cancel" data-id="${event.id}">参加を取り消す</button>`
-              : `<button class="primary-button" data-action="join" data-id="${event.id}">参加する</button>`
-          }
+          <button class="primary-button" data-action="join" data-id="${event.id}">
+            参加する
+          </button>
+          <button class="secondary-button" data-action="cancel" data-id="${event.id}">
+            参加を取り消す
+          </button>
           ${
             isAdmin
               ? `<button class="secondary-button" data-action="delete-event" data-id="${event.id}">削除</button>`
@@ -189,38 +175,48 @@ async function loadEvents() {
 }
 
 async function joinEvent(eventId) {
+  const name = prompt("参加する方のお名前を入力してください。");
+  if (!name || !name.trim()) return;
+
+  const memberName = name.trim();
+
   const { error } = await db
     .from("event_responses")
     .upsert({
       event_id: eventId,
-      member_name: currentUser.email,
+      member_name: memberName,
       attendance: "参加"
     }, {
       onConflict: "event_id,member_name"
     });
 
   if (error) {
-    alert("参加登録できませんでした。");
+    alert("参加登録できませんでした：" + error.message);
     console.error(error);
     return;
   }
 
+  alert("参加登録しました！");
   await loadEvents();
 }
 
 async function cancelEvent(eventId) {
+  const name = prompt("参加登録したときのお名前を入力してください。");
+  if (!name || !name.trim()) return;
+
   const { error } = await db
     .from("event_responses")
     .delete()
     .eq("event_id", eventId)
-    .eq("member_name", currentUser.email);
+    .eq("member_name", name.trim());
 
   if (error) {
-    alert("参加を取り消せませんでした。");
+    alert("参加を取り消せませんでした：" + error.message);
     console.error(error);
     return;
   }
 
+  alert("参加を取り消しました。");
   await loadEvents();
 }
 
@@ -234,8 +230,7 @@ async function deleteEvent(eventId) {
     .eq("id", eventId);
 
   if (error) {
-    alert("削除できませんでした。");
-    console.error(error);
+    alert("削除できませんでした：" + error.message);
     return;
   }
 
@@ -286,32 +281,20 @@ async function addEvent() {
   const description = $("event-description").value.trim();
 
   if (!title || !date || !location || !description) {
-    showMessage(
-      "event-admin-message",
-      "イベント名・開催日・場所・内容を入力してください。",
-      true
-    );
+    showMessage("event-admin-message", "イベント名・開催日・場所・内容を入力してください。", true);
     return;
   }
 
-  const { data, error } = await db
-    .from("events")
-    .insert({
-      title,
-      event_date: date,
-      event_time: time,
-      location,
-      description
-    })
-    .select();
+  const { error } = await db.from("events").insert({
+    title,
+    event_date: date,
+    event_time: time,
+    location,
+    description
+  });
 
   if (error) {
-    console.error("イベント登録エラー:", error);
-    showMessage(
-      "event-admin-message",
-      "登録エラー：" + error.message,
-      true
-    );
+    showMessage("event-admin-message", "登録エラー：" + error.message, true);
     return;
   }
 
@@ -339,15 +322,14 @@ async function addAnnouncement() {
   });
 
   if (error) {
-    showMessage("announcement-admin-message", "投稿できませんでした。", true);
-    console.error(error);
+    showMessage("announcement-admin-message", "投稿エラー：" + error.message, true);
     return;
   }
 
   $("announcement-title").value = "";
   $("announcement-content").value = "";
 
-  showMessage("announcement-admin-message", "お知らせを投稿しました。");
+  showMessage("announcement-admin-message", "お知らせを投稿しました！");
   await loadAnnouncements();
 }
 
@@ -361,8 +343,7 @@ async function deleteAnnouncement(id) {
     .eq("id", id);
 
   if (error) {
-    alert("削除できませんでした。");
-    console.error(error);
+    alert("削除できませんでした：" + error.message);
     return;
   }
 
@@ -404,13 +385,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   if (data.session) {
     currentUser = data.session.user;
-    await showApp();
   }
 
-  db.auth.onAuthStateChange(async (_event, session) => {
-    if (session && !currentUser) {
-      currentUser = session.user;
-      await showApp();
-    }
-  });
+  await checkAdmin();
+  await loadEvents();
+  await loadAnnouncements();
+  switchTab("events");
 });
