@@ -7,8 +7,13 @@
   <meta name="theme-color" content="#234b35">
   <title>防災Sowing 会員アプリ</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    [hidden] {
+      display: none !important;
+    }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=3" defer></script>
 </head>
 
 <body>
@@ -27,53 +32,23 @@
 
     <section class="panel">
       <h2>会員向け情報</h2>
-      <p>
-        防災Sowingのイベント情報やお知らせを確認できます。
-      </p>
+      <p>防災Sowingのイベント情報やお知らせを確認できます。</p>
     </section>
 
     <nav class="tab-nav">
-      <button class="tab-button active" data-tab="events">
-        イベント
-      </button>
-
-      <button class="tab-button" data-tab="news">
-        お知らせ
-      </button>
-
-      <button
-        class="tab-button"
-        data-tab="admin"
-        id="admin-tab"
-        hidden
-      >
-        管理者
-      </button>
+      <button class="tab-button active" data-tab="events">イベント</button>
+      <button class="tab-button" data-tab="news">お知らせ</button>
+      <button class="tab-button" data-tab="admin" id="admin-tab" hidden>管理者</button>
     </nav>
 
     <section id="events-page" class="page">
       <div class="panel">
         <h2>イベント</h2>
-        <p class="muted">
-          イベントの詳細を確認し、参加予定を登録できます。
-        </p>
+        <p class="muted">イベントの詳細を確認し、参加予定を登録できます。</p>
 
         <div class="event-view-switch">
-          <button
-            id="event-list-view-button"
-            class="primary-button"
-            type="button"
-          >
-            一覧
-          </button>
-
-          <button
-            id="event-calendar-view-button"
-            class="secondary-button"
-            type="button"
-          >
-            カレンダー
-          </button>
+          <button id="event-list-view-button" class="primary-button" type="button">一覧</button>
+          <button id="event-calendar-view-button" class="secondary-button" type="button">カレンダー</button>
         </div>
 
         <div id="events-list">
@@ -107,36 +82,21 @@
     </section>
 
     <section id="admin-page" class="page" hidden>
-
       <div class="panel auth-panel">
         <h2>管理者ログイン</h2>
-        <p class="muted">
-          管理者機能を利用する場合はログインしてください。
-        </p>
+        <p class="muted">管理者機能を利用する場合はログインしてください。</p>
 
         <label for="login-email">メールアドレス</label>
-        <input
-          type="email"
-          id="login-email"
-          placeholder="メールアドレス"
-        >
+        <input type="email" id="login-email" placeholder="メールアドレス">
 
         <label for="login-password">パスワード</label>
-        <input
-          type="password"
-          id="login-password"
-          placeholder="パスワード"
-        >
+        <input type="password" id="login-password" placeholder="パスワード">
 
-        <button id="login-button" class="primary-button">
-          管理者ログイン
-        </button>
-
+        <button id="login-button" class="primary-button">管理者ログイン</button>
         <p id="auth-message"></p>
       </div>
 
       <div id="admin-functions" hidden>
-
         <div class="panel">
           <h2>イベントを登録</h2>
 
@@ -156,16 +116,9 @@
           <input id="event-location" type="text" placeholder="開催場所">
 
           <label for="event-description">イベント内容</label>
-          <textarea
-            id="event-description"
-            rows="4"
-            placeholder="イベントの内容"
-          ></textarea>
+          <textarea id="event-description" rows="4" placeholder="イベントの内容"></textarea>
 
-          <button id="add-event-button" class="primary-button">
-            イベントを登録
-          </button>
-
+          <button id="add-event-button" class="primary-button">イベントを登録</button>
           <p id="event-admin-message"></p>
         </div>
 
@@ -173,32 +126,18 @@
           <h2>お知らせを投稿</h2>
 
           <label for="announcement-title">タイトル</label>
-          <input
-            id="announcement-title"
-            type="text"
-            placeholder="お知らせのタイトル"
-          >
+          <input id="announcement-title" type="text" placeholder="お知らせのタイトル">
 
           <label for="announcement-content">本文</label>
-          <textarea
-            id="announcement-content"
-            rows="5"
-            placeholder="お知らせの内容"
-          ></textarea>
+          <textarea id="announcement-content" rows="5" placeholder="お知らせの内容"></textarea>
 
-          <button id="add-announcement-button" class="primary-button">
-            お知らせを投稿
-          </button>
-
+          <button id="add-announcement-button" class="primary-button">お知らせを投稿</button>
           <p id="announcement-admin-message"></p>
         </div>
 
         <div class="panel">
-          <button id="logout-button" class="secondary-button">
-            管理者ログアウト
-          </button>
+          <button id="logout-button" class="secondary-button">管理者ログアウト</button>
         </div>
-
       </div>
     </section>
 
