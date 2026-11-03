@@ -11,6 +11,8 @@ let allEvents = [];
 let allResponses = [];
 let calendarDate = new Date();
 let selectedDate = formatDate(new Date());
+let editingEventId = null;
+let originalEventButtonText = "";
 
 function formatDate(date) {
   return [
@@ -176,7 +178,10 @@ function renderEventCards(events) {
           <button class="primary-button" data-action="join" data-id="${event.id}">参加する</button>
           <button class="secondary-button" data-action="cancel" data-id="${event.id}">参加を取り消す</button>
           ${isAdmin
-            ? `<button class="secondary-button" data-action="delete-event" data-id="${event.id}">削除</button>`
+            ? `
+              <button class="secondary-button" data-action="edit-event" data-id="${event.id}">編集</button>
+              <button class="secondary-button" data-action="delete-event" data-id="${event.id}">削除</button>
+            `
             : ""}
         </div>
       </article>
@@ -342,6 +347,113 @@ async function deleteEvent(id) {
   await loadEvents();
 }
 
+function startEditEvent(id) {
+  if (!isAdmin) return;
+
+  const event = allEvents.find(item => item.id === id);
+  if (!event) return;
+
+  editingEventId = id;
+
+  const timeParts = (event.event_time || "").split(/[～〜~]/);
+
+  $("event-title").value = event.title || "";
+  $("event-date").value = event.event_date || "";
+  $("event-time-start").value = timeParts[0]?.trim() || "";
+  $("event-time-end").value = timeParts[1]?.trim() || "";
+  $("event-location").value = event.location || "";
+  $("event-description").value = event.description || "";
+
+  const button = $("add-event-button");
+  if (!originalEventButtonText) {
+    originalEventButtonText = button.textContent;
+  }
+  button.textContent = "変更を保存";
+
+  $("event-edit-cancel-button").hidden = false;
+
+  showMessage("event-admin-message", "イベントを編集中です。");
+  switchTab("admin");
+
+  $("event-title").scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+}
+
+function cancelEditEvent() {
+  editingEventId = null;
+
+  [
+    "event-title", "event-date", "event-time-start",
+    "event-time-end", "event-location", "event-description"
+  ].forEach(id => $(id).value = "");
+
+  $("add-event-button").textContent =
+    originalEventButtonText || "イベントを登録";
+
+  $("event-edit-cancel-button").hidden = true;
+  showMessage("event-admin-message", "編集をキャンセルしました。");
+}
+
+async function addEvent() {
+  if (!isAdmin) return;
+
+  const title = $("event-title").value.trim();
+  const date = $("event-date").value;
+  const start = $("event-time-start").value;
+  const end = $("event-time-end").value;
+  const location = $("event-location").value.trim();
+  const description = $("event-description").value.trim();
+
+  if (!title || !date || !start || !end || !location || !description) {
+    showMessage("event-admin-message", "すべての項目を入力してください。", true);
+    return;
+  }
+
+  if (start >= end) {
+    showMessage("event-admin-message", "終了時間は開始時間より後にしてください。", true);
+    return;
+  }
+
+  const eventData = {
+    title,
+    event_date: date,
+    event_time: `${start}～${end}`,
+    location,
+    description
+  };
+
+  let error;
+
+  if (editingEventId) {
+    ({ error } = await db.from("events")
+      .update(eventData)
+      .eq("id", editingEventId));
+  } else {
+    ({ error } = await db.from("events").insert(eventData));
+  }
+
+  if (error) {
+    showMessage(
+      "event-admin-message",
+      "保存エラー：" + error.message,
+      true
+    );
+    return;
+  }
+
+  const wasEditing = !!editingEventId;
+  cancelEditEvent();
+
+  showMessage(
+    "event-admin-message",
+    wasEditing ? "イベントを更新しました！" : "イベントを登録しました！"
+  );
+
+  await loadEvents();
+}
+
 async function loadAnnouncements() {
   const root = $("announcements-list");
   root.innerHTML = '<p class="muted">読み込み中…</p>';
@@ -371,48 +483,6 @@ async function loadAnnouncements() {
         : ""}
     </article>
   `).join("");
-}
-
-async function addEvent() {
-  if (!isAdmin) return;
-
-  const title = $("event-title").value.trim();
-  const date = $("event-date").value;
-  const start = $("event-time-start").value;
-  const end = $("event-time-end").value;
-  const location = $("event-location").value.trim();
-  const description = $("event-description").value.trim();
-
-  if (!title || !date || !start || !end || !location || !description) {
-    showMessage("event-admin-message", "すべての項目を入力してください。", true);
-    return;
-  }
-
-  if (start >= end) {
-    showMessage("event-admin-message", "終了時間は開始時間より後にしてください。", true);
-    return;
-  }
-
-  const { error } = await db.from("events").insert({
-    title,
-    event_date: date,
-    event_time: `${start}～${end}`,
-    location,
-    description
-  });
-
-  if (error) {
-    showMessage("event-admin-message", "登録エラー：" + error.message, true);
-    return;
-  }
-
-  [
-    "event-title", "event-date", "event-time-start",
-    "event-time-end", "event-location", "event-description"
-  ].forEach(id => $(id).value = "");
-
-  showMessage("event-admin-message", "イベントを登録しました！");
-  await loadEvents();
 }
 
 async function addAnnouncement() {
@@ -514,6 +584,9 @@ async function logout() {
   await db.auth.signOut();
   currentUser = null;
   isAdmin = false;
+
+  if (editingEventId) cancelEditEvent();
+
   await checkAdmin();
   showMessage("auth-message", "ログアウトしました。");
   await loadEvents();
@@ -523,6 +596,18 @@ async function logout() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   addCalendarStyles();
+
+  const eventButton = $("add-event-button");
+  originalEventButtonText = eventButton.textContent;
+
+  const cancelButton = document.createElement("button");
+  cancelButton.id = "event-edit-cancel-button";
+  cancelButton.type = "button";
+  cancelButton.className = "secondary-button";
+  cancelButton.textContent = "編集をキャンセル";
+  cancelButton.hidden = true;
+  cancelButton.addEventListener("click", cancelEditEvent);
+  eventButton.insertAdjacentElement("afterend", cancelButton);
 
   $("login-button").addEventListener("click", login);
   $("logout-button").addEventListener("click", logout);
@@ -566,6 +651,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (action === "join") joinEvent(id);
     if (action === "cancel") cancelEvent(id);
+    if (action === "edit-event") startEditEvent(id);
     if (action === "delete-event") deleteEvent(id);
     if (action === "delete-announcement") deleteAnnouncement(id);
   });
