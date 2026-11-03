@@ -7,78 +7,69 @@
   <meta name="theme-color" content="#183d2b">
   <title>防災Sowing 会員アプリ</title>
 
-  <link rel="apple-touch-icon" href="logo.jpeg">
   <link rel="icon" type="image/jpeg" href="logo.jpeg">
-  <link rel="stylesheet" href="style.css?v=4">
-
-  <style>
-    [hidden] { display: none !important; }
-
-    .time-input-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 8px 0 18px;
-    }
-
-    .time-input-group input {
-      width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
-      font-size: 18px;
-      text-align: center;
-      padding: 12px 6px;
-    }
-
-    .time-input-group span {
-      white-space: nowrap;
-    }
-
-    .time-separator {
-      font-size: 20px;
-      font-weight: bold;
-    }
-  </style>
+  <link rel="apple-touch-icon" href="logo.jpeg">
+  <link rel="stylesheet" href="style.css?v=5">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=4" defer></script>
+  <script src="app.js?v=5" defer></script>
 </head>
 
 <body>
-
   <header class="site-header">
     <div class="brand">
       <img src="logo.jpeg" alt="防災Sowingロゴ" class="logo">
       <div>
+        <p class="organization-name">特定非営利活動法人</p>
         <h1>防災Sowing</h1>
-        <p>MEMBER'S PAGE</p>
+        <p class="brand-subtitle">MEMBER'S PAGE</p>
       </div>
     </div>
   </header>
 
   <main class="container">
 
-    <section class="panel">
-      <p class="eyebrow">WELCOME TO SOWING</p>
-      <h2>会員向け情報</h2>
-      <p>防災Sowingのイベント情報やお知らせを確認できます。</p>
+    <!-- トップ画面のメイン画像 -->
+    <section class="hero-panel">
+      <img id="hero-image"
+        class="hero-image"
+        src="logo.jpeg"
+        alt="防災Sowing メイン画像">
+      <div class="hero-overlay">
+        <p class="eyebrow">WELCOME TO SOWING</p>
+        <h2>防災の種をまこう</h2>
+        <p>イベント情報やお知らせをチェックして、<br>
+          日頃から防災について考えてみましょう。</p>
+      </div>
     </section>
 
     <nav class="tab-nav">
-      <button class="tab-button active" data-tab="events">イベント</button>
-      <button class="tab-button" data-tab="news">お知らせ</button>
-      <button class="tab-button" data-tab="admin" id="admin-tab" hidden>管理者</button>
+      <button class="tab-button active" data-tab="events" type="button">
+        イベント
+      </button>
+      <button class="tab-button" data-tab="news" type="button">
+        お知らせ
+      </button>
+      <button class="tab-button" data-tab="admin" id="admin-tab"
+        type="button" hidden>
+        管理者
+      </button>
     </nav>
 
+    <!-- イベント -->
     <section id="events-page" class="page">
       <div class="panel">
         <p class="eyebrow">EVENT INFORMATION</p>
         <h2>イベント</h2>
-        <p class="muted">イベントの詳細を確認し、参加予定を登録できます。</p>
+        <p class="muted">
+          イベントの詳細を確認し、参加予定を登録できます。
+        </p>
 
         <div class="event-view-switch">
-          <button id="event-list-view-button" class="primary-button" type="button">一覧</button>
-          <button id="event-calendar-view-button" class="secondary-button" type="button">カレンダー</button>
+          <button id="event-list-view-button"
+            class="primary-button" type="button">一覧</button>
+          <button id="event-calendar-view-button"
+            class="secondary-button" type="button">カレンダー</button>
         </div>
 
         <div id="events-list">
@@ -87,9 +78,9 @@
 
         <div id="events-calendar" hidden>
           <div class="calendar-header">
-            <button id="calendar-prev" type="button">‹</button>
+            <button id="calendar-prev" type="button" aria-label="前の月">‹</button>
             <h3 id="calendar-month"></h3>
-            <button id="calendar-next" type="button">›</button>
+            <button id="calendar-next" type="button" aria-label="次の月">›</button>
           </div>
 
           <div id="calendar-grid" class="calendar-grid"></div>
@@ -102,6 +93,7 @@
       </div>
     </section>
 
+    <!-- お知らせ -->
     <section id="news-page" class="page" hidden>
       <div class="panel">
         <p class="eyebrow">NEWS & INFORMATION</p>
@@ -112,24 +104,58 @@
       </div>
     </section>
 
+    <!-- 管理者 -->
     <section id="admin-page" class="page" hidden>
       <div class="panel auth-panel">
         <p class="eyebrow">ADMINISTRATOR</p>
         <h2>管理者ログイン</h2>
-        <p class="muted">管理者機能を利用する場合はログインしてください。</p>
+        <p class="muted">
+          管理者機能を利用する場合はログインしてください。
+        </p>
 
         <label for="login-email">メールアドレス</label>
-        <input type="email" id="login-email" placeholder="メールアドレス">
+        <input type="email" id="login-email"
+          placeholder="メールアドレス" autocomplete="username">
 
         <label for="login-password">パスワード</label>
-        <input type="password" id="login-password" placeholder="パスワード">
+        <input type="password" id="login-password"
+          placeholder="パスワード" autocomplete="current-password">
 
-        <button id="login-button" class="primary-button">管理者ログイン</button>
-        <p id="auth-message"></p>
+        <button id="login-button" class="primary-button" type="button">
+          管理者ログイン
+        </button>
+        <p id="auth-message" aria-live="polite"></p>
       </div>
 
       <div id="admin-functions" hidden>
+
+        <!-- トップ画像の設定 -->
         <div class="panel">
+          <p class="eyebrow">MAIN VISUAL</p>
+          <h2>トップ画面の画像を変更</h2>
+          <p class="muted">
+            トップ画面に表示する画像を選択してください。
+          </p>
+
+          <img id="hero-image-preview"
+            class="image-preview"
+            src="logo.jpeg"
+            alt="トップ画像のプレビュー">
+
+          <label for="hero-image-file">トップ画像</label>
+          <input id="hero-image-file" type="file"
+            accept="image/*">
+
+          <button id="save-hero-image-button"
+            class="primary-button" type="button">
+            トップ画像を保存
+          </button>
+          <p id="hero-image-message" aria-live="polite"></p>
+        </div>
+
+        <!-- イベントの登録・編集 -->
+        <div class="panel">
+          <p class="eyebrow">EVENT MANAGEMENT</p>
           <h2>イベントを登録</h2>
 
           <label for="event-title">イベント名</label>
@@ -140,25 +166,24 @@
 
           <label>開始時間</label>
           <div class="time-input-group">
-            <input id="event-start-hour" type="number" inputmode="numeric"
-              min="0" max="23" placeholder="時">
+            <input id="event-start-hour" type="number"
+              inputmode="numeric" min="0" max="23" placeholder="時">
             <span>時</span>
-            <input id="event-start-minute" type="number" inputmode="numeric"
-              min="0" max="59" placeholder="分">
+            <input id="event-start-minute" type="number"
+              inputmode="numeric" min="0" max="59" placeholder="分">
             <span>分</span>
           </div>
 
           <label>終了時間</label>
           <div class="time-input-group">
-            <input id="event-end-hour" type="number" inputmode="numeric"
-              min="0" max="23" placeholder="時">
+            <input id="event-end-hour" type="number"
+              inputmode="numeric" min="0" max="23" placeholder="時">
             <span>時</span>
-            <input id="event-end-minute" type="number" inputmode="numeric"
-              min="0" max="59" placeholder="分">
+            <input id="event-end-minute" type="number"
+              inputmode="numeric" min="0" max="59" placeholder="分">
             <span>分</span>
           </div>
 
-          <!-- app.jsとの連携用 -->
           <input id="event-time-start" type="hidden">
           <input id="event-time-end" type="hidden">
 
@@ -166,37 +191,60 @@
           <input id="event-location" type="text" placeholder="開催場所">
 
           <label for="event-description">イベント内容</label>
-          <textarea id="event-description" rows="4" placeholder="イベントの内容"></textarea>
+          <textarea id="event-description" rows="4"
+            placeholder="イベントの内容"></textarea>
 
-          <button id="add-event-button" class="primary-button">イベントを登録</button>
-          <p id="event-admin-message"></p>
+          <label for="event-image-file">イベント画像（任意）</label>
+          <input id="event-image-file" type="file" accept="image/*">
+
+          <img id="event-image-preview"
+            class="image-preview"
+            alt="イベント画像のプレビュー" hidden>
+
+          <p class="muted">
+            新しい画像を選ぶと、そのイベントに画像を設定できます。
+          </p>
+
+          <button id="add-event-button"
+            class="primary-button" type="button">
+            イベントを登録
+          </button>
+          <p id="event-admin-message" aria-live="polite"></p>
         </div>
 
+        <!-- お知らせの登録 -->
         <div class="panel">
+          <p class="eyebrow">NEWS MANAGEMENT</p>
           <h2>お知らせを投稿</h2>
 
           <label for="announcement-title">タイトル</label>
-          <input id="announcement-title" type="text" placeholder="お知らせのタイトル">
+          <input id="announcement-title" type="text"
+            placeholder="お知らせのタイトル">
 
           <label for="announcement-content">本文</label>
-          <textarea id="announcement-content" rows="5" placeholder="お知らせの内容"></textarea>
+          <textarea id="announcement-content" rows="5"
+            placeholder="お知らせの内容"></textarea>
 
-          <button id="add-announcement-button" class="primary-button">お知らせを投稿</button>
-          <p id="announcement-admin-message"></p>
+          <button id="add-announcement-button"
+            class="primary-button" type="button">
+            お知らせを投稿
+          </button>
+          <p id="announcement-admin-message" aria-live="polite"></p>
         </div>
 
         <div class="panel">
-          <button id="logout-button" class="secondary-button">管理者ログアウト</button>
+          <button id="logout-button"
+            class="secondary-button" type="button">
+            管理者ログアウト
+          </button>
         </div>
       </div>
     </section>
-
   </main>
 
   <footer class="site-footer">
     <p>特定非営利活動法人 防災Sowing</p>
     <p>防災の種をまこう‼︎</p>
   </footer>
-
 </body>
 </html>
