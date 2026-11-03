@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#244b36">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#234b35">
   <title>防災Sowing 会員アプリ</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -11,147 +11,128 @@
 </head>
 
 <body>
+
   <header class="site-header">
     <div class="brand">
-      <img src="logo.jpeg" alt="防災Sowing ロゴ" class="logo">
+      <img src="logo.jpeg" alt="防災Sowingロゴ" class="logo">
       <div>
         <h1>防災Sowing</h1>
-        <p>防災の種をまこう‼︎</p>
+        <p>会員アプリ</p>
       </div>
     </div>
   </header>
 
   <main class="container">
 
-    <!-- ログイン・新規登録 -->
-    <section id="auth-section" class="panel auth-panel">
-      <h2>会員ログイン</h2>
-      <p class="muted">防災Sowing会員専用ページです。</p>
-
-      <label for="login-email">メールアドレス</label>
-      <input
-        id="login-email"
-        type="email"
-        autocomplete="email"
-        placeholder="メールアドレス"
-      >
-
-      <label for="login-password">パスワード</label>
-      <input
-        id="login-password"
-        type="password"
-        autocomplete="current-password"
-        placeholder="パスワード"
-      >
-
-      <button id="login-button" class="primary-button">
-        ログイン
-      </button>
-
-      <p id="auth-message" class="message" aria-live="polite"></p>
+    <section class="panel">
+      <h2>会員向け情報</h2>
+      <p>
+        防災Sowingのイベント情報やお知らせを確認できます。
+      </p>
     </section>
 
-    <!-- ログイン後 -->
-    <section id="app-section" hidden>
+    <nav class="tab-nav">
+      <button class="tab-button active" data-tab="events">
+        イベント
+      </button>
 
-      <div class="welcome-row">
-        <div>
-          <p class="eyebrow">MEMBER PAGE</p>
-          <h2>会員ページ</h2>
-          <p id="member-email" class="muted"></p>
+      <button class="tab-button" data-tab="news">
+        お知らせ
+      </button>
+
+      <button
+        class="tab-button"
+        data-tab="admin"
+        id="admin-tab"
+        hidden
+      >
+        管理者
+      </button>
+    </nav>
+
+    <section id="events-page" class="page">
+      <div class="panel">
+        <h2>イベント一覧</h2>
+        <p class="muted">
+          イベントの詳細を確認し、参加予定を登録できます。
+        </p>
+        <div id="events-list">
+          <p class="muted">読み込み中…</p>
         </div>
-        <button id="logout-button" class="secondary-button">
-          ログアウト
+      </div>
+    </section>
+
+    <section id="news-page" class="page" hidden>
+      <div class="panel">
+        <h2>お知らせ</h2>
+        <div id="announcements-list">
+          <p class="muted">読み込み中…</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="admin-page" class="page" hidden>
+
+      <div class="panel auth-panel">
+        <h2>管理者ログイン</h2>
+        <p class="muted">
+          管理者機能を利用する場合はログインしてください。
+        </p>
+
+        <label for="login-email">メールアドレス</label>
+        <input
+          type="email"
+          id="login-email"
+          placeholder="メールアドレス"
+        >
+
+        <label for="login-password">パスワード</label>
+        <input
+          type="password"
+          id="login-password"
+          placeholder="パスワード"
+        >
+
+        <button id="login-button" class="primary-button">
+          管理者ログイン
         </button>
+
+        <p id="auth-message"></p>
       </div>
 
-      <!-- メニュー -->
-      <nav class="tab-nav">
-        <button class="tab-button active" data-tab="events">
-          イベント
-        </button>
-        <button class="tab-button" data-tab="news">
-          お知らせ
-        </button>
-        <button
-          class="tab-button"
-          data-tab="admin"
-          id="admin-tab"
-          hidden
-        >
-          管理者
-        </button>
-      </nav>
+      <div id="admin-functions" hidden>
 
-      <!-- イベント一覧 -->
-      <section id="events-page" class="page">
-        <p class="eyebrow">EVENTS</p>
-        <h2>イベント情報</h2>
-
-        <div id="events-list">
-          <p class="muted">イベントを読み込んでいます。</p>
-        </div>
-      </section>
-
-      <!-- お知らせ一覧 -->
-      <section id="news-page" class="page" hidden>
-        <p class="eyebrow">ANNOUNCEMENTS</p>
-        <h2>お知らせ</h2>
-
-        <div id="announcements-list">
-          <p class="muted">お知らせを読み込んでいます。</p>
-        </div>
-      </section>
-
-      <!-- 管理者専用ページ -->
-      <section id="admin-page" class="page" hidden>
-        <p class="eyebrow">ADMINISTRATION</p>
-        <h2>管理者ページ</h2>
-
-        <!-- イベント登録 -->
         <div class="panel">
-          <h3>イベントを登録</h3>
+          <h2>イベントを登録</h2>
 
           <label for="event-title">イベント名</label>
-          <input
-            id="event-title"
-            type="text"
-            placeholder="例：防災講習会"
-          >
+          <input id="event-title" type="text" placeholder="イベント名">
 
           <label for="event-date">開催日</label>
           <input id="event-date" type="date">
 
           <label for="event-time">開催時間</label>
-          <input
-            id="event-time"
-            type="text"
-            placeholder="例：10:00〜12:00"
-          >
+          <input id="event-time" type="text" placeholder="例：10:00～12:00">
 
           <label for="event-location">開催場所</label>
-          <input
-            id="event-location"
-            type="text"
-            placeholder="会場・住所など"
-          >
+          <input id="event-location" type="text" placeholder="開催場所">
 
           <label for="event-description">イベント内容</label>
           <textarea
             id="event-description"
-            placeholder="イベントの内容を入力"
+            rows="4"
+            placeholder="イベントの内容"
           ></textarea>
 
           <button id="add-event-button" class="primary-button">
-            イベントを登録する
+            イベントを登録
           </button>
 
-          <p id="event-admin-message" class="message"></p>
+          <p id="event-admin-message"></p>
         </div>
 
-        <!-- お知らせ投稿 -->
         <div class="panel">
-          <h3>お知らせを投稿</h3>
+          <h2>お知らせを投稿</h2>
 
           <label for="announcement-title">タイトル</label>
           <input
@@ -163,21 +144,26 @@
           <label for="announcement-content">本文</label>
           <textarea
             id="announcement-content"
-            placeholder="お知らせの内容を入力"
+            rows="5"
+            placeholder="お知らせの内容"
           ></textarea>
 
-          <button
-            id="add-announcement-button"
-            class="primary-button"
-          >
-            お知らせを投稿する
+          <button id="add-announcement-button" class="primary-button">
+            お知らせを投稿
           </button>
 
-          <p id="announcement-admin-message" class="message"></p>
+          <p id="announcement-admin-message"></p>
         </div>
 
-      </section>
+        <div class="panel">
+          <button id="logout-button" class="secondary-button">
+            管理者ログアウト
+          </button>
+        </div>
+
+      </div>
     </section>
+
   </main>
 
   <footer class="site-footer">
