@@ -1,3 +1,4 @@
+
 const SUPABASE_URL = "https://ftcrohylqnlmwlhybkha.supabase.co";
 const SUPABASE_KEY = "sb_publishable_uf_7B5i4YVsQWw7RjiQ_wQ_9KKoop4M";
 
@@ -136,20 +137,15 @@ async function loadEvents() {
         response.attendance === "参加"
     );
 
-    const date = escapeHTML(event.event_date || "");
-    const time = escapeHTML(event.event_time || "");
-    const location = escapeHTML(event.location || "");
-    const description = escapeHTML(event.description || "");
-
     return `
       <article class="event-card">
         <h3>${escapeHTML(event.title)}</h3>
         <div class="event-meta">
-          📅 ${date} ${time}<br>
-          📍 ${location}<br>
+          📅 ${escapeHTML(event.event_date || "")} ${escapeHTML(event.event_time || "")}<br>
+          📍 ${escapeHTML(event.location || "")}<br>
           👥 参加 ${members.length}人
         </div>
-        <p class="event-description">${description}</p>
+        <p class="event-description">${escapeHTML(event.description || "")}</p>
         <div class="participant-list">
           <strong>参加予定</strong><br>
           ${members.length
@@ -178,13 +174,11 @@ async function joinEvent(eventId) {
   const name = prompt("参加する方のお名前を入力してください。");
   if (!name || !name.trim()) return;
 
-  const memberName = name.trim();
-
   const { error } = await db
     .from("event_responses")
     .upsert({
       event_id: eventId,
-      member_name: memberName,
+      member_name: name.trim(),
       attendance: "参加"
     }, {
       onConflict: "event_id,member_name"
@@ -212,7 +206,6 @@ async function cancelEvent(eventId) {
 
   if (error) {
     alert("参加を取り消せませんでした：" + error.message);
-    console.error(error);
     return;
   }
 
@@ -276,19 +269,27 @@ async function addEvent() {
 
   const title = $("event-title").value.trim();
   const date = $("event-date").value;
-  const time = $("event-time").value.trim();
+  const startTime = $("event-time-start").value;
+  const endTime = $("event-time-end").value;
   const location = $("event-location").value.trim();
   const description = $("event-description").value.trim();
 
-  if (!title || !date || !location || !description) {
-    showMessage("event-admin-message", "イベント名・開催日・場所・内容を入力してください。", true);
+  if (!title || !date || !startTime || !endTime || !location || !description) {
+    showMessage("event-admin-message", "すべての項目を入力してください。", true);
     return;
   }
+
+  if (startTime >= endTime) {
+    showMessage("event-admin-message", "終了時間は開始時間より後にしてください。", true);
+    return;
+  }
+
+  const eventTime = `${startTime}～${endTime}`;
 
   const { error } = await db.from("events").insert({
     title,
     event_date: date,
-    event_time: time,
+    event_time: eventTime,
     location,
     description
   });
@@ -298,8 +299,14 @@ async function addEvent() {
     return;
   }
 
-  ["event-title", "event-date", "event-time", "event-location", "event-description"]
-    .forEach((id) => $(id).value = "");
+  [
+    "event-title",
+    "event-date",
+    "event-time-start",
+    "event-time-end",
+    "event-location",
+    "event-description"
+  ].forEach((id) => $(id).value = "");
 
   showMessage("event-admin-message", "イベントを登録しました！");
   await loadEvents();
