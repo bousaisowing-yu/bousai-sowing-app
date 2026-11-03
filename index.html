@@ -8,15 +8,21 @@
 
   <title>防災Sowing 会員アプリ</title>
 
-  <!-- ホーム画面・ブラウザ用アイコン -->
   <link rel="apple-touch-icon" href="logo.jpeg">
   <link rel="icon" type="image/jpeg" href="logo.jpeg">
-
   <link rel="stylesheet" href="style.css?v=4">
 
   <style>
     [hidden] {
       display: none !important;
+    }
+
+    .time-input {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 18px;
+      padding: 12px;
+      letter-spacing: 1px;
     }
   </style>
 
@@ -118,11 +124,27 @@
           <label for="event-date">開催日</label>
           <input id="event-date" type="date">
 
-          <label for="event-time-start">開始時間</label>
-          <input id="event-time-start" type="time" step="600">
+          <label for="event-time-start">開始時間（例：9:30）</label>
+          <input
+            id="event-time-start"
+            type="text"
+            class="time-input"
+            inputmode="numeric"
+            placeholder="9:30"
+            maxlength="5"
+            autocomplete="off"
+          >
 
-          <label for="event-time-end">終了時間</label>
-          <input id="event-time-end" type="time" step="600">
+          <label for="event-time-end">終了時間（例：12:00）</label>
+          <input
+            id="event-time-end"
+            type="text"
+            class="time-input"
+            inputmode="numeric"
+            placeholder="12:00"
+            maxlength="5"
+            autocomplete="off"
+          >
 
           <label for="event-location">開催場所</label>
           <input id="event-location" type="text" placeholder="開催場所">
