@@ -347,6 +347,43 @@ async function deleteEvent(id) {
   await loadEvents();
 }
 
+// 時刻を「時」と「分」に分けて入力欄へ反映
+function setTimeInputs(prefix, time) {
+  const match = (time || "").trim().match(/^(\d{1,2}):(\d{1,2})$/);
+
+  $(prefix + "-hour").value = match ? Number(match[1]) : "";
+  $(prefix + "-minute").value = match ? Number(match[2]) : "";
+}
+
+// 時刻入力欄から時刻を取得してチェック
+function getTimeValue(prefix) {
+  const hourText = $(prefix + "-hour").value.trim();
+  const minuteText = $(prefix + "-minute").value.trim();
+
+  if (hourText === "" || minuteText === "") {
+    return { error: "開始・終了時間の時と分をすべて入力してください。" };
+  }
+
+  if (!/^\d+$/.test(hourText) || !/^\d+$/.test(minuteText)) {
+    return { error: "時刻は数字で入力してください。" };
+  }
+
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+
+  if (hour < 0 || hour > 23) {
+    return { error: "時は0〜23の範囲で入力してください。" };
+  }
+
+  if (minute < 0 || minute > 59) {
+    return { error: "分は0〜59の範囲で入力してください。" };
+  }
+
+  return {
+    value: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+  };
+}
+
 function startEditEvent(id) {
   if (!isAdmin) return;
 
@@ -359,8 +396,10 @@ function startEditEvent(id) {
 
   $("event-title").value = event.title || "";
   $("event-date").value = event.event_date || "";
-  $("event-time-start").value = timeParts[0]?.trim() || "";
-  $("event-time-end").value = timeParts[1]?.trim() || "";
+
+  setTimeInputs("event-start", timeParts[0] || "");
+  setTimeInputs("event-end", timeParts[1] || "");
+
   $("event-location").value = event.location || "";
   $("event-description").value = event.description || "";
 
@@ -385,9 +424,17 @@ function cancelEditEvent() {
   editingEventId = null;
 
   [
-    "event-title", "event-date", "event-time-start",
-    "event-time-end", "event-location", "event-description"
-  ].forEach(id => $(id).value = "");
+    "event-title",
+    "event-date",
+    "event-start-hour",
+    "event-start-minute",
+    "event-end-hour",
+    "event-end-minute",
+    "event-location",
+    "event-description"
+  ].forEach(id => {
+    if ($(id)) $(id).value = "";
+  });
 
   $("add-event-button").textContent =
     originalEventButtonText || "イベントを登録";
@@ -401,15 +448,28 @@ async function addEvent() {
 
   const title = $("event-title").value.trim();
   const date = $("event-date").value;
-  const start = $("event-time-start").value;
-  const end = $("event-time-end").value;
   const location = $("event-location").value.trim();
   const description = $("event-description").value.trim();
 
-  if (!title || !date || !start || !end || !location || !description) {
+  if (!title || !date || !location || !description) {
     showMessage("event-admin-message", "すべての項目を入力してください。", true);
     return;
   }
+
+  const startResult = getTimeValue("event-start");
+  if (startResult.error) {
+    showMessage("event-admin-message", startResult.error, true);
+    return;
+  }
+
+  const endResult = getTimeValue("event-end");
+  if (endResult.error) {
+    showMessage("event-admin-message", endResult.error, true);
+    return;
+  }
+
+  const start = startResult.value;
+  const end = endResult.value;
 
   if (start >= end) {
     showMessage("event-admin-message", "終了時間は開始時間より後にしてください。", true);
