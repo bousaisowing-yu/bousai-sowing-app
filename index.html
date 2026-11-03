@@ -5,7 +5,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#183d2b">
-
   <title>防災Sowing 会員アプリ</title>
 
   <link rel="apple-touch-icon" href="logo.jpeg">
@@ -13,21 +12,36 @@
   <link rel="stylesheet" href="style.css?v=4">
 
   <style>
-    [hidden] {
-      display: none !important;
+    [hidden] { display: none !important; }
+
+    .time-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0 18px;
     }
 
-    .time-input {
+    .time-input-group input {
       width: 100%;
+      min-width: 0;
       box-sizing: border-box;
       font-size: 18px;
-      padding: 12px;
-      letter-spacing: 1px;
+      text-align: center;
+      padding: 12px 6px;
+    }
+
+    .time-input-group span {
+      white-space: nowrap;
+    }
+
+    .time-separator {
+      font-size: 20px;
+      font-weight: bold;
     }
   </style>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=3" defer></script>
+  <script src="app.js?v=4" defer></script>
 </head>
 
 <body>
@@ -124,27 +138,29 @@
           <label for="event-date">開催日</label>
           <input id="event-date" type="date">
 
-          <label for="event-time-start">開始時間（例：9:30）</label>
-          <input
-            id="event-time-start"
-            type="text"
-            class="time-input"
-            inputmode="numeric"
-            placeholder="9:30"
-            maxlength="5"
-            autocomplete="off"
-          >
+          <label>開始時間</label>
+          <div class="time-input-group">
+            <input id="event-start-hour" type="number" inputmode="numeric"
+              min="0" max="23" placeholder="時">
+            <span>時</span>
+            <input id="event-start-minute" type="number" inputmode="numeric"
+              min="0" max="59" placeholder="分">
+            <span>分</span>
+          </div>
 
-          <label for="event-time-end">終了時間（例：12:00）</label>
-          <input
-            id="event-time-end"
-            type="text"
-            class="time-input"
-            inputmode="numeric"
-            placeholder="12:00"
-            maxlength="5"
-            autocomplete="off"
-          >
+          <label>終了時間</label>
+          <div class="time-input-group">
+            <input id="event-end-hour" type="number" inputmode="numeric"
+              min="0" max="23" placeholder="時">
+            <span>時</span>
+            <input id="event-end-minute" type="number" inputmode="numeric"
+              min="0" max="59" placeholder="分">
+            <span>分</span>
+          </div>
+
+          <!-- app.jsとの連携用 -->
+          <input id="event-time-start" type="hidden">
+          <input id="event-time-end" type="hidden">
 
           <label for="event-location">開催場所</label>
           <input id="event-location" type="text" placeholder="開催場所">
