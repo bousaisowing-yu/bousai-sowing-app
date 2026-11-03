@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#203f30">
+  <title>防災Sowing 会員アプリ</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <img src="logo.jpeg" alt="防災Sowing 公式ロゴ" class="logo">
+    <div><p class="eyebrow">特定非営利活動法人</p><h1>防災Sowing</h1><p class="sub">会員アプリ</p></div>
+    <button id="adminOpen" class="admin-link" type="button">管理</button>
+  </header>
+
+  <main>
+    <section id="home" class="page active">
+      <div class="hero">
+        <p class="eyebrow light">MEMBERS' PORTAL</p>
+        <h2>防災の種をまこう。</h2>
+        <p>活動予定やお知らせを、ここから確認できます。</p>
+      </div>
+      <div class="quick-grid">
+        <button class="quick" data-go="events"><span>01</span><b>イベントを見る</b><small>活動予定・詳細</small></button>
+        <button class="quick" data-go="join"><span>02</span><b>参加登録</b><small>参加・不参加を登録</small></button>
+        <button class="quick" data-go="news"><span>03</span><b>お知らせ</b><small>会員向け連絡</small></button>
+      </div>
+      <section class="section"><div class="section-head"><div><p class="eyebrow">LATEST</p><h3>最新のお知らせ</h3></div><button class="text-btn" data-go="news">すべて見る →</button></div><div id="homeNews" class="stack"><p class="muted">共有データベース接続後に表示されます。</p></div></section>
+      <section class="section"><div class="section-head"><div><p class="eyebrow">NEXT EVENT</p><h3>次のイベント</h3></div><button class="text-btn" data-go="events">一覧 →</button></div><div id="homeEvents" class="stack"><p class="muted">共有データベース接続後に表示されます。</p></div></section>
+    </section>
+
+    <section id="events" class="page">
+      <div class="page-title"><p class="eyebrow">SCHEDULE</p><h2>イベント</h2><p>活動予定とイベントの詳細を確認できます。</p></div>
+      <div id="eventList" class="stack"><div class="empty">イベントはまだ登録されていません。</div></div>
+    </section>
+
+    <section id="join" class="page">
+      <div class="page-title"><p class="eyebrow">PARTICIPATION</p><h2>参加登録</h2><p>参加するイベントを選び、名前を入力してください。</p></div>
+      <form id="joinForm" class="panel">
+        <label>イベント<select id="joinEvent" required><option value="">イベントを選択</option></select></label>
+        <label>お名前<input id="memberName" maxlength="40" autocomplete="name" required placeholder="例：竹内"></label>
+        <label>参加確認<select id="attendance" required><option value="参加">参加</option><option value="不参加">不参加</option></select></label>
+        <button class="primary" type="submit">登録する</button>
+        <p class="fine">※参加者名の共有範囲は、会員向けのアクセス制限を設定してから運用します。</p>
+      </form>
+    </section>
+
+    <section id="news" class="page">
+      <div class="page-title"><p class="eyebrow">INFORMATION</p><h2>お知らせ</h2><p>活動に関する連絡事項を掲載します。</p></div>
+      <div id="newsList" class="stack"><div class="empty">お知らせはまだありません。</div></div>
+    </section>
+
+    <section id="admin" class="page">
+      <div class="page-title"><p class="eyebrow">ADMINISTRATION</p><h2>管理</h2><p>管理者向けの編集画面です。</p></div>
+      <div class="notice"><b>管理機能はデータベース接続後に有効になります。</b><p>管理者だけが編集できる認証を設定し、会員情報を一般公開しない構成にします。</p></div>
+      <div class="panel">
+        <h3>管理できる項目</h3>
+        <ul class="admin-list"><li>イベントの追加・編集・削除</li><li>イベント写真の追加・変更</li><li>お知らせの投稿・編集・削除</li><li>トップ画面の写真・ロゴの変更</li></ul>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="メインメニュー">
+    <button class="nav-item active" data-go="home"><span>⌂</span>ホーム</button>
+    <button class="nav-item" data-go="events"><span>▦</span>イベント</button>
+    <button class="nav-item" data-go="join"><span>＋</span>参加登録</button>
+    <button class="nav-item" data-go="news"><span>▤</span>お知らせ</button>
+  </nav>
+  <script src="app.js"></script>
+</body>
+</html>
