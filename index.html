@@ -10,7 +10,19 @@
   <link rel="icon" type="image/jpeg" href="logo.jpeg">
   <link rel="apple-touch-icon" href="logo.jpeg">
   <link rel="stylesheet" href="style.css?v=6">
+<link rel="manifest" href="./manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js")
+        .then(() => console.log("Service Worker registered"))
+        .catch((error) => console.error("Service Worker error:", error));
+    });
+  }
+</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="app.js?v=6" defer></script>
 </head>
