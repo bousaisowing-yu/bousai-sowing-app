@@ -1,4 +1,3 @@
-
 const SUPABASE_URL = "https://ftcrohylqnlmwlhybkha.supabase.co";
 const SUPABASE_KEY = "sb_publishable_uf_7B5i4YVsQWw7RjiQ_wQ_9KKoop4M";
 
@@ -11,12 +10,20 @@ let currentUser = null;
 let isAdmin = false;
 let allEvents = [];
 let allResponses = [];
+let allInterests = {};
+
 let calendarDate = new Date();
 let selectedDate = formatDate(new Date());
 let editingEventId = null;
 let originalEventButtonText = "";
 let currentEventImageUrl = "";
 let currentHeroImageUrl = "";
+
+const interestBusy = new Set();
+
+/* -----------------------------
+   共通処理
+----------------------------- */
 
 function formatDate(date) {
   return [
@@ -39,29 +46,67 @@ function escapeHTML(value) {
 function showMessage(id, message, error = false) {
   const element = $(id);
   if (!element) return;
+
   element.textContent = message;
   element.style.color = error ? "#b42318" : "#315d42";
 }
+
+/* -----------------------------
+   匿名ログイン
+----------------------------- */
+
+async function ensureUserSession() {
+  const { data, error } = await db.auth.getSession();
+
+  if (error) throw error;
+
+  if (data?.session?.user) {
+    currentUser = data.session.user;
+    return currentUser;
+  }
+
+  const { data: anonData, error: anonError } =
+    await db.auth.signInAnonymously();
+
+  if (anonError) throw anonError;
+
+  currentUser = anonData.user;
+
+  return currentUser;
+}
+
+/* -----------------------------
+   カレンダー用スタイル
+----------------------------- */
 
 function addCalendarStyles() {
   if ($("calendar-dynamic-styles")) return;
 
   const style = document.createElement("style");
   style.id = "calendar-dynamic-styles";
+
   style.textContent = `
     .event-view-switch {
       display:flex;
       gap:10px;
       margin:18px 0;
     }
-    .event-view-switch button { flex:1; }
+
+    .event-view-switch button {
+      flex:1;
+    }
+
     .calendar-header {
       display:flex;
       align-items:center;
       justify-content:space-between;
       margin:20px 0;
     }
-    .calendar-header h3 { margin:0; }
+
+    .calendar-header h3 {
+      margin:0;
+    }
+
     .calendar-header button {
       background:#234b35;
       color:white;
@@ -70,17 +115,20 @@ function addCalendarStyles() {
       height:42px;
       padding:0;
     }
+
     .calendar-grid {
       display:grid;
       grid-template-columns:repeat(7,minmax(0,1fr));
       gap:4px;
     }
+
     .calendar-weekday {
       text-align:center;
       font-size:12px;
       font-weight:bold;
       padding:8px 0;
     }
+
     .calendar-day {
       min-width:0;
       min-height:58px;
@@ -94,28 +142,39 @@ function addCalendarStyles() {
       align-items:center;
       gap:5px;
     }
-    .calendar-day.other-month { opacity:.35; }
+
+    .calendar-day.other-month {
+      opacity:.35;
+    }
+
     .calendar-day.selected {
       border:2px solid #315d42;
       background:#e8f1e9;
       font-weight:bold;
     }
+
     .calendar-day.today {
       color:#267344;
       font-weight:bold;
     }
+
     .calendar-event-dot {
       width:7px;
       height:7px;
       border-radius:50%;
       background:#315d42;
     }
-    .calendar-selected-events { margin-top:24px; }
+
+    .calendar-selected-events {
+      margin-top:24px;
+    }
+
     .calendar-selected-events h3 {
       font-size:17px;
       border-bottom:2px solid #315d42;
       padding-bottom:10px;
     }
+
     .event-card-image {
       display:block;
       width:100%;
@@ -126,7 +185,11 @@ function addCalendarStyles() {
       border-radius:12px;
       margin-bottom:14px;
     }
-    .event-card-content { padding:16px; }
+
+    .event-card-content {
+      padding:16px;
+    }
+
     .image-preview {
       display:block;
       width:100%;
@@ -136,6 +199,7 @@ function addCalendarStyles() {
       border-radius:12px;
       margin-top:12px;
     }
+
     .event-card {
       border:1px solid #dce5dc;
       border-radius:14px;
@@ -143,20 +207,80 @@ function addCalendarStyles() {
       margin:14px 0;
       overflow:hidden;
     }
-    .event-card h3 { margin-top:0; }
-    .event-description { white-space:pre-wrap; }
-    .participant-list { margin-top:12px; }
+
+    .event-card h3 {
+      margin-top:0;
+    }
+
+    .event-description {
+      white-space:pre-wrap;
+    }
+
+    .participant-list {
+      margin-top:12px;
+    }
+
     .event-actions {
       display:flex;
       flex-wrap:wrap;
       gap:8px;
       margin-top:14px;
     }
-    .event-actions button { margin:0; }
-    [hidden] { display:none !important; }
+
+    .event-actions button {
+      margin:0;
+    }
+
+    /* 気になる機能 */
+
+    .event-interest {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:16px;
+      padding:12px;
+      background:#f1f6f1;
+      border-radius:10px;
+    }
+
+    .event-interest-count {
+      font-weight:bold;
+      color:#315d42;
+    }
+
+    .interest-button {
+      border:1px solid #315d42;
+      border-radius:20px;
+      padding:8px 16px;
+      background:white;
+      color:#315d42;
+      font-weight:bold;
+      cursor:pointer;
+    }
+
+    .interest-button.active {
+      background:#315d42;
+      color:white;
+    }
+
+    .interest-button:disabled {
+      opacity:.5;
+      cursor:not-allowed;
+    }
+
+    [hidden] {
+      display:none !important;
+    }
   `;
+
   document.head.appendChild(style);
 }
+
+/* -----------------------------
+   タブ・表示切り替え
+----------------------------- */
 
 function switchTab(tab) {
   ["events", "news", "admin"].forEach(name => {
@@ -192,6 +316,126 @@ function getEventMembers(eventId) {
 }
 
 /* -----------------------------
+   気になる機能
+----------------------------- */
+
+async function loadEventInterests() {
+  allInterests = {};
+
+  if (!allEvents.length) return;
+
+  try {
+    await ensureUserSession();
+
+    const results = await Promise.all(
+      allEvents.map(async event => {
+        const { data, error } = await db.rpc(
+          "get_event_interest_status",
+          {
+            p_event_id: event.id
+          }
+        );
+
+        if (error) {
+          console.error("気になる情報の取得エラー:", error);
+
+          return [
+            event.id,
+            {
+              count: 0,
+              isInterested: false,
+              unavailable: true
+            }
+          ];
+        }
+
+        const result = Array.isArray(data) ? data[0] : data;
+
+        return [
+          event.id,
+          {
+            count: Number(result?.interest_count || 0),
+            isInterested: !!result?.is_interested,
+            unavailable: false
+          }
+        ];
+      })
+    );
+
+    allInterests = Object.fromEntries(results);
+
+  } catch (error) {
+    console.error("気になる情報を読み込めませんでした:", error);
+  }
+}
+
+async function toggleEventInterest(id) {
+  const key = String(id);
+
+  if (interestBusy.has(key)) return;
+
+  interestBusy.add(key);
+
+  document.querySelectorAll(".interest-button").forEach(button => {
+    if (String(button.dataset.id) === key) {
+      button.disabled = true;
+    }
+  });
+
+  try {
+    await ensureUserSession();
+
+    const { data, error } = await db.rpc(
+      "toggle_event_interest",
+      {
+        p_event_id: id
+      }
+    );
+
+    if (error) throw error;
+
+    const result = Array.isArray(data) ? data[0] : data;
+
+    allInterests[id] = {
+      count: Number(result?.interest_count || 0),
+      isInterested: !!result?.is_interested,
+      unavailable: false
+    };
+
+    renderAllEventViews();
+
+  } catch (error) {
+    console.error(error);
+
+    alert(
+      "「気になる」の登録・解除ができませんでした。\n" +
+      error.message
+    );
+
+  } finally {
+    interestBusy.delete(key);
+
+    document.querySelectorAll(".interest-button").forEach(button => {
+      if (String(button.dataset.id) === key) {
+        button.disabled = false;
+      }
+    });
+  }
+}
+
+/* -----------------------------
+   イベント画面の再描画
+----------------------------- */
+
+function renderAllEventViews() {
+  $("events-list").innerHTML = allEvents.length
+    ? renderEventCards(allEvents)
+    : '<p class="muted">現在、登録されているイベントはありません。</p>';
+
+  renderCalendar();
+}
+
+/* -----------------------------
    画像アップロード共通処理
 ----------------------------- */
 
@@ -203,7 +447,6 @@ function isValidImage(file) {
     return false;
   }
 
-  // 画像1枚あたり最大5MB
   if (file.size > 5 * 1024 * 1024) {
     alert("画像は5MB以下のファイルを選択してください。");
     return false;
@@ -304,6 +547,7 @@ async function saveHeroImage() {
 
   const button = $("save-hero-image-button");
   button.disabled = true;
+
   showMessage("hero-image-message", "画像をアップロードしています…");
 
   try {
@@ -324,13 +568,16 @@ async function saveHeroImage() {
     $("hero-image-file").value = "";
 
     showMessage("hero-image-message", "トップ画像を保存しました！");
+
   } catch (error) {
     console.error(error);
+
     showMessage(
       "hero-image-message",
       "画像を保存できませんでした：" + error.message,
       true
     );
+
   } finally {
     button.disabled = false;
   }
@@ -348,6 +595,12 @@ function renderEventCards(events) {
   return events.map(event => {
     const members = getEventMembers(event.id);
 
+    const interest = allInterests[event.id] || {
+      count: 0,
+      isInterested: false,
+      unavailable: false
+    };
+
     const imageHtml = event.image_url
       ? `<img class="event-card-image"
           src="${escapeHTML(event.image_url)}"
@@ -358,6 +611,7 @@ function renderEventCards(events) {
     return `
       <article class="event-card">
         ${imageHtml}
+
         <h3>${escapeHTML(event.title)}</h3>
 
         <div class="event-meta">
@@ -372,28 +626,57 @@ function renderEventCards(events) {
         <div class="participant-list">
           <strong>参加予定</strong><br>
           ${members.length
-            ? members.map(member => escapeHTML(member.member_name)).join("、")
+            ? members.map(member =>
+                escapeHTML(member.member_name)
+              ).join("、")
             : "まだ参加者はいません"}
+        </div>
+
+        <div class="event-interest">
+          <span class="event-interest-count">
+            ♥ 気になる ${interest.count}人
+          </span>
+
+          <button
+            type="button"
+            class="interest-button ${interest.isInterested ? "active" : ""}"
+            data-action="toggle-interest"
+            data-id="${escapeHTML(event.id)}"
+            ${interestBusy.has(String(event.id)) ? "disabled" : ""}
+            ${interest.unavailable ? "disabled" : ""}
+          >
+            ${interest.isInterested
+              ? "♥ 気になるを解除"
+              : "♡ 気になる"}
+          </button>
         </div>
 
         <div class="event-actions">
           <button class="primary-button"
             data-action="join"
-            data-id="${escapeHTML(event.id)}">参加する</button>
+            data-id="${escapeHTML(event.id)}">
+            参加する
+          </button>
 
           <button class="secondary-button"
             data-action="cancel"
-            data-id="${escapeHTML(event.id)}">参加を取り消す</button>
+            data-id="${escapeHTML(event.id)}">
+            参加を取り消す
+          </button>
 
           ${isAdmin
             ? `
               <button class="secondary-button"
                 data-action="edit-event"
-                data-id="${escapeHTML(event.id)}">編集</button>
+                data-id="${escapeHTML(event.id)}">
+                編集
+              </button>
 
               <button class="secondary-button danger-button"
                 data-action="delete-event"
-                data-id="${escapeHTML(event.id)}">削除</button>
+                data-id="${escapeHTML(event.id)}">
+                削除
+              </button>
             `
             : ""}
         </div>
@@ -426,11 +709,9 @@ async function loadEvents() {
 
   allResponses = responses || [];
 
-  $("events-list").innerHTML = allEvents.length
-    ? renderEventCards(allEvents)
-    : '<p class="muted">現在、登録されているイベントはありません。</p>';
+  await loadEventInterests();
 
-  renderCalendar();
+  renderAllEventViews();
 }
 
 /* -----------------------------
@@ -476,7 +757,10 @@ function renderCalendar() {
         class="${classes}"
         data-calendar-date="${dateString}"
         ${inMonth ? "" : "disabled"}>
-        <span class="calendar-day-number">${inMonth ? number : ""}</span>
+        <span class="calendar-day-number">
+          ${inMonth ? number : ""}
+        </span>
+
         ${hasEvent && inMonth
           ? '<span class="calendar-event-dot"></span>'
           : ""}
@@ -485,6 +769,7 @@ function renderCalendar() {
   }
 
   $("calendar-grid").innerHTML = html;
+
   renderSelectedDay();
 }
 
@@ -509,6 +794,7 @@ function changeCalendarMonth(amount) {
   );
 
   selectedDate = formatDate(calendarDate);
+
   renderCalendar();
 }
 
@@ -518,6 +804,7 @@ function changeCalendarMonth(amount) {
 
 async function joinEvent(id) {
   const name = prompt("参加する方のお名前を入力してください。");
+
   if (!name || !name.trim()) return;
 
   const { error } = await db.from("event_responses").upsert({
@@ -534,11 +821,13 @@ async function joinEvent(id) {
   }
 
   alert("参加登録しました！");
+
   await loadEvents();
 }
 
 async function cancelEvent(id) {
   const name = prompt("参加登録したときのお名前を入力してください。");
+
   if (!name || !name.trim()) return;
 
   const { error } = await db.from("event_responses")
@@ -552,6 +841,7 @@ async function cancelEvent(id) {
   }
 
   alert("参加を取り消しました。");
+
   await loadEvents();
 }
 
@@ -584,22 +874,30 @@ function getTimeValue(prefix) {
   const minuteText = $(prefix + "-minute").value.trim();
 
   if (hourText === "" || minuteText === "") {
-    return { error: "開始・終了時間の時と分をすべて入力してください。" };
+    return {
+      error: "開始・終了時間の時と分をすべて入力してください。"
+    };
   }
 
   if (!/^\d+$/.test(hourText) || !/^\d+$/.test(minuteText)) {
-    return { error: "時刻は数字で入力してください。" };
+    return {
+      error: "時刻は数字で入力してください。"
+    };
   }
 
   const hour = Number(hourText);
   const minute = Number(minuteText);
 
   if (hour < 0 || hour > 23) {
-    return { error: "時は0〜23の範囲で入力してください。" };
+    return {
+      error: "時は0〜23の範囲で入力してください。"
+    };
   }
 
   if (minute < 0 || minute > 59) {
-    return { error: "分は0〜59の範囲で入力してください。" };
+    return {
+      error: "分は0〜59の範囲で入力してください。"
+    };
   }
 
   return {
@@ -609,6 +907,7 @@ function getTimeValue(prefix) {
 
 function previewEventImage(url) {
   const preview = $("event-image-preview");
+
   if (!preview) return;
 
   if (url) {
@@ -623,7 +922,10 @@ function previewEventImage(url) {
 function startEditEvent(id) {
   if (!isAdmin) return;
 
-  const event = allEvents.find(item => String(item.id) === String(id));
+  const event = allEvents.find(item =>
+    String(item.id) === String(id)
+  );
+
   if (!event) return;
 
   editingEventId = id;
@@ -640,18 +942,24 @@ function startEditEvent(id) {
   $("event-location").value = event.location || "";
   $("event-description").value = event.description || "";
 
-  if ($("event-image-file")) $("event-image-file").value = "";
+  if ($("event-image-file")) {
+    $("event-image-file").value = "";
+  }
+
   previewEventImage(currentEventImageUrl);
 
   const button = $("add-event-button");
+
   if (!originalEventButtonText) {
     originalEventButtonText = button.textContent;
   }
+
   button.textContent = "変更を保存";
 
   $("event-edit-cancel-button").hidden = false;
 
   showMessage("event-admin-message", "イベントを編集中です。");
+
   switchTab("admin");
 
   $("event-title").scrollIntoView({
@@ -677,13 +985,17 @@ function cancelEditEvent() {
     if ($(id)) $(id).value = "";
   });
 
-  if ($("event-image-file")) $("event-image-file").value = "";
+  if ($("event-image-file")) {
+    $("event-image-file").value = "";
+  }
+
   previewEventImage("");
 
   $("add-event-button").textContent =
     originalEventButtonText || "イベントを登録";
 
   $("event-edit-cancel-button").hidden = true;
+
   showMessage("event-admin-message", "編集をキャンセルしました。");
 }
 
@@ -696,17 +1008,23 @@ async function addEvent() {
   const description = $("event-description").value.trim();
 
   if (!title || !date || !location || !description) {
-    showMessage("event-admin-message", "すべての項目を入力してください。", true);
+    showMessage(
+      "event-admin-message",
+      "すべての項目を入力してください。",
+      true
+    );
     return;
   }
 
   const startResult = getTimeValue("event-start");
+
   if (startResult.error) {
     showMessage("event-admin-message", startResult.error, true);
     return;
   }
 
   const endResult = getTimeValue("event-end");
+
   if (endResult.error) {
     showMessage("event-admin-message", endResult.error, true);
     return;
@@ -716,7 +1034,11 @@ async function addEvent() {
   const end = endResult.value;
 
   if (start >= end) {
-    showMessage("event-admin-message", "終了時間は開始時間より後にしてください。", true);
+    showMessage(
+      "event-admin-message",
+      "終了時間は開始時間より後にしてください。",
+      true
+    );
     return;
   }
 
@@ -755,19 +1077,25 @@ async function addEvent() {
     const wasEditing = !!editingEventId;
 
     cancelEditEvent();
+
     showMessage(
       "event-admin-message",
-      wasEditing ? "イベントを更新しました！" : "イベントを登録しました！"
+      wasEditing
+        ? "イベントを更新しました！"
+        : "イベントを登録しました！"
     );
 
     await loadEvents();
+
   } catch (error) {
     console.error(error);
+
     showMessage(
       "event-admin-message",
       "保存できませんでした：" + error.message,
       true
     );
+
   } finally {
     saveButton.disabled = false;
   }
@@ -779,6 +1107,7 @@ async function addEvent() {
 
 async function loadAnnouncements() {
   const root = $("announcements-list");
+
   root.innerHTML = '<p class="muted">読み込み中…</p>';
 
   const { data, error } = await db.from("announcements")
@@ -799,16 +1128,25 @@ async function loadAnnouncements() {
   root.innerHTML = data.map(item => `
     <article class="announcement-card">
       <h3>${escapeHTML(item.title)}</h3>
-      <p class="announcement-content">${escapeHTML(item.content)}</p>
-      <p class="muted">${escapeHTML(
-        item.created_at
-          ? new Date(item.created_at).toLocaleString("ja-JP")
-          : ""
-      )}</p>
+
+      <p class="announcement-content">
+        ${escapeHTML(item.content)}
+      </p>
+
+      <p class="muted">
+        ${escapeHTML(
+          item.created_at
+            ? new Date(item.created_at).toLocaleString("ja-JP")
+            : ""
+        )}
+      </p>
+
       ${isAdmin
         ? `<button class="secondary-button"
             data-action="delete-announcement"
-            data-id="${escapeHTML(item.id)}">削除</button>`
+            data-id="${escapeHTML(item.id)}">
+            削除
+          </button>`
         : ""}
     </article>
   `).join("");
@@ -821,7 +1159,11 @@ async function addAnnouncement() {
   const content = $("announcement-content").value.trim();
 
   if (!title || !content) {
-    showMessage("announcement-admin-message", "タイトルと本文を入力してください。", true);
+    showMessage(
+      "announcement-admin-message",
+      "タイトルと本文を入力してください。",
+      true
+    );
     return;
   }
 
@@ -831,21 +1173,31 @@ async function addAnnouncement() {
   });
 
   if (error) {
-    showMessage("announcement-admin-message", "投稿エラー：" + error.message, true);
+    showMessage(
+      "announcement-admin-message",
+      "投稿エラー：" + error.message,
+      true
+    );
     return;
   }
 
   $("announcement-title").value = "";
   $("announcement-content").value = "";
 
-  showMessage("announcement-admin-message", "お知らせを投稿しました！");
+  showMessage(
+    "announcement-admin-message",
+    "お知らせを投稿しました！"
+  );
+
   await loadAnnouncements();
 }
 
 async function deleteAnnouncement(id) {
   if (!isAdmin || !confirm("このお知らせを削除しますか？")) return;
 
-  const { error } = await db.from("announcements").delete().eq("id", id);
+  const { error } = await db.from("announcements")
+    .delete()
+    .eq("id", id);
 
   if (error) {
     alert("削除できませんでした：" + error.message);
@@ -871,12 +1223,19 @@ async function checkAdmin() {
     isAdmin = !error && !!data;
   }
 
-  if ($("admin-functions")) $("admin-functions").hidden = !isAdmin;
+  if ($("admin-functions")) {
+    $("admin-functions").hidden = !isAdmin;
+  }
 
   const authPanel = document.querySelector(".auth-panel");
-  if (authPanel) authPanel.hidden = isAdmin;
 
-  if ($("admin-tab")) $("admin-tab").hidden = false;
+  if (authPanel) {
+    authPanel.hidden = isAdmin;
+  }
+
+  if ($("admin-tab")) {
+    $("admin-tab").hidden = false;
+  }
 }
 
 async function login() {
@@ -884,7 +1243,11 @@ async function login() {
   const password = $("login-password").value;
 
   if (!email || !password) {
-    showMessage("auth-message", "メールアドレスとパスワードを入力してください。", true);
+    showMessage(
+      "auth-message",
+      "メールアドレスとパスワードを入力してください。",
+      true
+    );
     return;
   }
 
@@ -899,27 +1262,43 @@ async function login() {
     if (error) throw error;
 
     currentUser = data.user;
+
     await checkAdmin();
 
     if (!isAdmin) {
       await db.auth.signOut();
+
       currentUser = null;
+
+      await ensureUserSession();
       await checkAdmin();
 
-      showMessage("auth-message", "管理者アカウントではありません。", true);
+      showMessage(
+        "auth-message",
+        "管理者アカウントではありません。",
+        true
+      );
+
       return;
     }
 
-    showMessage("auth-message", "管理者としてログインしました。");
+    showMessage(
+      "auth-message",
+      "管理者としてログインしました。"
+    );
+
     await loadEvents();
     await loadAnnouncements();
+
   } catch (error) {
     console.error(error);
+
     showMessage(
       "auth-message",
       "ログインできませんでした。入力内容を確認してください。",
       true
     );
+
   } finally {
     $("login-button").disabled = false;
   }
@@ -927,12 +1306,22 @@ async function login() {
 
 async function logout() {
   await db.auth.signOut();
+
   currentUser = null;
   isAdmin = false;
 
-  if (editingEventId) cancelEditEvent();
+  try {
+    await ensureUserSession();
+  } catch (error) {
+    console.error("匿名ログインに失敗しました:", error);
+  }
+
+  if (editingEventId) {
+    cancelEditEvent();
+  }
 
   await checkAdmin();
+
   showMessage("auth-message", "ログアウトしました。");
 
   await loadEvents();
@@ -949,14 +1338,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   addCalendarStyles();
 
   const eventButton = $("add-event-button");
+
   originalEventButtonText = eventButton.textContent;
 
   const cancelButton = document.createElement("button");
+
   cancelButton.id = "event-edit-cancel-button";
   cancelButton.type = "button";
   cancelButton.className = "secondary-button";
   cancelButton.textContent = "編集をキャンセル";
   cancelButton.hidden = true;
+
   cancelButton.addEventListener("click", cancelEditEvent);
 
   eventButton.insertAdjacentElement("afterend", cancelButton);
@@ -967,13 +1359,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("add-announcement-button").addEventListener("click", addAnnouncement);
 
   if ($("save-hero-image-button")) {
-    $("save-hero-image-button").addEventListener("click", saveHeroImage);
+    $("save-hero-image-button").addEventListener(
+      "click",
+      saveHeroImage
+    );
   }
 
   // トップ画像のプレビュー
+
   if ($("hero-image-file")) {
     $("hero-image-file").addEventListener("change", () => {
       const file = $("hero-image-file").files?.[0];
+
       if (!file) return;
 
       if (!isValidImage(file)) {
@@ -986,9 +1383,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // イベント画像のプレビュー
+
   if ($("event-image-file")) {
     $("event-image-file").addEventListener("change", () => {
       const file = $("event-image-file").files?.[0];
+
       if (!file) return;
 
       if (!isValidImage(file)) {
@@ -1000,8 +1399,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
+  // ボタン操作
+
   document.addEventListener("click", event => {
     const button = event.target.closest("button");
+
     if (!button) return;
 
     if (button.id === "event-list-view-button") {
@@ -1035,23 +1437,53 @@ document.addEventListener("DOMContentLoaded", async () => {
     const action = button.dataset.action;
     const id = button.dataset.id;
 
-    if (action === "join") joinEvent(id);
-    if (action === "cancel") cancelEvent(id);
-    if (action === "edit-event") startEditEvent(id);
-    if (action === "delete-event") deleteEvent(id);
-    if (action === "delete-announcement") deleteAnnouncement(id);
+    if (action === "join") {
+      joinEvent(id);
+      return;
+    }
+
+    if (action === "cancel") {
+      cancelEvent(id);
+      return;
+    }
+
+    if (action === "toggle-interest") {
+      toggleEventInterest(id);
+      return;
+    }
+
+    if (action === "edit-event") {
+      startEditEvent(id);
+      return;
+    }
+
+    if (action === "delete-event") {
+      deleteEvent(id);
+      return;
+    }
+
+    if (action === "delete-announcement") {
+      deleteAnnouncement(id);
+      return;
+    }
   });
 
   document.querySelectorAll(".tab-button").forEach(button => {
-    button.addEventListener("click", () => switchTab(button.dataset.tab));
+    button.addEventListener("click", () => {
+      switchTab(button.dataset.tab);
+    });
   });
 
-  const { data, error } = await db.auth.getSession();
+  // 匿名ログインまたは既存セッションの取得
 
-  if (error) console.error(error);
-  if (data?.session) currentUser = data.session.user;
+  try {
+    await ensureUserSession();
+  } catch (error) {
+    console.error("ログインセッションを準備できませんでした:", error);
+  }
 
   await checkAdmin();
+
   await loadHeroImage();
   await loadEvents();
   await loadAnnouncements();
