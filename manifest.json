@@ -1,0 +1,22 @@
+{
+  "name": "防災Sowing 会員アプリ",
+  "short_name": "防災Sowing",
+  "description": "防災Sowingの会員向けアプリ",
+  "start_url": "/bousai-sowing-app/",
+  "scope": "/bousai-sowing-app/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#183d2b",
+  "icons": [
+    {
+      "src": "/bousai-sowing-app/logo.jpeg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "/bousai-sowing-app/logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
