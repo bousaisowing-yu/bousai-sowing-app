@@ -9,10 +9,10 @@
 
   <link rel="icon" type="image/jpeg" href="logo.jpeg">
   <link rel="apple-touch-icon" href="logo.jpeg">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=5" defer></script>
+  <script src="app.js?v=6" defer></script>
 </head>
 
 <body>
@@ -29,7 +29,6 @@
 
   <main class="container">
 
-    <!-- トップ画面のメイン画像 -->
     <section class="hero-panel">
       <img id="hero-image"
         class="hero-image"
@@ -56,13 +55,12 @@
       </button>
     </nav>
 
-    <!-- イベント -->
     <section id="events-page" class="page">
       <div class="panel">
         <p class="eyebrow">EVENT INFORMATION</p>
         <h2>イベント</h2>
         <p class="muted">
-          イベントの詳細を確認し、参加予定を登録できます。
+          イベントの詳細を確認し、参加予定や「気になる」を登録できます。
         </p>
 
         <div class="event-view-switch">
@@ -93,7 +91,6 @@
       </div>
     </section>
 
-    <!-- お知らせ -->
     <section id="news-page" class="page" hidden>
       <div class="panel">
         <p class="eyebrow">NEWS & INFORMATION</p>
@@ -104,7 +101,6 @@
       </div>
     </section>
 
-    <!-- 管理者 -->
     <section id="admin-page" class="page" hidden>
       <div class="panel auth-panel">
         <p class="eyebrow">ADMINISTRATOR</p>
@@ -129,7 +125,6 @@
 
       <div id="admin-functions" hidden>
 
-        <!-- トップ画像の設定 -->
         <div class="panel">
           <p class="eyebrow">MAIN VISUAL</p>
           <h2>トップ画面の画像を変更</h2>
@@ -153,7 +148,6 @@
           <p id="hero-image-message" aria-live="polite"></p>
         </div>
 
-        <!-- イベントの登録・編集 -->
         <div class="panel">
           <p class="eyebrow">EVENT MANAGEMENT</p>
           <h2>イベントを登録</h2>
@@ -212,7 +206,6 @@
           <p id="event-admin-message" aria-live="polite"></p>
         </div>
 
-        <!-- お知らせの登録 -->
         <div class="panel">
           <p class="eyebrow">NEWS MANAGEMENT</p>
           <h2>お知らせを投稿</h2>
