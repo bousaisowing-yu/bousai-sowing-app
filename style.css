@@ -362,6 +362,57 @@ input[type="file"] {
   border-color: #f0ceca;
 }
 
+/* 気になる機能 */
+.event-interest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.interest-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 16px;
+  border: 1px solid #b9cdbb;
+  border-radius: 22px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 700;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+.interest-button:hover {
+  background: #dcebdc;
+}
+
+.interest-button:active {
+  transform: scale(0.97);
+}
+
+.interest-button.active {
+  background: #fff0ef;
+  border-color: #efc6c2;
+  color: #bd4038;
+}
+
+.interest-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.event-interest-count {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
 /* 画像プレビュー */
 .image-preview {
   display: block;
@@ -553,5 +604,14 @@ input[type="file"] {
 
   .time-input-group span {
     font-size: 12px;
+  }
+
+  .event-interest {
+    gap: 7px;
+  }
+
+  .interest-button {
+    min-height: 44px;
+    padding: 9px 15px;
   }
 }
