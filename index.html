@@ -9,7 +9,7 @@
 
   <link rel="icon" type="image/jpeg" href="logo.jpeg">
   <link rel="apple-touch-icon" href="logo.jpeg">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -31,7 +31,7 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=6" defer></script>
+  <script src="app.js?v=7" defer></script>
 </head>
 
 <body>
@@ -206,6 +206,12 @@
           <label for="event-description">イベント内容</label>
           <textarea id="event-description" rows="4"
             placeholder="イベントの内容"></textarea>
+
+          <!-- 重要マーク設定 -->
+          <label class="important-setting">
+            <input id="event-is-important" type="checkbox">
+            ★ このイベントに重要マークを付ける
+          </label>
 
           <label for="event-image-file">イベント画像（任意）</label>
           <input id="event-image-file" type="file" accept="image/*">
