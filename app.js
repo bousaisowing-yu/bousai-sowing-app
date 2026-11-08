@@ -1491,3 +1491,348 @@ document.addEventListener("DOMContentLoaded", async () => {
   switchTab("events");
   setEventView("list");
 });
+
+
+/* =================================
+   重要イベント機能
+   ================================= */
+
+// 重要マークの表示スタイル
+const importantStyles = document.createElement("style");
+
+importantStyles.textContent = `
+  .important-setting {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:18px 0;
+    padding:14px;
+    border:1px solid #e3b341;
+    border-radius:10px;
+    background:#fff9e8;
+    color:#765400;
+    font-weight:bold;
+  }
+
+  .important-setting input {
+    width:20px;
+    height:20px;
+    accent-color:#c58b00;
+  }
+
+  .important-event-badge {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    margin:0 0 12px;
+    padding:5px 12px;
+    border-radius:20px;
+    background:#fff0c2;
+    color:#805600;
+    border:1px solid #e4b43c;
+    font-size:13px;
+    font-weight:bold;
+  }
+`;
+
+document.head.appendChild(importantStyles);
+
+
+// イベントカード表示を拡張
+function renderEventCards(events) {
+  if (!events || events.length === 0) {
+    return '<p class="muted">この日のイベントはありません。</p>';
+  }
+
+  return events.map(event => {
+    const members = getEventMembers(event.id);
+
+    const interest = allInterests[event.id] || {
+      count: 0,
+      isInterested: false,
+      unavailable: false
+    };
+
+    const imageHtml = event.image_url
+      ? `<img class="event-card-image"
+          src="${escapeHTML(event.image_url)}"
+          alt="${escapeHTML(event.title)}の画像"
+          loading="lazy">`
+      : "";
+
+    return `
+      <article class="event-card">
+        ${imageHtml}
+
+        ${event.is_important
+          ? '<div class="important-event-badge">★ 重要</div>'
+          : ""}
+
+        <h3>${escapeHTML(event.title)}</h3>
+
+        <div class="event-meta">
+          📅 ${escapeHTML(event.event_date || "")}
+          ${escapeHTML(event.event_time || "")}<br>
+          📍 ${escapeHTML(event.location || "")}<br>
+          👥 参加 ${members.length}人
+        </div>
+
+        <p class="event-description">${escapeHTML(event.description || "")}</p>
+
+        <div class="participant-list">
+          <strong>参加予定</strong><br>
+          ${members.length
+            ? members.map(member =>
+                escapeHTML(member.member_name)
+              ).join("、")
+            : "まだ参加者はいません"}
+        </div>
+
+        <div class="event-interest">
+          <span class="event-interest-count">
+            ♥ 気になる ${interest.count}人
+          </span>
+
+          <button
+            type="button"
+            class="interest-button ${interest.isInterested ? "active" : ""}"
+            data-action="toggle-interest"
+            data-id="${escapeHTML(event.id)}"
+            ${interestBusy.has(String(event.id)) ? "disabled" : ""}
+            ${interest.unavailable ? "disabled" : ""}
+          >
+            ${interest.isInterested
+              ? "♥ 気になるを解除"
+              : "♡ 気になる"}
+          </button>
+        </div>
+
+        <div class="event-actions">
+          <button class="primary-button"
+            data-action="join"
+            data-id="${escapeHTML(event.id)}">
+            参加する
+          </button>
+
+          <button class="secondary-button"
+            data-action="cancel"
+            data-id="${escapeHTML(event.id)}">
+            参加を取り消す
+          </button>
+
+          ${isAdmin
+            ? `
+              <button class="secondary-button"
+                data-action="edit-event"
+                data-id="${escapeHTML(event.id)}">
+                編集
+              </button>
+
+              <button class="secondary-button danger-button"
+                data-action="delete-event"
+                data-id="${escapeHTML(event.id)}">
+                削除
+              </button>
+            `
+            : ""}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+
+// イベント編集時に重要設定を読み込む
+function startEditEvent(id) {
+  if (!isAdmin) return;
+
+  const event = allEvents.find(item =>
+    String(item.id) === String(id)
+  );
+
+  if (!event) return;
+
+  editingEventId = id;
+  currentEventImageUrl = event.image_url || "";
+
+  const timeParts = (event.event_time || "").split(/[～〜~]/);
+
+  $("event-title").value = event.title || "";
+  $("event-date").value = event.event_date || "";
+
+  setTimeInputs("event-start", timeParts[0] || "");
+  setTimeInputs("event-end", timeParts[1] || "");
+
+  $("event-location").value = event.location || "";
+  $("event-description").value = event.description || "";
+
+  $("event-is-important").checked = !!event.is_important;
+
+  if ($("event-image-file")) {
+    $("event-image-file").value = "";
+  }
+
+  previewEventImage(currentEventImageUrl);
+
+  const button = $("add-event-button");
+
+  if (!originalEventButtonText) {
+    originalEventButtonText = button.textContent;
+  }
+
+  button.textContent = "変更を保存";
+
+  $("event-edit-cancel-button").hidden = false;
+
+  showMessage("event-admin-message", "イベントを編集中です。");
+
+  switchTab("admin");
+
+  $("event-title").scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+}
+
+
+// 編集キャンセル時に重要設定もリセット
+function cancelEditEvent() {
+  editingEventId = null;
+  currentEventImageUrl = "";
+
+  [
+    "event-title",
+    "event-date",
+    "event-start-hour",
+    "event-start-minute",
+    "event-end-hour",
+    "event-end-minute",
+    "event-location",
+    "event-description"
+  ].forEach(id => {
+    if ($(id)) $(id).value = "";
+  });
+
+  if ($("event-is-important")) {
+    $("event-is-important").checked = false;
+  }
+
+  if ($("event-image-file")) {
+    $("event-image-file").value = "";
+  }
+
+  previewEventImage("");
+
+  $("add-event-button").textContent =
+    originalEventButtonText || "イベントを登録";
+
+  $("event-edit-cancel-button").hidden = true;
+
+  showMessage("event-admin-message", "編集をキャンセルしました。");
+}
+
+
+// イベント登録・更新時に重要設定を保存
+async function addEvent() {
+  if (!isAdmin) return;
+
+  const title = $("event-title").value.trim();
+  const date = $("event-date").value;
+  const location = $("event-location").value.trim();
+  const description = $("event-description").value.trim();
+
+  if (!title || !date || !location || !description) {
+    showMessage(
+      "event-admin-message",
+      "すべての項目を入力してください。",
+      true
+    );
+    return;
+  }
+
+  const startResult = getTimeValue("event-start");
+
+  if (startResult.error) {
+    showMessage("event-admin-message", startResult.error, true);
+    return;
+  }
+
+  const endResult = getTimeValue("event-end");
+
+  if (endResult.error) {
+    showMessage("event-admin-message", endResult.error, true);
+    return;
+  }
+
+  const start = startResult.value;
+  const end = endResult.value;
+
+  if (start >= end) {
+    showMessage(
+      "event-admin-message",
+      "終了時間は開始時間より後にしてください。",
+      true
+    );
+    return;
+  }
+
+  const saveButton = $("add-event-button");
+  saveButton.disabled = true;
+
+  try {
+    let imageUrl = currentEventImageUrl;
+    const imageFile = $("event-image-file")?.files?.[0];
+
+    if (imageFile) {
+      imageUrl = await uploadImage(imageFile, "events");
+    }
+
+    const eventData = {
+      title,
+      event_date: date,
+      event_time: `${start}～${end}`,
+      location,
+      description,
+      image_url: imageUrl || null,
+      is_important: $("event-is-important").checked
+    };
+
+    let error;
+
+    if (editingEventId) {
+      ({ error } = await db.from("events")
+        .update(eventData)
+        .eq("id", editingEventId));
+    } else {
+      ({ error } = await db.from("events").insert(eventData));
+    }
+
+    if (error) throw error;
+
+    const wasEditing = !!editingEventId;
+
+    cancelEditEvent();
+
+    showMessage(
+      "event-admin-message",
+      wasEditing
+        ? "イベントを更新しました！"
+        : "イベントを登録しました！"
+    );
+
+    await loadEvents();
+
+  } catch (error) {
+    console.error(error);
+
+    showMessage(
+      "event-admin-message",
+      "保存できませんでした：" + error.message,
+      true
+    );
+
+  } finally {
+    saveButton.disabled = false;
+  }
+}
+
