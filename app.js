@@ -1369,6 +1369,11 @@ async function addEvent() {
       ...document.querySelectorAll(".event-tag:checked")
     ].map(input => input.value);
 
+    // 通知を送るチェックボックスの状態を取得
+    const sendNotification = $("event-send-notification")
+      ? $("event-send-notification").checked
+      : true;
+
     const eventData = {
       title,
       event_date: date,
@@ -1389,6 +1394,27 @@ async function addEvent() {
         .eq("id", editingEventId));
     } else {
       ({ error } = await db.from("events").insert(eventData));
+
+      // 新規登録かつ通知チェックが入っている場合のみOneSignal経由で通知を送信
+      if (!error && sendNotification) {
+        try {
+          await fetch("https://onesignal.com/api/v1/notifications", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Authorization": "Basic 3ugs3bhffuzjfdylj44thl23g"
+            },
+            body: JSON.stringify({
+              app_id: "b7cd02f4-3342-452f-b261-d3bff69f03a9",
+              included_segments: ["All"],
+              contents: { en: `新しいイベント「${title}」が登録されました！` },
+              headings: { en: "防災Sowing 新着イベント" }
+            })
+          });
+        } catch (notifErr) {
+          console.error("プッシュ通知の送信に失敗しました:", notifErr);
+        }
+      }
     }
 
     if (error) throw error;
