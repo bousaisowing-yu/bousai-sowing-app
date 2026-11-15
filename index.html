@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -23,6 +22,9 @@
         serviceWorkerPath: "/bousai-sowing-app/OneSignalSDKWorker.js",
         serviceWorkerParam: { scope: "/bousai-sowing-app/" }
       });
+
+      // 自動でスライドプロンプト（通知許可のポップアップ）を表示させるコード
+      OneSignal.Slidedown.promptPush();
     });
   </script>
 
