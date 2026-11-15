@@ -166,6 +166,13 @@
             ★ このイベントに重要マークを付ける
           </label>
 
+          <!-- ▼ 追加：プッシュ通知を送るチェックボックス ▼ -->
+          <label class="important-setting" style="background-color: #e8f5e9; border-color: #2e7d32; margin-top: 8px;">
+            <input id="event-send-notification" type="checkbox" checked>
+            🔔 このイベントの登録を会員にプッシュ通知でお知らせする
+          </label>
+          <!-- ▲ ここまで ▲ -->
+
           <div class="event-settings-section">
             <h3>会員への参加募集</h3>
             <p class="muted">募集しない場合も、イベント情報は会員画面に表示されます。</p>
@@ -218,7 +225,7 @@
         </div>
 
         <div class="panel">
-          <p class="eyebrow">NEWS MANAGEMENT</p>
+          <p class="eyevrow">NEWS MANAGEMENT</p>
           <h2>お知らせを投稿</h2>
           <label for="announcement-title">タイトル</label>
           <input id="announcement-title" type="text" placeholder="お知らせのタイトル">
