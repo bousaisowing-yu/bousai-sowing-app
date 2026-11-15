@@ -1,4 +1,3 @@
-
 const SUPABASE_URL = "https://ftcrohylqnlmwlhybkha.supabase.co";
 const SUPABASE_KEY = "sb_publishable_uf_7B5i4YVsQWw7RjiQ_wQ_9KKoop4M";
 
@@ -21,6 +20,7 @@ let currentEventImageUrl = "";
 let currentHeroImageUrl = "";
 
 const interestBusy = new Set();
+let recoverySessionActive = false;
 
 /* -----------------------------
    イベントマーク設定
@@ -450,6 +450,67 @@ function addCalendarStyles() {
       color:#666;
       font-size:12px;
       font-weight:bold;
+    }
+
+    /* パスワード再設定 */
+    .password-recovery-link {
+      display:block;
+      width:100%;
+      margin-top:12px;
+      padding:10px;
+      border:0;
+      background:transparent;
+      color:#315d42;
+      text-decoration:underline;
+      cursor:pointer;
+      font-size:14px;
+    }
+
+    .recovery-overlay {
+      position:fixed;
+      inset:0;
+      z-index:99999;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      background:rgba(0,0,0,.55);
+    }
+
+    .recovery-dialog {
+      width:100%;
+      max-width:420px;
+      padding:24px;
+      border-radius:16px;
+      background:white;
+      box-shadow:0 10px 40px rgba(0,0,0,.2);
+    }
+
+    .recovery-dialog h2 {
+      margin-top:0;
+      color:#234b35;
+    }
+
+    .recovery-dialog input {
+      display:block;
+      width:100%;
+      box-sizing:border-box;
+      margin:10px 0;
+      padding:13px;
+      border:1px solid #ccc;
+      border-radius:8px;
+      font-size:16px;
+    }
+
+    .recovery-dialog button {
+      width:100%;
+      margin-top:10px;
+    }
+
+    .recovery-message {
+      margin-top:12px;
+      line-height:1.6;
+      font-size:14px;
     }
 
     [hidden] {
@@ -1168,11 +1229,9 @@ function startEditEvent(id) {
 
   $("event-is-important").checked = !!event.is_important;
 
-  // 募集設定を復元
   $("event-recruitment-enabled").checked =
     event.recruitment_enabled !== false;
 
-  // イベントマークを復元
   const savedTags = getEventTags(event);
 
   document.querySelectorAll(".event-tag").forEach(input => {
@@ -1468,6 +1527,288 @@ async function deleteAnnouncement(id) {
 }
 
 /* -----------------------------
+   管理者パスワード再設定
+----------------------------- */
+
+function setupPasswordRecovery() {
+  const authPanel = document.querySelector(".auth-panel");
+
+  if (!authPanel) {
+    console.error("ログイン画面が見つかりません。");
+    return;
+  }
+
+  if (!$("forgot-password-button")) {
+    const forgotButton = document.createElement("button");
+
+    forgotButton.id = "forgot-password-button";
+    forgotButton.type = "button";
+    forgotButton.className = "password-recovery-link";
+    forgotButton.textContent = "パスワードを忘れた方";
+
+    const loginButton = $("login-button");
+
+    if (loginButton) {
+      loginButton.insertAdjacentElement("afterend", forgotButton);
+    } else {
+      authPanel.appendChild(forgotButton);
+    }
+
+    forgotButton.addEventListener("click", sendPasswordResetEmail);
+  }
+
+  if (!$("password-recovery-overlay")) {
+    const overlay = document.createElement("div");
+
+    overlay.id = "password-recovery-overlay";
+    overlay.className = "recovery-overlay";
+    overlay.hidden = true;
+
+    overlay.innerHTML = `
+      <div class="recovery-dialog">
+        <h2 id="recovery-title">新しいパスワードの設定</h2>
+
+        <p>
+          新しいパスワードを入力してください。
+        </p>
+
+        <input
+          id="recovery-password"
+          type="password"
+          autocomplete="new-password"
+          placeholder="新しいパスワード（8文字以上）"
+        >
+
+        <input
+          id="recovery-password-confirm"
+          type="password"
+          autocomplete="new-password"
+          placeholder="新しいパスワード（確認）"
+        >
+
+        <button
+          id="recovery-save-button"
+          type="button"
+          class="primary-button"
+        >
+          パスワードを変更する
+        </button>
+
+        <button
+          id="recovery-close-button"
+          type="button"
+          class="secondary-button"
+        >
+          閉じる
+        </button>
+
+        <p
+          id="recovery-message"
+          class="recovery-message"
+          aria-live="polite"
+        ></p>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    $("recovery-save-button").addEventListener(
+      "click",
+      updateRecoveredPassword
+    );
+
+    $("recovery-close-button").addEventListener(
+      "click",
+      closePasswordRecovery
+    );
+  }
+
+  // メールリンクから戻ったときの認証イベントを監視
+  db.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") {
+      recoverySessionActive = true;
+      currentUser = session?.user || null;
+      openPasswordRecovery();
+    }
+  });
+}
+
+async function sendPasswordResetEmail() {
+  const email = $("login-email")?.value.trim();
+
+  if (!email) {
+    showMessage(
+      "auth-message",
+      "メールアドレスを入力してから押してください。",
+      true
+    );
+
+    $("login-email")?.focus();
+    return;
+  }
+
+  const button = $("forgot-password-button");
+  button.disabled = true;
+
+  showMessage(
+    "auth-message",
+    "再設定メールを送信しています…"
+  );
+
+  try {
+    const redirectTo =
+      window.location.origin + window.location.pathname;
+
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo
+    });
+
+    if (error) throw error;
+
+    showMessage(
+      "auth-message",
+      "再設定メールを送信しました。メールをご確認ください。"
+    );
+
+  } catch (error) {
+    console.error("再設定メール送信エラー:", error);
+
+    showMessage(
+      "auth-message",
+      "メールを送信できませんでした。メールアドレスや設定を確認してください。",
+      true
+    );
+
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function openPasswordRecovery() {
+  const overlay = $("password-recovery-overlay");
+
+  if (!overlay) return;
+
+  overlay.hidden = false;
+
+  $("recovery-password").value = "";
+  $("recovery-password-confirm").value = "";
+  $("recovery-message").textContent = "";
+
+  $("recovery-title").textContent =
+    "新しいパスワードの設定";
+
+  $("recovery-save-button").hidden = false;
+  $("recovery-close-button").hidden = false;
+}
+
+function closePasswordRecovery() {
+  const overlay = $("password-recovery-overlay");
+
+  if (overlay) {
+    overlay.hidden = true;
+  }
+}
+
+async function updateRecoveredPassword() {
+  const password = $("recovery-password").value;
+  const confirmPassword = $("recovery-password-confirm").value;
+  const button = $("recovery-save-button");
+  const message = $("recovery-message");
+
+  if (!recoverySessionActive) {
+    message.textContent =
+      "再設定用の認証情報が確認できません。メールのリンクから再度アクセスしてください。";
+
+    message.style.color = "#b42318";
+    return;
+  }
+
+  if (!password || !confirmPassword) {
+    message.textContent =
+      "新しいパスワードを2か所に入力してください。";
+
+    message.style.color = "#b42318";
+    return;
+  }
+
+  if (password.length < 8) {
+    message.textContent =
+      "パスワードは8文字以上で設定してください。";
+
+    message.style.color = "#b42318";
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    message.textContent =
+      "2つのパスワードが一致していません。";
+
+    message.style.color = "#b42318";
+    return;
+  }
+
+  button.disabled = true;
+  message.textContent = "パスワードを変更しています…";
+  message.style.color = "#315d42";
+
+  try {
+    const { error } = await db.auth.updateUser({
+      password
+    });
+
+    if (error) throw error;
+
+    message.textContent =
+      "パスワードを変更しました！ログイン画面に戻ります。";
+
+    message.style.color = "#315d42";
+
+    $("recovery-password").value = "";
+    $("recovery-password-confirm").value = "";
+
+    $("recovery-title").textContent =
+      "パスワード変更完了";
+
+    button.hidden = true;
+    recoverySessionActive = false;
+
+    setTimeout(async () => {
+      closePasswordRecovery();
+
+      try {
+        await db.auth.signOut();
+        currentUser = null;
+        isAdmin = false;
+
+        await ensureUserSession();
+        await checkAdmin();
+
+      } catch (error) {
+        console.error("ログイン状態の切り替えエラー:", error);
+      }
+
+      showMessage(
+        "auth-message",
+        "新しいパスワードで管理者ログインしてください。"
+      );
+
+    }, 1800);
+
+  } catch (error) {
+    console.error("パスワード変更エラー:", error);
+
+    message.textContent =
+      "パスワードを変更できませんでした。メールのリンクが期限切れでないか確認してください。";
+
+    message.style.color = "#b42318";
+
+  } finally {
+    button.disabled = false;
+  }
+}
+
+/* -----------------------------
    管理者ログイン
 ----------------------------- */
 
@@ -1596,6 +1937,9 @@ async function logout() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   addCalendarStyles();
+
+  // パスワード再設定機能を初期化
+  setupPasswordRecovery();
 
   const eventButton = $("add-event-button");
 
