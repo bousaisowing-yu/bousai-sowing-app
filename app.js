@@ -1,3 +1,4 @@
+
 const SUPABASE_URL = "https://ftcrohylqnlmwlhybkha.supabase.co";
 const SUPABASE_KEY = "sb_publishable_uf_7B5i4YVsQWw7RjiQ_wQ_9KKoop4M";
 
@@ -20,6 +21,49 @@ let currentEventImageUrl = "";
 let currentHeroImageUrl = "";
 
 const interestBusy = new Set();
+
+/* -----------------------------
+   イベントマーク設定
+----------------------------- */
+
+const EVENT_TAGS = {
+  first_time: { label: "初参加歓迎", icon: "🌱", group: "参加しやすさ" },
+  observation: { label: "見学OK", icon: "👀", group: "参加しやすさ" },
+  midway: { label: "途中参加OK", icon: "🕒", group: "参加しやすさ" },
+  no_qualification: { label: "資格不要", icon: "👌", group: "参加しやすさ" },
+  solo_welcome: { label: "ひとり参加歓迎", icon: "🙌", group: "参加しやすさ" },
+  no_equipment: { label: "手ぶら参加OK", icon: "🎒", group: "参加しやすさ" },
+  same_day: { label: "当日参加OK", icon: "📢", group: "参加しやすさ" },
+  actively_recruiting: { label: "積極募集中", icon: "🔥", group: "募集・注目" },
+  limited: { label: "人数限定", icon: "👥", group: "募集・注目" },
+  few_remaining: { label: "残りわずか", icon: "⏳", group: "募集・注目" },
+  new: { label: "新着イベント", icon: "✨", group: "募集・注目" },
+  regular: { label: "定期開催", icon: "🔁", group: "募集・注目" },
+  expertise: { label: "専門性を活かせる", icon: "🛠️", group: "活動の特徴" }
+};
+
+function getEventTags(event) {
+  return Array.isArray(event.event_tags) ? event.event_tags : [];
+}
+
+function renderEventTags(event) {
+  const tags = getEventTags(event);
+
+  if (!tags.length) return "";
+
+  return `
+    <div class="event-tags">
+      ${tags
+        .filter(tag => EVENT_TAGS[tag])
+        .map(tag => `
+          <span class="event-tag-badge">
+            ${EVENT_TAGS[tag].icon}
+            ${escapeHTML(EVENT_TAGS[tag].label)}
+          </span>
+        `).join("")}
+    </div>
+  `;
+}
 
 /* -----------------------------
    共通処理
@@ -76,7 +120,7 @@ async function ensureUserSession() {
 }
 
 /* -----------------------------
-   カレンダー用スタイル
+   カレンダー・共通スタイル
 ----------------------------- */
 
 function addCalendarStyles() {
@@ -231,8 +275,6 @@ function addCalendarStyles() {
       margin:0;
     }
 
-    /* 気になる機能 */
-
     .event-interest {
       display:flex;
       align-items:center;
@@ -270,8 +312,154 @@ function addCalendarStyles() {
       cursor:not-allowed;
     }
 
+    .important-setting {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:18px 0;
+      padding:14px;
+      border:1px solid #e3b341;
+      border-radius:10px;
+      background:#fff9e8;
+      color:#765400;
+      font-weight:bold;
+    }
+
+    .important-setting input {
+      width:20px;
+      height:20px;
+      accent-color:#c58b00;
+    }
+
+    .important-event-badge {
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      margin:0 0 12px;
+      padding:5px 12px;
+      border-radius:20px;
+      background:#fff0c2;
+      color:#805600;
+      border:1px solid #e4b43c;
+      font-size:13px;
+      font-weight:bold;
+    }
+
+    .event-settings-section {
+      margin:22px 0;
+      padding:16px;
+      border:1px solid #dce5dc;
+      border-radius:12px;
+      background:#f8fbf8;
+    }
+
+    .event-settings-section h3 {
+      margin:0 0 8px;
+      color:#234b35;
+      font-size:17px;
+    }
+
+    .event-settings-section h4 {
+      margin:18px 0 10px;
+      color:#315d42;
+      font-size:14px;
+    }
+
+    .recruitment-setting {
+      display:flex;
+      align-items:flex-start;
+      gap:12px;
+      padding:14px;
+      border:1px solid #b9d0bd;
+      border-radius:10px;
+      background:white;
+      cursor:pointer;
+    }
+
+    .recruitment-setting input {
+      width:21px;
+      height:21px;
+      flex-shrink:0;
+      accent-color:#315d42;
+    }
+
+    .recruitment-setting span {
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+    }
+
+    .recruitment-setting small {
+      color:#647568;
+      font-weight:normal;
+      line-height:1.5;
+    }
+
+    .event-tag-grid {
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+
+    .event-tag-grid label {
+      display:flex;
+      align-items:center;
+      gap:8px;
+      min-width:0;
+      padding:11px 9px;
+      border:1px solid #d5e1d6;
+      border-radius:9px;
+      background:white;
+      font-size:13px;
+      cursor:pointer;
+    }
+
+    .event-tag-grid input {
+      width:18px;
+      height:18px;
+      flex-shrink:0;
+      accent-color:#315d42;
+    }
+
+    .event-tags {
+      display:flex;
+      flex-wrap:wrap;
+      gap:7px;
+      margin:12px 0;
+    }
+
+    .event-tag-badge {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:5px 9px;
+      border-radius:20px;
+      background:#eaf2eb;
+      border:1px solid #cbdccc;
+      color:#285239;
+      font-size:12px;
+      font-weight:bold;
+    }
+
+    .recruitment-closed-badge {
+      display:inline-block;
+      padding:5px 10px;
+      margin:8px 0;
+      border-radius:20px;
+      background:#f1f1f1;
+      color:#666;
+      font-size:12px;
+      font-weight:bold;
+    }
+
     [hidden] {
       display:none !important;
+    }
+
+    @media(max-width:420px) {
+      .event-tag-grid {
+        grid-template-columns:1fr;
+      }
     }
   `;
 
@@ -331,9 +519,7 @@ async function loadEventInterests() {
       allEvents.map(async event => {
         const { data, error } = await db.rpc(
           "get_event_interest_status",
-          {
-            p_event_id: event.id
-          }
+          { p_event_id: event.id }
         );
 
         if (error) {
@@ -387,9 +573,7 @@ async function toggleEventInterest(id) {
 
     const { data, error } = await db.rpc(
       "toggle_event_interest",
-      {
-        p_event_id: id
-      }
+      { p_event_id: id }
     );
 
     if (error) throw error;
@@ -608,11 +792,39 @@ function renderEventCards(events) {
           loading="lazy">`
       : "";
 
+    const recruitmentEnabled = event.recruitment_enabled !== false;
+
+    const memberActions = recruitmentEnabled
+      ? `
+        <button class="primary-button"
+          data-action="join"
+          data-id="${escapeHTML(event.id)}">
+          参加する
+        </button>
+
+        <button class="secondary-button"
+          data-action="cancel"
+          data-id="${escapeHTML(event.id)}">
+          参加を取り消す
+        </button>
+      `
+      : `
+        <span class="recruitment-closed-badge">
+          現在、参加募集は行っていません
+        </span>
+      `;
+
     return `
       <article class="event-card">
         ${imageHtml}
 
+        ${event.is_important
+          ? '<div class="important-event-badge">★ 重要</div>'
+          : ""}
+
         <h3>${escapeHTML(event.title)}</h3>
+
+        ${renderEventTags(event)}
 
         <div class="event-meta">
           📅 ${escapeHTML(event.event_date || "")}
@@ -652,17 +864,7 @@ function renderEventCards(events) {
         </div>
 
         <div class="event-actions">
-          <button class="primary-button"
-            data-action="join"
-            data-id="${escapeHTML(event.id)}">
-            参加する
-          </button>
-
-          <button class="secondary-button"
-            data-action="cancel"
-            data-id="${escapeHTML(event.id)}">
-            参加を取り消す
-          </button>
+          ${isAdmin ? "" : memberActions}
 
           ${isAdmin
             ? `
@@ -803,6 +1005,15 @@ function changeCalendarMonth(amount) {
 ----------------------------- */
 
 async function joinEvent(id) {
+  const event = allEvents.find(item =>
+    String(item.id) === String(id)
+  );
+
+  if (event && event.recruitment_enabled === false) {
+    alert("このイベントは現在、参加募集を行っていません。");
+    return;
+  }
+
   const name = prompt("参加する方のお名前を入力してください。");
 
   if (!name || !name.trim()) return;
@@ -826,6 +1037,15 @@ async function joinEvent(id) {
 }
 
 async function cancelEvent(id) {
+  const event = allEvents.find(item =>
+    String(item.id) === String(id)
+  );
+
+  if (event && event.recruitment_enabled === false) {
+    alert("このイベントは現在、参加募集を行っていません。");
+    return;
+  }
+
   const name = prompt("参加登録したときのお名前を入力してください。");
 
   if (!name || !name.trim()) return;
@@ -919,6 +1139,10 @@ function previewEventImage(url) {
   }
 }
 
+/* -----------------------------
+   イベント編集
+----------------------------- */
+
 function startEditEvent(id) {
   if (!isAdmin) return;
 
@@ -941,6 +1165,19 @@ function startEditEvent(id) {
 
   $("event-location").value = event.location || "";
   $("event-description").value = event.description || "";
+
+  $("event-is-important").checked = !!event.is_important;
+
+  // 募集設定を復元
+  $("event-recruitment-enabled").checked =
+    event.recruitment_enabled !== false;
+
+  // イベントマークを復元
+  const savedTags = getEventTags(event);
+
+  document.querySelectorAll(".event-tag").forEach(input => {
+    input.checked = savedTags.includes(input.value);
+  });
 
   if ($("event-image-file")) {
     $("event-image-file").value = "";
@@ -985,6 +1222,18 @@ function cancelEditEvent() {
     if ($(id)) $(id).value = "";
   });
 
+  if ($("event-is-important")) {
+    $("event-is-important").checked = false;
+  }
+
+  if ($("event-recruitment-enabled")) {
+    $("event-recruitment-enabled").checked = true;
+  }
+
+  document.querySelectorAll(".event-tag").forEach(input => {
+    input.checked = false;
+  });
+
   if ($("event-image-file")) {
     $("event-image-file").value = "";
   }
@@ -998,6 +1247,10 @@ function cancelEditEvent() {
 
   showMessage("event-admin-message", "編集をキャンセルしました。");
 }
+
+/* -----------------------------
+   イベント登録・更新
+----------------------------- */
 
 async function addEvent() {
   if (!isAdmin) return;
@@ -1053,13 +1306,20 @@ async function addEvent() {
       imageUrl = await uploadImage(imageFile, "events");
     }
 
+    const selectedTags = [
+      ...document.querySelectorAll(".event-tag:checked")
+    ].map(input => input.value);
+
     const eventData = {
       title,
       event_date: date,
       event_time: `${start}～${end}`,
       location,
       description,
-      image_url: imageUrl || null
+      image_url: imageUrl || null,
+      is_important: $("event-is-important").checked,
+      recruitment_enabled: $("event-recruitment-enabled").checked,
+      event_tags: selectedTags
     };
 
     let error;
@@ -1491,348 +1751,3 @@ document.addEventListener("DOMContentLoaded", async () => {
   switchTab("events");
   setEventView("list");
 });
-
-
-/* =================================
-   重要イベント機能
-   ================================= */
-
-// 重要マークの表示スタイル
-const importantStyles = document.createElement("style");
-
-importantStyles.textContent = `
-  .important-setting {
-    display:flex;
-    align-items:center;
-    gap:10px;
-    margin:18px 0;
-    padding:14px;
-    border:1px solid #e3b341;
-    border-radius:10px;
-    background:#fff9e8;
-    color:#765400;
-    font-weight:bold;
-  }
-
-  .important-setting input {
-    width:20px;
-    height:20px;
-    accent-color:#c58b00;
-  }
-
-  .important-event-badge {
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    margin:0 0 12px;
-    padding:5px 12px;
-    border-radius:20px;
-    background:#fff0c2;
-    color:#805600;
-    border:1px solid #e4b43c;
-    font-size:13px;
-    font-weight:bold;
-  }
-`;
-
-document.head.appendChild(importantStyles);
-
-
-// イベントカード表示を拡張
-function renderEventCards(events) {
-  if (!events || events.length === 0) {
-    return '<p class="muted">この日のイベントはありません。</p>';
-  }
-
-  return events.map(event => {
-    const members = getEventMembers(event.id);
-
-    const interest = allInterests[event.id] || {
-      count: 0,
-      isInterested: false,
-      unavailable: false
-    };
-
-    const imageHtml = event.image_url
-      ? `<img class="event-card-image"
-          src="${escapeHTML(event.image_url)}"
-          alt="${escapeHTML(event.title)}の画像"
-          loading="lazy">`
-      : "";
-
-    return `
-      <article class="event-card">
-        ${imageHtml}
-
-        ${event.is_important
-          ? '<div class="important-event-badge">★ 重要</div>'
-          : ""}
-
-        <h3>${escapeHTML(event.title)}</h3>
-
-        <div class="event-meta">
-          📅 ${escapeHTML(event.event_date || "")}
-          ${escapeHTML(event.event_time || "")}<br>
-          📍 ${escapeHTML(event.location || "")}<br>
-          👥 参加 ${members.length}人
-        </div>
-
-        <p class="event-description">${escapeHTML(event.description || "")}</p>
-
-        <div class="participant-list">
-          <strong>参加予定</strong><br>
-          ${members.length
-            ? members.map(member =>
-                escapeHTML(member.member_name)
-              ).join("、")
-            : "まだ参加者はいません"}
-        </div>
-
-        <div class="event-interest">
-          <span class="event-interest-count">
-            ♥ 気になる ${interest.count}人
-          </span>
-
-          <button
-            type="button"
-            class="interest-button ${interest.isInterested ? "active" : ""}"
-            data-action="toggle-interest"
-            data-id="${escapeHTML(event.id)}"
-            ${interestBusy.has(String(event.id)) ? "disabled" : ""}
-            ${interest.unavailable ? "disabled" : ""}
-          >
-            ${interest.isInterested
-              ? "♥ 気になるを解除"
-              : "♡ 気になる"}
-          </button>
-        </div>
-
-        <div class="event-actions">
-          <button class="primary-button"
-            data-action="join"
-            data-id="${escapeHTML(event.id)}">
-            参加する
-          </button>
-
-          <button class="secondary-button"
-            data-action="cancel"
-            data-id="${escapeHTML(event.id)}">
-            参加を取り消す
-          </button>
-
-          ${isAdmin
-            ? `
-              <button class="secondary-button"
-                data-action="edit-event"
-                data-id="${escapeHTML(event.id)}">
-                編集
-              </button>
-
-              <button class="secondary-button danger-button"
-                data-action="delete-event"
-                data-id="${escapeHTML(event.id)}">
-                削除
-              </button>
-            `
-            : ""}
-        </div>
-      </article>
-    `;
-  }).join("");
-}
-
-
-// イベント編集時に重要設定を読み込む
-function startEditEvent(id) {
-  if (!isAdmin) return;
-
-  const event = allEvents.find(item =>
-    String(item.id) === String(id)
-  );
-
-  if (!event) return;
-
-  editingEventId = id;
-  currentEventImageUrl = event.image_url || "";
-
-  const timeParts = (event.event_time || "").split(/[～〜~]/);
-
-  $("event-title").value = event.title || "";
-  $("event-date").value = event.event_date || "";
-
-  setTimeInputs("event-start", timeParts[0] || "");
-  setTimeInputs("event-end", timeParts[1] || "");
-
-  $("event-location").value = event.location || "";
-  $("event-description").value = event.description || "";
-
-  $("event-is-important").checked = !!event.is_important;
-
-  if ($("event-image-file")) {
-    $("event-image-file").value = "";
-  }
-
-  previewEventImage(currentEventImageUrl);
-
-  const button = $("add-event-button");
-
-  if (!originalEventButtonText) {
-    originalEventButtonText = button.textContent;
-  }
-
-  button.textContent = "変更を保存";
-
-  $("event-edit-cancel-button").hidden = false;
-
-  showMessage("event-admin-message", "イベントを編集中です。");
-
-  switchTab("admin");
-
-  $("event-title").scrollIntoView({
-    behavior: "smooth",
-    block: "center"
-  });
-}
-
-
-// 編集キャンセル時に重要設定もリセット
-function cancelEditEvent() {
-  editingEventId = null;
-  currentEventImageUrl = "";
-
-  [
-    "event-title",
-    "event-date",
-    "event-start-hour",
-    "event-start-minute",
-    "event-end-hour",
-    "event-end-minute",
-    "event-location",
-    "event-description"
-  ].forEach(id => {
-    if ($(id)) $(id).value = "";
-  });
-
-  if ($("event-is-important")) {
-    $("event-is-important").checked = false;
-  }
-
-  if ($("event-image-file")) {
-    $("event-image-file").value = "";
-  }
-
-  previewEventImage("");
-
-  $("add-event-button").textContent =
-    originalEventButtonText || "イベントを登録";
-
-  $("event-edit-cancel-button").hidden = true;
-
-  showMessage("event-admin-message", "編集をキャンセルしました。");
-}
-
-
-// イベント登録・更新時に重要設定を保存
-async function addEvent() {
-  if (!isAdmin) return;
-
-  const title = $("event-title").value.trim();
-  const date = $("event-date").value;
-  const location = $("event-location").value.trim();
-  const description = $("event-description").value.trim();
-
-  if (!title || !date || !location || !description) {
-    showMessage(
-      "event-admin-message",
-      "すべての項目を入力してください。",
-      true
-    );
-    return;
-  }
-
-  const startResult = getTimeValue("event-start");
-
-  if (startResult.error) {
-    showMessage("event-admin-message", startResult.error, true);
-    return;
-  }
-
-  const endResult = getTimeValue("event-end");
-
-  if (endResult.error) {
-    showMessage("event-admin-message", endResult.error, true);
-    return;
-  }
-
-  const start = startResult.value;
-  const end = endResult.value;
-
-  if (start >= end) {
-    showMessage(
-      "event-admin-message",
-      "終了時間は開始時間より後にしてください。",
-      true
-    );
-    return;
-  }
-
-  const saveButton = $("add-event-button");
-  saveButton.disabled = true;
-
-  try {
-    let imageUrl = currentEventImageUrl;
-    const imageFile = $("event-image-file")?.files?.[0];
-
-    if (imageFile) {
-      imageUrl = await uploadImage(imageFile, "events");
-    }
-
-    const eventData = {
-      title,
-      event_date: date,
-      event_time: `${start}～${end}`,
-      location,
-      description,
-      image_url: imageUrl || null,
-      is_important: $("event-is-important").checked
-    };
-
-    let error;
-
-    if (editingEventId) {
-      ({ error } = await db.from("events")
-        .update(eventData)
-        .eq("id", editingEventId));
-    } else {
-      ({ error } = await db.from("events").insert(eventData));
-    }
-
-    if (error) throw error;
-
-    const wasEditing = !!editingEventId;
-
-    cancelEditEvent();
-
-    showMessage(
-      "event-admin-message",
-      wasEditing
-        ? "イベントを更新しました！"
-        : "イベントを登録しました！"
-    );
-
-    await loadEvents();
-
-  } catch (error) {
-    console.error(error);
-
-    showMessage(
-      "event-admin-message",
-      "保存できませんでした：" + error.message,
-      true
-    );
-
-  } finally {
-    saveButton.disabled = false;
-  }
-}
-
