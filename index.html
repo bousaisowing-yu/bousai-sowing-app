@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap">
-  <link rel="stylesheet" href="style.css?v=23">
+  <link rel="stylesheet" href="style.css?v=24">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -32,7 +32,7 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=23" defer></script>
+  <script src="app.js?v=24" defer></script>
 </head>
 
 <body>
@@ -154,7 +154,7 @@
 
           <div class="form-block">
             <label for="event-title">イベント名</label>
-            <input id="event-title" type="text" placeholder="例：焼き芋大会 & 防災イベント">
+            <input id="event-title" type="text" lang="ja" autocorrect="on" placeholder="例：焼き芋大会 & 防災イベント">
 
             <div class="form-row">
               <div class="form-col">
@@ -182,10 +182,10 @@
             <input id="event-time-end" type="hidden">
 
             <label for="event-location">開催場所</label>
-            <input id="event-location" type="text" placeholder="例：蹉跎西校区">
+            <input id="event-location" type="text" lang="ja" autocorrect="on" placeholder="例：蹉跎西校区">
 
             <label for="event-description">イベント内容</label>
-            <textarea id="event-description" rows="4" placeholder="①②③ で始まる行は番号付きで表示されます"></textarea>
+            <textarea id="event-description" lang="ja" autocorrect="on" rows="4" placeholder="①②③ で始まる行は番号付きで表示されます"></textarea>
           </div>
 
           <h3 class="form-heading">設定</h3>
@@ -240,9 +240,9 @@
           <p class="eyebrow">NEWS MANAGEMENT</p>
           <h2>お知らせを投稿</h2>
           <label for="announcement-title">タイトル</label>
-          <input id="announcement-title" type="text" placeholder="お知らせのタイトル">
+          <input id="announcement-title" type="text" lang="ja" autocorrect="on" placeholder="お知らせのタイトル">
           <label for="announcement-content">本文</label>
-          <textarea id="announcement-content" rows="6" placeholder="お知らせの内容"></textarea>
+          <textarea id="announcement-content" lang="ja" autocorrect="on" rows="6" placeholder="お知らせの内容"></textarea>
           <button id="add-announcement-button" class="primary-button" type="button">お知らせを投稿</button>
           <p id="announcement-admin-message" aria-live="polite"></p>
           <p class="form-note">投稿したお知らせの削除は、「お知らせ」のページの各お知らせの下からできます。</p>
