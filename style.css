@@ -1288,3 +1288,51 @@ article.event-card.ec.ec-highlight {
   0%, 100% { box-shadow: 0 8px 22px rgba(24, 61, 43, 0.13); }
   50%      { box-shadow: 0 0 0 4px #b5d98f, 0 8px 22px rgba(24, 61, 43, 0.2); }
 }
+
+/* 共有ボタンはマークだけ・日付と同じ行に収める */
+.ec .ec-band {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.ec .ec-band-date,
+.ec .ec-band-time {
+  white-space: nowrap;
+}
+
+.ec .ec-band-time {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ec .ec-share {
+  flex-shrink: 0;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  gap: 0;
+  border-radius: 50%;
+}
+
+.ec .ec-share svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* 狭い画面でも日付・時間・共有マークが1行に収まるように */
+.ec .ec-band {
+  gap: 10px;
+  padding: 9px 12px 9px 15px;
+}
+
+.ec .ec-band-date {
+  font-size: clamp(16px, 5vw, 20px);
+}
+
+.ec .ec-band-time {
+  overflow: visible;
+  text-overflow: clip;
+  font-size: clamp(12px, 3.8vw, 15px);
+}
