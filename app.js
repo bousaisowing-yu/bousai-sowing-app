@@ -1007,8 +1007,8 @@ function renderEventCards(events) {
           <div class="ec-description">${renderDescription(event.description)}</div>
         </div>
 
-        ${isAdmin && members.length
-          ? `<p class="ec-members">参加予定（管理者にだけ表示）：${members.map(member =>
+        ${members.length
+          ? `<p class="ec-members">参加予定：${members.map(member =>
               escapeHTML(member.member_name)).join("、")}</p>`
           : ""}
 
