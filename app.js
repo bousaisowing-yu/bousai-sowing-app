@@ -923,11 +923,15 @@ function renderEventCards(events) {
       unavailable: false
     };
 
+    // 画像は切らずに全体を表示。押すと元の大きさで開く
     const imageHtml = event.image_url
-      ? `<img class="event-card-image"
-          src="${escapeHTML(event.image_url)}"
-          alt="${escapeHTML(event.title)}の画像"
-          loading="lazy">`
+      ? `<a class="ec-image-link" href="${escapeHTML(event.image_url)}" target="_blank" rel="noopener">
+          <img class="event-card-image"
+            src="${escapeHTML(event.image_url)}"
+            alt="${escapeHTML(event.title)}の画像"
+            loading="lazy">
+          <span class="ec-image-hint">タップで拡大</span>
+        </a>`
       : "";
 
     const recruitmentEnabled = event.recruitment_enabled !== false;
