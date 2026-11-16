@@ -2144,8 +2144,29 @@ function hideSplash() {
   }, wait);
 }
 
+// 文字入力中は body に印を付ける（キーボードと重なる固定メニューを隠す）
+function setupTypingMode() {
+  const isTextField = el =>
+    el && (el.tagName === "TEXTAREA" ||
+      (el.tagName === "INPUT" && !["checkbox", "radio", "file", "button", "submit"].includes(el.type)));
+
+  document.addEventListener("focusin", e => {
+    if (isTextField(e.target)) document.body.classList.add("is-typing");
+  });
+
+  document.addEventListener("focusout", e => {
+    if (!isTextField(e.target)) return;
+    setTimeout(() => {
+      if (!isTextField(document.activeElement)) {
+        document.body.classList.remove("is-typing");
+      }
+    }, 100);
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   addCalendarStyles();
+  setupTypingMode();
 
   // パスワード再設定機能を初期化
   setupPasswordRecovery();
