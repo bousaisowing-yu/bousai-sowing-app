@@ -77,7 +77,7 @@ const ICONS = {
   heartOutline: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" d="M12 20s-8-5-8-10.6A4.5 4.5 0 0 1 12 6.9a4.5 4.5 0 0 1 8 2.5C20 15 12 20 12 20z"/></svg>'
 };
 
-ICONS.share = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v6.5A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V12"/></svg>';
+ICONS.share = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" d="M21.5 2.5 2.9 10.2c-.8.3-.8 1.4 0 1.7l6.9 2.4 2.4 6.9c.3.8 1.4.8 1.7 0z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9.8 14.3 21.5 2.5"/></svg>';
 
 const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -978,7 +978,7 @@ function renderEventCards(events) {
           <button type="button" class="ec-share"
             data-action="share-event"
             data-id="${escapeHTML(event.id)}"
-            aria-label="このイベントを共有">${ICONS.share}共有</button>
+            aria-label="このイベントを共有">${ICONS.share}</button>
         </div>
 
         ${imageHtml}
