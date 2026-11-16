@@ -1251,3 +1251,40 @@ article.event-card.ec {
   font-size: 13px;
   letter-spacing: 0.06em;
 }
+
+/* 共有ボタン（緑の帯の右はし） */
+.ec .ec-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  align-self: center;
+  padding: 5px 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: white;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ec .ec-share svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ec .ec-share:active {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 共有リンクから開いたときに光らせる */
+article.event-card.ec.ec-highlight {
+  animation: ec-glow 1.3s ease 2;
+}
+
+@keyframes ec-glow {
+  0%, 100% { box-shadow: 0 8px 22px rgba(24, 61, 43, 0.13); }
+  50%      { box-shadow: 0 0 0 4px #b5d98f, 0 8px 22px rgba(24, 61, 43, 0.2); }
+}
