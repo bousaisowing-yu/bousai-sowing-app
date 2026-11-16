@@ -2066,6 +2066,21 @@ async function logout() {
    初期化・ボタン設定
 ----------------------------- */
 
+const splashStartedAt = Date.now();
+
+function hideSplash() {
+  const splash = $("splash");
+  if (!splash) return;
+
+  // 最低1.5秒はロゴを見せる
+  const wait = Math.max(0, 1500 - (Date.now() - splashStartedAt));
+
+  setTimeout(() => {
+    splash.classList.add("hide");
+    setTimeout(() => splash.remove(), 700);
+  }, wait);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   addCalendarStyles();
 
@@ -2237,4 +2252,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   switchTab("events");
   setEventView("list");
+
+  hideSplash();
 });
