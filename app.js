@@ -973,7 +973,13 @@ function renderEventCards(events) {
         </div>
 
         <div class="ec-meta">
-          <span class="ec-meta-item">${ICONS.pin}${escapeHTML(event.location || "未定")}</span>
+          ${event.location
+            ? `<a class="ec-meta-item ec-map-link"
+                href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}"
+                target="_blank" rel="noopener">
+                ${ICONS.pin}<span>${escapeHTML(event.location)}</span><span class="ec-map-chip">地図</span>
+              </a>`
+            : `<span class="ec-meta-item">${ICONS.pin}未定</span>`}
           <span class="ec-meta-item">${ICONS.people}参加 ${members.length}人</span>
         </div>
 
