@@ -1359,3 +1359,16 @@ body.is-typing .sticky-save {
 body.is-typing .admin-switch {
   position: static;
 }
+
+/* 管理者の編集・削除ボタン（参加ボタンの下に小さめに） */
+.ec .ec-actions [data-action="edit-event"],
+.ec .ec-actions [data-action="delete-event"] {
+  min-height: 40px;
+  font-size: 13px;
+  background: white;
+  border: 1.5px solid var(--border);
+}
+
+.ec .ec-actions [data-action="delete-event"] {
+  color: #b42318;
+}
