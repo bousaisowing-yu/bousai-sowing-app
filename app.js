@@ -90,6 +90,18 @@ function formatEventDateJa(dateText) {
   return `${y}年${Number(m)}月${Number(d)}日（${WEEKDAYS_JA[day]}）`;
 }
 
+// 帯に出す日付 "2026-11-19" → "11/19（木）"（今年以外は年も付ける）
+function formatEventBandDate(dateText) {
+  const match = String(dateText || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return dateText || "日程未定";
+
+  const [, y, m, d] = match;
+  const day = new Date(Number(y), Number(m) - 1, Number(d)).getDay();
+  const yearText = Number(y) === new Date().getFullYear() ? "" : `${y}/`;
+
+  return `${yearText}${Number(m)}/${Number(d)}（${WEEKDAYS_JA[day]}）`;
+}
+
 // "09:00～12:00" → "09:00 〜 12:00"
 function formatEventTimeJa(timeText) {
   const parts = String(timeText || "")
@@ -958,6 +970,11 @@ function renderEventCards(events) {
 
     return `
       <article class="event-card ec">
+        <div class="ec-band">
+          <span class="ec-band-date">${escapeHTML(formatEventBandDate(event.event_date))}</span>
+          <span class="ec-band-time">${escapeHTML(formatEventTimeJa(event.event_time))}</span>
+        </div>
+
         ${imageHtml}
 
         ${event.is_important
@@ -967,14 +984,6 @@ function renderEventCards(events) {
         <h3 class="ec-title">${escapeHTML(event.title)}</h3>
 
         ${renderEventTags(event)}
-
-        <div class="ec-datebox">
-          <span class="ec-datebox-icon">${ICONS.calendar}</span>
-          <span class="ec-datebox-text">
-            <span class="ec-date">${escapeHTML(formatEventDateJa(event.event_date))}</span>
-            <span class="ec-time">${escapeHTML(formatEventTimeJa(event.event_time))}</span>
-          </span>
-        </div>
 
         <div class="ec-meta">
           ${event.location
