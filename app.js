@@ -598,6 +598,16 @@ function addCalendarStyles() {
    タブ・表示切り替え
 ----------------------------- */
 
+function setAdminSection(name) {
+  document.querySelectorAll(".admin-section").forEach(section => {
+    section.hidden = section.id !== "admin-section-" + name;
+  });
+
+  document.querySelectorAll(".admin-switch-button").forEach(button => {
+    button.classList.toggle("active", button.dataset.adminSection === name);
+  });
+}
+
 function switchTab(tab) {
   ["events", "news", "admin"].forEach(name => {
     const page = $(name + "-page");
@@ -1329,6 +1339,7 @@ function startEditEvent(id) {
   showMessage("event-admin-message", "イベントを編集中です。");
 
   switchTab("admin");
+  setAdminSection("events");
 
   $("event-title").scrollIntoView({
     behavior: "smooth",
@@ -1542,31 +1553,34 @@ async function loadAnnouncements() {
     return;
   }
 
-  root.innerHTML = data.map(item => `
-    <article class="announcement-card">
-      <h3>${escapeHTML(item.title)}</h3>
+  root.innerHTML = data.map(item => {
+    const created = item.created_at ? new Date(item.created_at) : null;
 
-      <p class="announcement-content">
-        ${escapeHTML(item.content)}
-      </p>
+    const dateText = created
+      ? `${created.getFullYear()}年${created.getMonth() + 1}月${created.getDate()}日（${WEEKDAYS_JA[created.getDay()]}）`
+      : "";
 
-      <p class="muted">
-        ${escapeHTML(
-          item.created_at
-            ? new Date(item.created_at).toLocaleString("ja-JP")
-            : ""
-        )}
-      </p>
+    const timeText = created
+      ? `${String(created.getHours()).padStart(2, "0")}:${String(created.getMinutes()).padStart(2, "0")}`
+      : "";
 
+    // 7日以内のお知らせに NEW を付ける
+    const isNew = created && (Date.now() - created.getTime()) < 7 * 24 * 60 * 60 * 1000;
+
+    return `<article class="announcement-card">
+      <div class="an-head">
+        <span class="an-date">${ICONS.calendar}${escapeHTML(dateText)}<small>${escapeHTML(timeText)}</small></span>
+        ${isNew ? '<span class="an-new">NEW</span>' : ""}
+      </div>
+      <h3 class="an-title">${escapeHTML(item.title)}</h3>
+      <div class="announcement-content">${escapeHTML(String(item.content || "").trim())}</div>
       ${isAdmin
-        ? `<button class="secondary-button"
+        ? `<button class="secondary-button an-delete"
             data-action="delete-announcement"
-            data-id="${escapeHTML(item.id)}">
-            削除
-          </button>`
+            data-id="${escapeHTML(item.id)}">削除</button>`
         : ""}
-    </article>
-  `).join("");
+    </article>`;
+  }).join("");
 }
 
 async function addAnnouncement() {
@@ -2130,6 +2144,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    if (button.dataset.adminSection) {
+      setAdminSection(button.dataset.adminSection);
+      return;
+    }
+
     if (button.dataset.calendarDate) {
       selectedDate = button.dataset.calendarDate;
       renderCalendar();
@@ -2173,6 +2192,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll(".tab-button").forEach(button => {
     button.addEventListener("click", () => {
       switchTab(button.dataset.tab);
+
+      // 切り替えたページの先頭が見えるようにする
+      const page = $(button.dataset.tab + "-page");
+      if (page) {
+        const top = page.getBoundingClientRect().top + window.scrollY - 12;
+        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+      }
     });
   });
 
