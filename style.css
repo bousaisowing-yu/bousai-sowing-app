@@ -801,3 +801,237 @@ article.event-card.ec {
   .ec .ec-date { font-size: 18px; }
   .ec .ec-time { font-size: 24px; }
 }
+
+
+/* ==========================================
+   管理者ページ
+   ========================================== */
+.admin-switch {
+  position: sticky;
+  top: calc(env(safe-area-inset-top) + 8px);
+  z-index: 50;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  background: rgba(232, 242, 231, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+.admin-switch-button {
+  flex: 1;
+  min-height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.admin-switch-button.active {
+  background: var(--green);
+  color: white;
+}
+
+.admin-section label {
+  margin: 12px 0 5px;
+  font-size: 14px;
+}
+
+.admin-section input,
+.admin-section textarea {
+  padding: 11px 12px;
+}
+
+.form-heading {
+  margin: 20px 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.form-heading small {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.form-note {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* 時間（開始〜終了を1行に） */
+.time-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-range .time-input-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.time-range .time-input-group input {
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+}
+
+.time-range-sep {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+/* 設定（横3つのタイル） */
+.option-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.admin-section .option-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 74px;
+  margin: 0;
+  padding: 8px 4px;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  background: white;
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.option-tile input,
+.tag-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+}
+
+.option-tile-icon {
+  font-size: 22px;
+  line-height: 1;
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+.option-tile-label {
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-section .option-tile:has(input:checked) {
+  border-color: var(--green);
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.option-tile:has(input:checked) .option-tile-icon {
+  filter: none;
+  opacity: 1;
+}
+
+.admin-section .option-tile:has(input:checked)::after {
+  content: "✓";
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--green);
+  color: white;
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 800;
+}
+
+/* マーク（押して選ぶチップ） */
+.tag-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.admin-section .tag-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  min-height: 42px;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: white;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-section .tag-chip:has(input:checked) {
+  border-color: var(--green);
+  background: var(--green);
+  color: white;
+}
+
+/* 登録ボタンを画面下（メニューの上）に固定 */
+.sticky-save {
+  position: sticky;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 18px rgba(24, 61, 43, 0.15);
+}
+
+#admin-functions .sticky-save .primary-button,
+#admin-functions .sticky-save .secondary-button {
+  flex: 1;
+  width: auto;
+  margin: 0;
+}
+
+.logout-row {
+  text-align: center;
+  margin: 8px 0 4px;
+}
+
+#admin-functions .logout-row .secondary-button {
+  width: auto;
+  min-height: 40px;
+  margin: 0;
+  padding: 6px 22px;
+  font-size: 13px;
+  background: transparent;
+  color: var(--muted);
+  text-decoration: underline;
+}
