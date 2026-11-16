@@ -1236,3 +1236,18 @@ article.event-card.ec {
     animation: none;
   }
 }
+
+/* ヘッダー：上が切れないように下げる／会員専用アプリの文字を大きく */
+.site-header {
+  padding-top: calc(env(safe-area-inset-top) + 34px);
+}
+
+.brand {
+  align-items: center;
+}
+
+.brand-subtitle {
+  padding: 5px 12px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
