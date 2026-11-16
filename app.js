@@ -57,12 +57,79 @@ function renderEventTags(event) {
         .filter(tag => EVENT_TAGS[tag])
         .map(tag => `
           <span class="event-tag-badge">
-            ${EVENT_TAGS[tag].icon}
-            ${escapeHTML(EVENT_TAGS[tag].label)}
+            <span class="ec-tag-icon">${EVENT_TAGS[tag].icon}</span>#${escapeHTML(EVENT_TAGS[tag].label)}
           </span>
         `).join("")}
     </div>
   `;
+}
+
+/* -----------------------------
+   イベントカード用のアイコン・表示
+----------------------------- */
+
+const ICONS = {
+  star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M7 2.5v3.5M17 2.5v3.5"/><rect x="3" y="4.5" width="18" height="16.5" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path fill="currentColor" d="M3 8h18v2H3z"/><rect x="6.5" y="12" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="10.5" y="12" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="14.5" y="12" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="6.5" y="16" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="10.5" y="16" width="3" height="2.6" rx=".6" fill="currentColor"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z"/></svg>',
+  people: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7.5" r="3.6" fill="currentColor"/><circle cx="16.8" cy="8.3" r="2.9" fill="currentColor"/><path fill="currentColor" d="M2 19.5c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3V21H2zM17.2 21v-1.5c0-2-.8-3.8-2.2-5 .6-.2 1.2-.3 1.9-.3 3 0 5.1 2.2 5.1 5V21z"/></svg>',
+  heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21s-8.5-5.3-8.5-11.4A4.8 4.8 0 0 1 12 6.6a4.8 4.8 0 0 1 8.5 3C20.5 15.7 12 21 12 21z"/></svg>',
+  heartOutline: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" d="M12 20s-8-5-8-10.6A4.5 4.5 0 0 1 12 6.9a4.5 4.5 0 0 1 8 2.5C20 15 12 20 12 20z"/></svg>'
+};
+
+const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
+
+// "2026-12-19" → "2026年12月19日（土）"
+function formatEventDateJa(dateText) {
+  const match = String(dateText || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return dateText || "日程未定";
+
+  const [, y, m, d] = match;
+  const day = new Date(Number(y), Number(m) - 1, Number(d)).getDay();
+
+  return `${y}年${Number(m)}月${Number(d)}日（${WEEKDAYS_JA[day]}）`;
+}
+
+// "09:00～12:00" → "09:00 〜 12:00"
+function formatEventTimeJa(timeText) {
+  const parts = String(timeText || "")
+    .split(/[～〜~]/)
+    .map(part => part.trim())
+    .filter(Boolean);
+
+  return parts.join(" 〜 ");
+}
+
+// 行頭の ①② や「1.」を丸数字のマークにして表示
+function renderDescription(text) {
+  const circled = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+
+  return String(text || "")
+    .split("\n")
+    .map(line => {
+      const trimmed = line.trim();
+      const first = trimmed.charAt(0);
+      const circledIndex = circled.indexOf(first);
+      const numbered = trimmed.match(/^(\d{1,2})[.．、)）](?!\d)\s*(.*)$/);
+
+      let number = null;
+      let body = line;
+
+      if (circledIndex >= 0) {
+        number = circledIndex + 1;
+        body = trimmed.slice(1).trim();
+      } else if (numbered) {
+        number = Number(numbered[1]);
+        body = numbered[2];
+      }
+
+      if (number !== null) {
+        return `<div class="ec-step"><span class="ec-step-num">${number}</span><span>${escapeHTML(body)}</span></div>`;
+      }
+
+      return `<div class="ec-line">${trimmed ? escapeHTML(line) : "&nbsp;"}</div>`;
+    })
+    .join("");
 }
 
 /* -----------------------------
@@ -876,38 +943,43 @@ function renderEventCards(events) {
       `;
 
     return `
-      <article class="event-card">
+      <article class="event-card ec">
         ${imageHtml}
 
         ${event.is_important
-          ? '<div class="important-event-badge">★ 重要</div>'
+          ? `<div class="ec-important">${ICONS.star} 重要</div>`
           : ""}
 
-        <h3>${escapeHTML(event.title)}</h3>
+        <h3 class="ec-title">${escapeHTML(event.title)}</h3>
 
         ${renderEventTags(event)}
 
-        <div class="event-meta">
-          📅 ${escapeHTML(event.event_date || "")}
-          ${escapeHTML(event.event_time || "")}<br>
-          📍 ${escapeHTML(event.location || "")}<br>
-          👥 参加 ${members.length}人
+        <div class="ec-datebox">
+          <span class="ec-datebox-icon">${ICONS.calendar}</span>
+          <span class="ec-datebox-text">
+            <span class="ec-date">${escapeHTML(formatEventDateJa(event.event_date))}</span>
+            <span class="ec-time">${escapeHTML(formatEventTimeJa(event.event_time))}</span>
+          </span>
         </div>
 
-        <p class="event-description">${escapeHTML(event.description || "")}</p>
-
-        <div class="participant-list">
-          <strong>参加予定</strong><br>
-          ${members.length
-            ? members.map(member =>
-                escapeHTML(member.member_name)
-              ).join("、")
-            : "まだ参加者はいません"}
+        <div class="ec-meta">
+          <span class="ec-meta-item">${ICONS.pin}${escapeHTML(event.location || "未定")}</span>
+          <span class="ec-meta-item">${ICONS.people}参加 ${members.length}人</span>
         </div>
 
-        <div class="event-interest">
-          <span class="event-interest-count">
-            ♥ 気になる ${interest.count}人
+        <div class="ec-section">
+          <span class="ec-label">内容</span>
+          <div class="ec-description">${renderDescription(event.description)}</div>
+        </div>
+
+        ${members.length
+          ? `<p class="ec-members">参加予定：${members.map(member =>
+              escapeHTML(member.member_name)).join("、")}</p>`
+          : ""}
+
+        <div class="ec-interest">
+          <span class="ec-interest-count">
+            ${ICONS.heart} 気になる ${interest.count}人
           </span>
 
           <button
@@ -919,12 +991,12 @@ function renderEventCards(events) {
             ${interest.unavailable ? "disabled" : ""}
           >
             ${interest.isInterested
-              ? "♥ 気になるを解除"
-              : "♡ 気になる"}
+              ? `${ICONS.heart} 気になる`
+              : `${ICONS.heartOutline} 気になる`}
           </button>
         </div>
 
-        <div class="event-actions">
+        <div class="event-actions ec-actions">
           ${isAdmin ? "" : memberActions}
 
           ${isAdmin
