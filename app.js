@@ -77,6 +77,8 @@ const ICONS = {
   heartOutline: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.3" stroke-linejoin="round" d="M12 20s-8-5-8-10.6A4.5 4.5 0 0 1 12 6.9a4.5 4.5 0 0 1 8 2.5C20 15 12 20 12 20z"/></svg>'
 };
 
+ICONS.share = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 12v6.5A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V12"/></svg>';
+
 const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
 
 // "2026-12-19" → "2026年12月19日（土）"
@@ -969,10 +971,14 @@ function renderEventCards(events) {
       `;
 
     return `
-      <article class="event-card ec">
+      <article class="event-card ec" id="event-${escapeHTML(event.id)}">
         <div class="ec-band">
           <span class="ec-band-date">${escapeHTML(formatEventBandDate(event.event_date))}</span>
           <span class="ec-band-time">${escapeHTML(formatEventTimeJa(event.event_time))}</span>
+          <button type="button" class="ec-share"
+            data-action="share-event"
+            data-id="${escapeHTML(event.id)}"
+            aria-label="このイベントを共有">${ICONS.share}共有</button>
         </div>
 
         ${imageHtml}
@@ -1001,8 +1007,8 @@ function renderEventCards(events) {
           <div class="ec-description">${renderDescription(event.description)}</div>
         </div>
 
-        ${members.length
-          ? `<p class="ec-members">参加予定：${members.map(member =>
+        ${isAdmin && members.length
+          ? `<p class="ec-members">参加予定（管理者にだけ表示）：${members.map(member =>
               escapeHTML(member.member_name)).join("、")}</p>`
           : ""}
 
@@ -2066,6 +2072,63 @@ async function logout() {
    初期化・ボタン設定
 ----------------------------- */
 
+/* -----------------------------
+   イベントの共有（LINEなど）
+----------------------------- */
+
+function getEventShareUrl(id) {
+  return `${location.origin}${location.pathname}#event-${id}`;
+}
+
+async function shareEvent(id) {
+  const event = allEvents.find(item => String(item.id) === String(id));
+  if (!event) return;
+
+  const lines = [
+    `【防災Sowing】${event.title}`,
+    `📅 ${formatEventBandDate(event.event_date)} ${formatEventTimeJa(event.event_time)}`.trim()
+  ];
+
+  if (event.location) lines.push(`📍 ${event.location}`);
+
+  lines.push("詳しくはこちら👇", getEventShareUrl(id));
+
+  const text = lines.join("\n");
+
+  // スマホの共有画面（LINE・メッセージなど）を使う
+  if (navigator.share) {
+    try {
+      await navigator.share({ text });
+      return;
+    } catch (error) {
+      if (error && error.name === "AbortError") return; // 自分で閉じたとき
+    }
+  }
+
+  // 共有画面が使えないときは LINE の送る画面を開く
+  window.open(
+    "https://line.me/R/share?text=" + encodeURIComponent(text),
+    "_blank",
+    "noopener"
+  );
+}
+
+// 共有リンク（#event-○○）から開いたとき、そのイベントまで移動する
+function openSharedEvent() {
+  const match = location.hash.match(/^#event-(.+)$/);
+  if (!match) return;
+
+  const card = document.getElementById("event-" + decodeURIComponent(match[1]));
+  if (!card) return;
+
+  setTimeout(() => {
+    const top = card.getBoundingClientRect().top + window.scrollY - 16;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    card.classList.add("ec-highlight");
+    setTimeout(() => card.classList.remove("ec-highlight"), 2600);
+  }, 1700);
+}
+
 const splashStartedAt = Date.now();
 
 function hideSplash() {
@@ -2202,6 +2265,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
+    if (action === "share-event") {
+      shareEvent(id);
+      return;
+    }
+
     if (action === "toggle-interest") {
       toggleEventInterest(id);
       return;
@@ -2254,4 +2322,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   setEventView("list");
 
   hideSplash();
+  openSharedEvent();
 });
