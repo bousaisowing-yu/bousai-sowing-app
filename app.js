@@ -1032,7 +1032,7 @@ function renderEventCards(events) {
         </div>
 
         <div class="event-actions ec-actions">
-          ${isAdmin ? "" : memberActions}
+          ${memberActions}
 
           ${isAdmin
             ? `
