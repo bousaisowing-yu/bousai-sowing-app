@@ -164,8 +164,6 @@ body {
   padding: 6px 10px;
   padding-bottom: calc(6px + env(safe-area-inset-bottom));
   background: rgba(255, 255, 255, 0.96);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
   border-top: 1px solid var(--border);
   box-shadow: 0 -4px 16px rgba(24, 61, 43, 0.08);
 }
@@ -816,8 +814,6 @@ article.event-card.ec {
   margin-bottom: 12px;
   border-radius: 999px;
   background: rgba(232, 242, 231, 0.95);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
   box-shadow: var(--shadow);
 }
 
@@ -1008,8 +1004,6 @@ article.event-card.ec {
   padding: 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
   box-shadow: 0 4px 18px rgba(24, 61, 43, 0.15);
 }
 
@@ -1335,4 +1329,33 @@ article.event-card.ec.ec-highlight {
   overflow: visible;
   text-overflow: clip;
   font-size: clamp(12px, 3.8vw, 15px);
+}
+
+/* ==========================================
+   文字入力中（キーボードが出ているとき）
+   下のメニューや固定ボタンを隠して、入力のじゃまをしない
+   ========================================== */
+.tab-nav {
+  background: #ffffff;
+}
+
+.admin-switch {
+  background: #e8f2e7;
+}
+
+.sticky-save {
+  background: #ffffff;
+}
+
+body.is-typing .tab-nav {
+  display: none;
+}
+
+body.is-typing .sticky-save {
+  position: static;
+  box-shadow: none;
+}
+
+body.is-typing .admin-switch {
+  position: static;
 }
