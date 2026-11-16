@@ -1149,3 +1149,90 @@ article.event-card.ec {
 .calendar-selected-events article.event-card.ec {
   margin-top: 12px;
 }
+
+/* ==========================================
+   起動時のロゴ画面
+   ========================================== */
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 40%, #ffffff 0%, #f5faee 55%, #e4efd6 100%);
+  transition: opacity 0.6s ease, visibility 0.6s;
+}
+
+#splash.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.splash-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.splash-logo {
+  width: min(70vw, 300px);
+  height: auto;
+  filter: drop-shadow(0 6px 14px rgba(70, 110, 30, 0.15));
+  animation: splash-pop 0.9s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.splash-org {
+  margin-top: 26px;
+  color: #5b7f2f;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  animation: splash-up 0.6s ease 0.35s both;
+}
+
+.splash-name {
+  margin-top: 2px;
+  color: #46701f;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  animation: splash-up 0.6s ease 0.5s both;
+}
+
+.splash-line {
+  width: 56px;
+  height: 3px;
+  margin: 14px 0;
+  border-radius: 3px;
+  background: #b5d98f;
+  animation: splash-up 0.6s ease 0.65s both;
+}
+
+.splash-app {
+  padding: 5px 18px;
+  border-radius: 999px;
+  background: #6a9a35;
+  color: white;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  animation: splash-up 0.6s ease 0.8s both;
+}
+
+@keyframes splash-pop {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes splash-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-logo, .splash-org, .splash-name, .splash-line, .splash-app {
+    animation: none;
+  }
+}
