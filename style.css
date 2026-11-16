@@ -1,591 +1,337 @@
 
+/* ==========================================
+   防災Sowing 会員アプリ デザインリニューアル
+   ========================================== */
+
 :root {
-  --green: #183d2b;
-  --green-light: #28563b;
-  --green-soft: #eaf1e9;
+  --green: #155b38;
+  --green-light: #267448;
+  --green-soft: #e8f2e7;
   --lime: #b5d879;
-  --bg: #f3f6f1;
-  --text: #243229;
+  --bg: #f5f8f3;
+  --text: #26352c;
   --muted: #68766c;
-  --border: #dce5dc;
+  --border: #dce8dc;
   --white: #ffffff;
-  --shadow: 0 8px 24px rgba(24, 61, 43, 0.08);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-[hidden] {
-  display: none !important;
-}
-
-html {
-  scroll-behavior: smooth;
+  --shadow: 0 5px 18px rgba(24,61,43,0.07);
 }
 
 body {
-  margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI",
-    "Noto Sans JP", "Hiragino Kaku Gothic ProN",
-    Meiryo, sans-serif;
-  line-height: 1.7;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-button {
-  cursor: pointer;
-}
-
+/* ヘッダー */
 .site-header {
   background: var(--green);
-  color: var(--white);
   padding: 16px 20px;
 }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
 .logo {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-  background: white;
   border-radius: 50%;
-  padding: 4px;
 }
 
-.organization-name {
-  margin: 0;
-  font-size: 11px;
-  opacity: 0.85;
-}
-
-.brand h1 {
-  margin: 0;
-  font-size: 25px;
-  line-height: 1.3;
-}
-
-.brand-subtitle {
-  margin: 2px 0 0;
-  font-size: 10px;
-  letter-spacing: 2px;
-  opacity: 0.8;
-}
-
+/* メイン画面 */
 .container {
-  width: min(100% - 28px, 900px);
-  margin: 24px auto 40px;
+  width: min(100% - 20px, 900px);
+  margin: 18px auto 35px;
 }
 
 /* トップ画像 */
 .hero-panel {
-  position: relative;
-  min-height: 300px;
-  overflow: hidden;
-  border-radius: 22px;
-  background: var(--green);
+  border-radius: 24px;
   box-shadow: var(--shadow);
-  margin-bottom: 22px;
-  isolation: isolate;
+  overflow: hidden;
 }
 
-.hero-image {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: -2;
-}
-
-.hero-panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    rgba(10, 35, 22, 0.88),
-    rgba(10, 35, 22, 0.45) 65%,
-    rgba(10, 35, 22, 0.12)
-  );
-  z-index: -1;
-}
-
-.hero-overlay {
-  color: white;
-  padding: 38px 32px;
-  max-width: 650px;
-}
-
-.hero-overlay h2 {
-  font-size: clamp(27px, 5vw, 40px);
-  line-height: 1.35;
-  margin: 8px 0 12px;
-}
-
-.hero-overlay p {
-  margin: 0;
-}
-
-.eyebrow {
-  color: var(--green-light);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 1.8px;
-  margin: 0 0 6px;
-}
-
-.hero-overlay .eyebrow {
-  color: var(--lime);
-}
-
-/* タブ */
+/* 一覧・カレンダー */
 .tab-nav {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 18px;
 }
 
 .tab-button {
   flex: 1;
-  min-height: 46px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: white;
+  min-height: 54px;
+  border: none;
+  border-radius: 40px;
+  background: var(--green-soft);
   color: var(--green);
-  font-weight: 700;
-  padding: 10px 12px;
+  font-size: 17px;
+  font-weight: 800;
 }
 
 .tab-button.active {
   background: var(--green);
-  border-color: var(--green);
   color: white;
 }
 
 /* パネル */
 .panel {
-  background: var(--white);
+  background: white;
   border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 24px;
-  margin-bottom: 18px;
+  border-radius: 22px;
+  padding: 22px;
   box-shadow: var(--shadow);
 }
 
-.panel h2 {
-  color: var(--green);
-  margin: 0 0 10px;
-  font-size: 24px;
-}
-
+.panel h2,
 .panel h3 {
   color: var(--green);
 }
 
-.muted {
-  color: var(--muted);
-  font-size: 14px;
+/* イベントカード */
+.event-card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 25px;
+  overflow: hidden;
+  margin: 18px 0;
+  box-shadow: var(--shadow);
 }
 
-label {
-  display: block;
-  margin: 17px 0 6px;
-  font-size: 14px;
+.event-card-content {
+  padding: 22px;
+}
+
+.event-card h3 {
+  color: var(--green);
+  font-size: clamp(23px, 5vw, 30px);
+  font-weight: 800;
+  line-height: 1.4;
+  margin: 8px 0 14px;
+}
+
+.event-card-image {
+  width: 100%;
+  max-height: 300px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* 開催日時・場所・参加人数 */
+.event-meta {
+  color: var(--text);
+  font-size: 16px;
   font-weight: 700;
+  margin: 10px 0;
 }
 
+/* イベント内容 */
+.event-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border-top: 2px solid var(--border);
+  border-bottom: 2px solid var(--border);
+  padding: 16px 0;
+  margin-top: 14px;
+  line-height: 1.9;
+  font-size: 16px;
+}
+
+/* ボタン共通 */
+.primary-button,
+.secondary-button {
+  min-height: 52px;
+  border-radius: 40px;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 12px 22px;
+}
+
+.primary-button {
+  background: var(--green);
+  color: white;
+  border: none;
+}
+
+.secondary-button {
+  background: var(--green-soft);
+  color: var(--green);
+  border: none;
+}
+
+.primary-button:hover,
+.secondary-button:hover {
+  opacity: 0.85;
+}
+
+/* イベント内の参加ボタン */
+.event-card .primary-button {
+  background: var(--green);
+  color: white;
+  border-radius: 40px;
+  min-height: 60px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.event-card .secondary-button {
+  background: var(--green-soft);
+  color: var(--green);
+  border-radius: 40px;
+  min-height: 60px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* 気になるボタン */
+.event-interest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 0;
+  border-top: none;
+}
+
+.interest-button {
+  min-height: 52px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 40px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.interest-button.active {
+  background: #e52d35;
+  color: white;
+  border: none;
+}
+
+.interest-button:disabled {
+  opacity: 0.55;
+}
+
+.event-interest-count {
+  color: var(--green);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* カレンダー */
+.calendar-header {
+  margin: 20px 0 15px;
+}
+
+.calendar-header button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.calendar-day {
+  border-radius: 12px;
+  min-height: 48px;
+}
+
+.calendar-day.has-event {
+  background: var(--green-soft);
+  border-color: #a8c4a9;
+}
+
+.calendar-day.selected {
+  background: var(--green);
+  color: white;
+}
+
+/* お知らせ */
+.announcement-card {
+  padding: 18px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.announcement-card h3 {
+  font-size: 20px;
+  color: var(--green);
+}
+
+/* 入力フォーム */
 input,
 textarea,
 select {
-  width: 100%;
-  padding: 12px 13px;
-  border: 1px solid #ccd8cd;
-  border-radius: 10px;
-  background: white;
-  color: var(--text);
-  outline: none;
+  border: 1px solid #ccdccc;
+  border-radius: 12px;
+  padding: 13px;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
   border-color: var(--green-light);
-  box-shadow: 0 0 0 3px rgba(40, 86, 59, 0.12);
 }
 
-textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-input[type="file"] {
-  padding: 10px;
-  background: #f8faf7;
-}
-
-.time-input-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.time-input-group input {
-  min-width: 0;
-  flex: 1;
-  text-align: center;
-}
-
-.time-input-group span {
-  white-space: nowrap;
-  font-size: 14px;
-}
-
-/* ボタン */
-.primary-button,
-.secondary-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 10px 18px;
-  border-radius: 10px;
-  font-weight: 700;
-  border: 1px solid transparent;
-  transition: opacity 0.2s, transform 0.2s;
-}
-
-.primary-button {
-  color: white;
-  background: var(--green);
-}
-
-.secondary-button {
-  color: var(--green);
-  background: var(--green-soft);
-  border-color: var(--border);
-}
-
-.primary-button:hover,
-.secondary-button:hover,
-.tab-button:hover {
-  opacity: 0.86;
-}
-
-.primary-button:active,
-.secondary-button:active {
-  transform: scale(0.98);
-}
-
-#add-event-button,
-#add-announcement-button,
-#login-button,
-#save-hero-image-button {
-  width: 100%;
-  margin-top: 18px;
-}
-
-.event-view-switch {
-  display: flex;
-  gap: 8px;
-  margin: 18px 0;
-}
-
-.event-view-switch button {
-  flex: 1;
-}
-
-/* イベントカード */
-.event-card {
-  border: 1px solid var(--border);
-  border-radius: 15px;
-  overflow: hidden;
-  background: white;
-  margin: 14px 0;
-}
-
-.event-card-image {
-  display: block;
-  width: 100%;
-  max-height: 320px;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
-  background: var(--green-soft);
-}
-
-.event-card-content {
-  padding: 18px;
-}
-
-.event-card h3 {
-  margin: 0 0 10px;
-  font-size: 19px;
-}
-
-.event-card p {
-  overflow-wrap: anywhere;
-}
-
-.event-meta {
-  color: var(--muted);
-  font-size: 14px;
-  margin: 5px 0;
-}
-
-.event-description {
-  white-space: pre-wrap;
-}
-
-.event-card button {
-  margin: 8px 8px 0 0;
-}
-
-.event-card .danger-button {
-  background: #fff0ef;
-  color: #a12e26;
-  border-color: #f0ceca;
-}
-
-/* 気になる機能 */
-.event-interest {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-
-.interest-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  padding: 8px 16px;
-  border: 1px solid #b9cdbb;
-  border-radius: 22px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 14px;
-  font-weight: 700;
-  transition: background 0.2s, color 0.2s, transform 0.2s;
-}
-
-.interest-button:hover {
-  background: #dcebdc;
-}
-
-.interest-button:active {
-  transform: scale(0.97);
-}
-
-.interest-button.active {
-  background: #fff0ef;
-  border-color: #efc6c2;
-  color: #bd4038;
-}
-
-.interest-button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.event-interest-count {
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-/* 画像プレビュー */
-.image-preview {
-  display: block;
-  width: 100%;
-  max-height: 300px;
-  object-fit: contain;
-  margin-top: 12px;
-  border-radius: 12px;
-  background: #edf1ec;
-  border: 1px solid var(--border);
-}
-
-/* カレンダー */
-.calendar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 20px 0 12px;
-}
-
-.calendar-header h3 {
-  margin: 0;
-  text-align: center;
-}
-
-.calendar-header button {
-  width: 42px;
-  height: 42px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--green-soft);
-  color: var(--green);
-  font-size: 25px;
-}
-
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 5px;
-}
-
-.calendar-day,
-.calendar-weekday {
-  min-width: 0;
-  text-align: center;
-  padding: 8px 2px;
-}
-
-.calendar-weekday {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.calendar-day {
-  min-height: 48px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: white;
-  color: var(--text);
-}
-
-.calendar-day.has-event {
-  background: var(--green-soft);
-  border-color: #a8c4a9;
-  font-weight: 800;
-}
-
-.calendar-day.selected {
-  background: var(--green);
-  color: white;
-  border-color: var(--green);
-}
-
-.calendar-day.empty {
-  visibility: hidden;
-}
-
-.calendar-selected-events {
-  margin-top: 20px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-
-/* お知らせ */
-.announcement-card {
-  padding: 16px 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.announcement-card:last-child {
-  border-bottom: 0;
-}
-
-.announcement-card h3 {
-  margin: 0 0 8px;
-  font-size: 18px;
-}
-
-.announcement-card p {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-/* メッセージ */
-#auth-message,
-#event-admin-message,
-#announcement-admin-message,
-#hero-image-message {
-  font-size: 14px;
-  overflow-wrap: anywhere;
-}
-
-.success-message {
-  color: #237343;
-}
-
-.error-message {
-  color: #b42318;
-}
-
+/* フッター */
 .site-footer {
-  text-align: center;
-  padding: 28px 16px;
   background: var(--green);
   color: white;
-  font-size: 13px;
 }
 
-.site-footer p {
-  margin: 4px 0;
-}
-
+/* スマートフォン */
 @media (max-width: 600px) {
-  .site-header {
-    padding: 13px 16px;
-  }
-
-  .logo {
-    width: 50px;
-    height: 50px;
-  }
-
-  .brand h1 {
-    font-size: 22px;
-  }
 
   .container {
-    width: min(100% - 20px, 900px);
+    width: calc(100% - 18px);
     margin-top: 14px;
   }
 
-  .hero-panel {
-    min-height: 270px;
-    border-radius: 16px;
+  .tab-nav {
+    gap: 8px;
   }
 
-  .hero-overlay {
-    padding: 28px 20px;
-  }
-
-  .hero-overlay h2 {
-    font-size: 28px;
+  .tab-button {
+    min-height: 52px;
+    font-size: 16px;
   }
 
   .panel {
-    padding: 18px;
-    border-radius: 14px;
+    padding: 17px;
+    border-radius: 20px;
   }
 
-  .panel h2 {
-    font-size: 21px;
+  .event-card {
+    border-radius: 23px;
+    margin: 16px 0;
+  }
+
+  .event-card-content {
+    padding: 18px 16px;
+  }
+
+  .event-card h3 {
+    font-size: 24px;
+  }
+
+  .event-meta {
+    font-size: 15px;
+  }
+
+  .event-description {
+    font-size: 15px;
+  }
+
+  .event-card .primary-button,
+  .event-card .secondary-button {
+    width: 100%;
+    min-height: 58px;
+    margin: 7px 0;
+  }
+
+  .event-interest {
+    justify-content: space-between;
+  }
+
+  .interest-button {
+    min-height: 48px;
+    font-size: 14px;
+    padding: 9px 15px;
   }
 
   .calendar-grid {
@@ -594,24 +340,6 @@ input[type="file"] {
 
   .calendar-day {
     min-height: 42px;
-    padding: 6px 0;
-    font-size: 13px;
-  }
-
-  .time-input-group {
-    gap: 5px;
-  }
-
-  .time-input-group span {
-    font-size: 12px;
-  }
-
-  .event-interest {
-    gap: 7px;
-  }
-
-  .interest-button {
-    min-height: 44px;
-    padding: 9px 15px;
+    border-radius: 9px;
   }
 }
