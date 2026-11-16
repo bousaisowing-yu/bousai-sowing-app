@@ -59,8 +59,8 @@ h1, h2, h3, h4, p {
 /* ヘッダー */
 .site-header {
   background: white;
-  padding: 10px 16px;
-  padding-top: max(10px, env(safe-area-inset-top));
+  padding: 12px 14px 10px;
+  padding-top: calc(env(safe-area-inset-top) + 18px);
   border-bottom: 3px solid var(--lime);
   box-shadow: 0 2px 10px rgba(24, 61, 43, 0.06);
 }
@@ -76,9 +76,9 @@ h1, h2, h3, h4, p {
 
 .brand-logo {
   display: block;
-  height: 48px;
+  height: 60px;
   width: auto;
-  max-width: 70%;
+  max-width: 72%;
 }
 
 .brand-subtitle {
@@ -447,8 +447,8 @@ article.event-card.ec {
   background: white;
   border: 1.5px solid #dbe9d9;
   border-radius: 20px;
-  padding: 16px 14px 14px;
-  margin: 12px 0;
+  padding: 14px 13px 12px;
+  margin: 10px 0;
   box-shadow: 0 4px 14px rgba(24, 61, 43, 0.07);
 }
 
@@ -468,27 +468,27 @@ article.event-card.ec {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 14px;
-  margin-bottom: 6px;
+  padding: 2px 11px;
+  margin-bottom: 4px;
   border-radius: 999px;
   background: #fff3c4;
   border: 1.5px solid #f2cf57;
   color: #8a5a00;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 800;
 }
 
 .ec .ec-important svg {
   color: #b8860b;
-  width: 16px;
-  height: 16px;
+  width: 13px;
+  height: 13px;
 }
 
 /* タイトル */
 .ec .ec-title {
-  margin: 2px 0 10px;
+  margin: 2px 0 8px;
   color: var(--green);
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1.4;
 }
@@ -497,26 +497,26 @@ article.event-card.ec {
 .ec .event-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 12px;
+  gap: 5px;
+  margin: 0 0 10px;
 }
 
 .ec .event-tag-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  gap: 3px;
+  padding: 3px 9px;
   border: none;
   border-radius: 999px;
   background: #e9f3e6;
   color: var(--green);
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .ec .ec-tag-icon {
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1;
 }
 
@@ -524,10 +524,10 @@ article.event-card.ec {
 .ec .ec-datebox {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  margin: 0 0 12px;
-  border-radius: 16px;
+  gap: 10px;
+  padding: 9px 12px;
+  margin: 0 0 10px;
+  border-radius: 14px;
   background: #fff6d6;
   border: 1.5px solid #f6e3a0;
   color: var(--green);
@@ -535,13 +535,13 @@ article.event-card.ec {
 
 .ec .ec-datebox-icon {
   display: flex;
-  padding-right: 12px;
+  padding-right: 10px;
   border-right: 2px solid var(--green);
 }
 
 .ec .ec-datebox-icon svg {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
 }
 
 .ec .ec-datebox-text {
@@ -552,13 +552,13 @@ article.event-card.ec {
 }
 
 .ec .ec-date {
-  font-size: 17px;
+  font-size: 14px;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .ec .ec-time {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -567,10 +567,10 @@ article.event-card.ec {
 .ec .ec-meta {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 0 4px 12px;
+  gap: 4px;
+  padding: 0 4px 10px;
   border-bottom: 2px solid var(--lime);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--text);
 }
@@ -583,31 +583,31 @@ article.event-card.ec {
 }
 
 .ec .ec-meta-item svg {
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
   margin-top: 2px;
   color: var(--green);
 }
 
 /* 内容 */
 .ec .ec-section {
-  padding: 12px 0;
+  padding: 10px 0;
   border-bottom: 2px solid var(--lime);
 }
 
 .ec .ec-label {
   display: inline-block;
-  padding: 2px 14px;
-  margin-bottom: 6px;
+  padding: 1px 12px;
+  margin-bottom: 4px;
   border-radius: 999px;
   background: var(--green);
   color: white;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
 }
 
 .ec .ec-description {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.7;
   font-weight: 500;
   overflow-wrap: anywhere;
@@ -629,21 +629,21 @@ article.event-card.ec {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 21px;
-  height: 21px;
-  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
   border-radius: 50%;
   background: var(--green);
   color: white;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
 }
 
 /* 参加予定の名前 */
 .ec .ec-members {
-  margin: 10px 4px 0;
+  margin: 8px 4px 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 /* 気になる */
@@ -652,8 +652,8 @@ article.event-card.ec {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 12px;
-  padding: 4px 4px 4px 14px;
+  margin-top: 10px;
+  padding: 3px 3px 3px 12px;
   border-radius: 999px;
   background: #e9f3e6;
 }
@@ -663,14 +663,14 @@ article.event-card.ec {
   align-items: center;
   gap: 6px;
   color: var(--green);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .ec .ec-interest-count svg {
-  width: 17px;
-  height: 17px;
+  width: 15px;
+  height: 15px;
 }
 
 .ec .interest-button {
@@ -678,21 +678,21 @@ article.event-card.ec {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 44px;
-  padding: 6px 18px;
+  min-height: 38px;
+  padding: 4px 16px;
   border: 2px solid #e52d35;
   border-radius: 999px;
   background: #e52d35;
   color: white;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .ec .interest-button svg {
-  width: 19px;
-  height: 19px;
+  width: 16px;
+  height: 16px;
 }
 
 .ec .interest-button.active {
@@ -711,18 +711,18 @@ article.event-card.ec {
 .ec .ec-actions .primary-button,
 .ec .ec-actions .secondary-button {
   width: 100%;
-  min-height: 50px;
+  min-height: 44px;
   margin: 0;
-  padding: 8px 6px;
+  padding: 6px 6px;
   border-radius: 999px;
   font-family: inherit;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 800;
   white-space: nowrap;
 }
 
 .ec .ec-actions .primary-button {
-  font-size: 17px;
+  font-size: 15px;
 }
 
 .ec .ec-actions .recruitment-closed-badge {
@@ -734,9 +734,9 @@ article.event-card.ec {
 
 /* 画面が広いとき（タブレット・パソコン） */
 @media (min-width: 600px) {
-  .ec .ec-title { font-size: 26px; }
-  .ec .ec-date { font-size: 20px; }
-  .ec .ec-time { font-size: 26px; }
+  .ec .ec-title { font-size: 22px; }
+  .ec .ec-date { font-size: 16px; }
+  .ec .ec-time { font-size: 21px; }
   .ec .ec-meta { flex-direction: row; gap: 24px; }
 }
 
@@ -747,4 +747,57 @@ article.event-card.ec {
 #news-page .panel > .eyebrow,
 #news-page .panel > h2 {
   padding: 0 4px;
+}
+
+/* イベント・お知らせ見出しまわりを少しコンパクトに */
+.panel h2 {
+  font-size: 19px;
+}
+
+.event-view-switch {
+  margin: 12px 0 4px !important;
+}
+
+.event-view-switch button {
+  min-height: 40px;
+  font-size: 14px;
+  padding: 6px 12px;
+}
+
+/* ==========================================
+   イベントカードの文字サイズ調整（標準）
+   ========================================== */
+.ec .ec-important { font-size: 13px; }
+.ec .ec-important svg { width: 14px; height: 14px; }
+.ec .ec-title { font-size: 20px; }
+.ec .event-tag-badge { font-size: 12px; }
+.ec .ec-tag-icon { font-size: 13px; }
+.ec .ec-datebox-icon svg { width: 27px; height: 27px; }
+.ec .ec-date { font-size: 16px; }
+.ec .ec-time { font-size: 20px; }
+.ec .ec-meta { font-size: 15px; }
+.ec .ec-meta-item svg { width: 18px; height: 18px; }
+.ec .ec-label { font-size: 12px; }
+.ec .ec-description { font-size: 15px; }
+.ec .ec-step-num { width: 20px; height: 20px; font-size: 12px; }
+
+/* 参加予定の名前（濃く・読みやすく） */
+.ec .ec-members {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ec .ec-interest-count { font-size: 14px; }
+.ec .ec-interest-count svg { width: 16px; height: 16px; }
+.ec .interest-button { min-height: 42px; padding: 5px 17px; font-size: 14px; }
+.ec .interest-button svg { width: 18px; height: 18px; }
+.ec .ec-actions .primary-button,
+.ec .ec-actions .secondary-button { min-height: 48px; font-size: 14px; }
+.ec .ec-actions .primary-button { font-size: 16px; }
+
+@media (min-width: 600px) {
+  .ec .ec-title { font-size: 24px; }
+  .ec .ec-date { font-size: 18px; }
+  .ec .ec-time { font-size: 24px; }
 }
