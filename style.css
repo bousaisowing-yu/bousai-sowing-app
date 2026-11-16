@@ -87,7 +87,7 @@ h1, h2, h3, h4, p {
   background: var(--green-soft);
   color: var(--green);
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.12em;
   white-space: nowrap;
 }
@@ -123,7 +123,7 @@ h1, h2, h3, h4, p {
 .hero-overlay h2 {
   color: var(--green);
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.35;
   margin: 2px 0 4px;
 }
@@ -137,7 +137,7 @@ h1, h2, h3, h4, p {
 .eyebrow,
 .eyevrow {
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--green-light);
 }
@@ -180,7 +180,7 @@ body {
   background: transparent;
   color: #7c8c80;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -220,7 +220,7 @@ body {
 .panel h2 {
   color: var(--green);
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   margin: 2px 0 6px;
 }
 
@@ -235,7 +235,7 @@ body {
   border: none;
   border-radius: 999px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
   padding: 10px 20px;
 }
 
@@ -335,14 +335,14 @@ body {
   background: #e52d35;
   color: white;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.06em;
 }
 
 .an-title {
   color: var(--green);
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.45;
   margin-bottom: 6px;
 }
@@ -473,7 +473,7 @@ article.event-card.ec {
   border: 1.5px solid #f2cf57;
   color: #8a5a00;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .ec .ec-important svg {
@@ -487,7 +487,7 @@ article.event-card.ec {
   margin: 2px 0 8px;
   color: var(--green);
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.4;
 }
 
@@ -509,7 +509,7 @@ article.event-card.ec {
   background: #e9f3e6;
   color: var(--green);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -551,13 +551,13 @@ article.event-card.ec {
 
 .ec .ec-date {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .ec .ec-time {
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -601,7 +601,7 @@ article.event-card.ec {
   background: var(--green);
   color: white;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .ec .ec-description {
@@ -634,7 +634,7 @@ article.event-card.ec {
   background: var(--green);
   color: white;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 参加予定の名前 */
@@ -662,7 +662,7 @@ article.event-card.ec {
   gap: 6px;
   color: var(--green);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -684,7 +684,7 @@ article.event-card.ec {
   color: white;
   font-family: inherit;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -715,7 +715,7 @@ article.event-card.ec {
   border-radius: 999px;
   font-family: inherit;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -825,7 +825,7 @@ article.event-card.ec {
   background: transparent;
   color: var(--green);
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .admin-switch-button.active {
@@ -846,7 +846,7 @@ article.event-card.ec {
 .form-heading {
   margin: 20px 0 8px;
   font-size: 15px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .form-heading small {
@@ -885,7 +885,7 @@ article.event-card.ec {
 
 .time-range-sep {
   color: var(--muted);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* 設定（横3つのタイル） */
@@ -932,7 +932,7 @@ article.event-card.ec {
 
 .option-tile-label {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .admin-section .option-tile:has(input:checked) {
@@ -958,7 +958,7 @@ article.event-card.ec {
   color: white;
   font-size: 11px;
   line-height: 18px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* マーク（押して選ぶチップ） */
@@ -1052,7 +1052,7 @@ article.event-card.ec {
   background: var(--green-soft);
   color: var(--green);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* イベント画像：切らずに全体を見せる */
@@ -1122,7 +1122,7 @@ article.event-card.ec {
   padding: 10px 15px;
   background: var(--green);
   color: white;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .ec .ec-band-date {
@@ -1181,7 +1181,7 @@ article.event-card.ec {
   margin-top: 26px;
   color: #5b7f2f;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.18em;
   animation: splash-up 0.6s ease 0.35s both;
 }
@@ -1190,7 +1190,7 @@ article.event-card.ec {
   margin-top: 2px;
   color: #46701f;
   font-size: 34px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   animation: splash-up 0.6s ease 0.5s both;
 }
@@ -1210,7 +1210,7 @@ article.event-card.ec {
   background: #6a9a35;
   color: white;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.2em;
   animation: splash-up 0.6s ease 0.8s both;
 }
@@ -1260,7 +1260,7 @@ article.event-card.ec {
   color: white;
   font-family: inherit;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -1371,4 +1371,21 @@ body.is-typing .admin-switch {
 
 .ec .ec-actions [data-action="delete-event"] {
   color: #b42318;
+}
+
+/* 文字が潰れないように：線の多い漢字も読みやすく */
+body {
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+.ec .ec-title,
+.panel h2,
+.an-title {
+  letter-spacing: 0.03em;
+}
+
+.ec .ec-description,
+.announcement-content {
+  font-weight: 400;
 }
