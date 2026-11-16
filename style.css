@@ -1035,3 +1035,28 @@ article.event-card.ec {
   color: var(--muted);
   text-decoration: underline;
 }
+
+/* 場所 → Googleマップ */
+.ec .ec-map-link {
+  color: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ec .ec-map-link > span:first-of-type {
+  text-decoration: underline;
+  text-decoration-color: var(--lime);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.ec .ec-map-chip {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+}
