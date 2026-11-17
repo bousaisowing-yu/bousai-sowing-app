@@ -1448,3 +1448,30 @@ body {
   background: #eeeeee;
   color: #666666;
 }
+
+/* iPhone の日付欄がはみ出さないように */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  box-sizing: border-box;
+  background: white;
+  color: var(--text);
+  text-align: left;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+.form-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.form-col {
+  overflow: hidden;
+}
