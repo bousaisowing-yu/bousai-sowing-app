@@ -2191,27 +2191,83 @@ function openSharedEvent() {
   const card = document.getElementById("event-" + decodeURIComponent(match[1]));
   if (!card) return;
 
-  setTimeout(() => {
+  runAfterSplash(() => {
     const top = card.getBoundingClientRect().top + window.scrollY - 16;
     window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     card.classList.add("ec-highlight");
     setTimeout(() => card.classList.remove("ec-highlight"), 2600);
-  }, 1700);
+  });
 }
 
 const splashStartedAt = Date.now();
+let splashClosed = false;
+let splashVideoWorks = true;
+const afterSplashTasks = [];
 
-function hideSplash() {
+// 起動画面を閉じる（動画が終わった／タップした／動画が使えないとき）
+function closeSplash() {
+  if (splashClosed) return;
+  splashClosed = true;
+
   const splash = $("splash");
-  if (!splash) return;
-
-  // 最低2.5秒はロゴを見せる（揺れるロゴが見えるように）
-  const wait = Math.max(0, 2500 - (Date.now() - splashStartedAt));
-
-  setTimeout(() => {
+  if (splash) {
     splash.classList.add("hide");
     setTimeout(() => splash.remove(), 700);
-  }, wait);
+  }
+
+  afterSplashTasks.splice(0).forEach(task => setTimeout(task, 400));
+}
+
+// 起動画面が閉じてから実行する
+function runAfterSplash(task) {
+  if (splashClosed || !$("splash")) task();
+  else afterSplashTasks.push(task);
+}
+
+function setupSplash() {
+  const splash = $("splash");
+  if (!splash) {
+    splashClosed = true;
+    return;
+  }
+
+  // 画面のどこをタップしても次へ
+  splash.addEventListener("click", closeSplash);
+
+  const video = splash.querySelector("video");
+
+  const videoFailed = () => {
+    if (!splashVideoWorks) return;
+    splashVideoWorks = false;
+    // 動画が動かないときは、ロゴの静止画を2.5秒見せて閉じる
+    const wait = Math.max(0, 2500 - (Date.now() - splashStartedAt));
+    setTimeout(closeSplash, wait);
+  };
+
+  if (!video) {
+    videoFailed();
+    return;
+  }
+
+  // 動画を最後まで見たら次へ
+  video.addEventListener("ended", closeSplash);
+  video.addEventListener("error", videoFailed);
+
+  const playing = video.play();
+  if (playing && playing.catch) playing.catch(videoFailed);
+
+  // 省電力モードなどで再生が始まらないとき
+  setTimeout(() => {
+    if (video.paused || video.currentTime === 0) videoFailed();
+  }, 2000);
+}
+
+// 読み込みが終わったときに呼ぶ（動画があるときは動画の終わりかタップで閉じる）
+function hideSplash() {
+  if (!splashVideoWorks) {
+    const wait = Math.max(0, 2500 - (Date.now() - splashStartedAt));
+    setTimeout(closeSplash, wait);
+  }
 }
 
 // 文字入力中は body に印を付ける（キーボードと重なる固定メニューを隠す）
@@ -2235,6 +2291,7 @@ function setupTypingMode() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  setupSplash();
   addCalendarStyles();
   setupTypingMode();
 
