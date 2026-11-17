@@ -1389,3 +1389,62 @@ body {
 .announcement-content {
   font-weight: 400;
 }
+
+/* ==========================================
+   締め切り日
+   ========================================== */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.form-col {
+  min-width: 0;
+}
+
+.form-col input[type="date"] {
+  min-width: 0;
+  min-height: 46px;
+}
+
+.label-note {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.ec .ec-deadline {
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--text);
+}
+
+.ec .ec-deadline svg {
+  margin-top: 0;
+}
+
+.ec .ec-deadline.is-closed {
+  color: var(--muted);
+}
+
+.ec .ec-deadline.is-closed svg {
+  color: var(--muted);
+}
+
+.ec .ec-dl-chip {
+  padding: 1px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ec .ec-dl-chip.soon {
+  background: #e52d35;
+  color: white;
+}
+
+.ec .ec-dl-chip.closed {
+  background: #eeeeee;
+  color: #666666;
+}
