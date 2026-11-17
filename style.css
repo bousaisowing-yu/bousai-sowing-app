@@ -1475,3 +1475,16 @@ input[type="date"]::-webkit-date-and-time-value {
 .form-col {
   overflow: hidden;
 }
+
+/* 開催日・締め切り日は縦に1つずつ並べる（iPhoneではみ出さないように） */
+.form-row {
+  display: block;
+}
+
+.form-col {
+  overflow: visible;
+}
+
+.form-col input[type="date"] {
+  width: 100%;
+}
