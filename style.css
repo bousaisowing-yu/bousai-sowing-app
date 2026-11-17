@@ -1505,3 +1505,62 @@ input[type="date"]::-webkit-date-and-time-value {
 .splash-org {
   margin-top: 10px;
 }
+
+/* 起動画面：芽吹くロゴの動画＋スキップ */
+.splash-video {
+  margin: -4% 0 0;
+}
+
+#splash {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.splash-skip {
+  position: absolute;
+  right: 18px;
+  bottom: calc(env(safe-area-inset-bottom) + 26px);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px 8px 18px;
+  border: 1.5px solid #b5d98f;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #46701f;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  animation: splash-up 0.6s ease 1.2s both;
+}
+
+.splash-skip span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.splash-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 34px);
+  text-align: center;
+  color: #8aa37a;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  animation: splash-up 0.6s ease 1.6s both;
+}
+
+@media (max-width: 380px) {
+  .splash-hint { display: none; }
+}
+
+/* ヒントとスキップボタンが重ならないように */
+.splash-hint {
+  bottom: calc(env(safe-area-inset-bottom) + 92px);
+}
+
+@media (max-width: 380px) {
+  .splash-hint { display: block; }
+}
