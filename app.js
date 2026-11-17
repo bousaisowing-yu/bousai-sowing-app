@@ -2205,8 +2205,8 @@ function hideSplash() {
   const splash = $("splash");
   if (!splash) return;
 
-  // 最低1.5秒はロゴを見せる
-  const wait = Math.max(0, 1500 - (Date.now() - splashStartedAt));
+  // 最低2.5秒はロゴを見せる（揺れるロゴが見えるように）
+  const wait = Math.max(0, 2500 - (Date.now() - splashStartedAt));
 
   setTimeout(() => {
     splash.classList.add("hide");
