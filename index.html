@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=29">
+  <link rel="stylesheet" href="style.css?v=30">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -32,14 +32,15 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=29" defer></script>
+  <script src="app.js?v=30" defer></script>
 </head>
 
 <body>
   <!-- 起動時のロゴ画面 -->
   <div id="splash" aria-hidden="true">
     <div class="splash-inner">
-      <img src="splash-logo.png" alt="" class="splash-logo">
+      <video class="splash-logo splash-video" src="splash-logo.mp4" poster="splash-poster.jpg"
+        autoplay muted loop playsinline webkit-playsinline preload="auto"></video>
       <p class="splash-org">特定非営利活動法人</p>
       <p class="splash-name">防災Sowing</p>
       <div class="splash-line"></div>
