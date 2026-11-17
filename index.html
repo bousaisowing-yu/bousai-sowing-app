@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=30">
+  <link rel="stylesheet" href="style.css?v=31">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -32,27 +32,29 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=30" defer></script>
+  <script src="app.js?v=31" defer></script>
 </head>
 
 <body>
   <!-- 起動時のロゴ画面 -->
-  <div id="splash" aria-hidden="true">
+  <div id="splash">
     <div class="splash-inner">
       <video class="splash-logo splash-video" src="splash-logo.mp4" poster="splash-poster.jpg"
-        autoplay muted loop playsinline webkit-playsinline preload="auto"></video>
+        autoplay muted playsinline webkit-playsinline preload="auto"></video>
       <p class="splash-org">特定非営利活動法人</p>
       <p class="splash-name">防災Sowing</p>
       <div class="splash-line"></div>
       <p class="splash-app">会員専用アプリ</p>
     </div>
+    <button type="button" class="splash-skip" id="splash-skip">スキップ<span aria-hidden="true">›</span></button>
+    <p class="splash-hint">画面をタップすると進みます</p>
   </div>
   <script>
-    // 何かあっても5秒で必ず消す
+    // 何かあっても20秒で必ず消す
     setTimeout(function () {
       var s = document.getElementById("splash");
       if (s) s.classList.add("hide");
-    }, 5000);
+    }, 20000);
   </script>
   <header class="site-header">
     <div class="brand">
