@@ -1488,3 +1488,20 @@ input[type="date"]::-webkit-date-and-time-value {
 .form-col input[type="date"] {
   width: 100%;
 }
+
+/* 起動画面：揺れるロゴの動画（白い背景を目立たせない） */
+.splash-video {
+  display: block;
+  width: min(84vw, 360px);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  margin: -6% 0 -8%;
+  filter: none;
+  mix-blend-mode: multiply;
+  background: transparent;
+  pointer-events: none;
+}
+
+.splash-org {
+  margin-top: 10px;
+}
