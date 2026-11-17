@@ -79,6 +79,8 @@ const ICONS = {
 
 ICONS.share = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" d="M21.5 2.5 2.9 10.2c-.8.3-.8 1.4 0 1.7l6.9 2.4 2.4 6.9c.3.8 1.4.8 1.7 0z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M9.8 14.3 21.5 2.5"/></svg>';
 
+ICONS.clock = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 7v5l3.5 2"/></svg>';
+
 const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
 
 // "2026-12-19" → "2026年12月19日（土）"
@@ -102,6 +104,35 @@ function formatEventBandDate(dateText) {
   const yearText = Number(y) === new Date().getFullYear() ? "" : `${y}/`;
 
   return `${yearText}${Number(m)}/${Number(d)}（${WEEKDAYS_JA[day]}）`;
+}
+
+// 締め切りの状態を調べる（締め切り日の夜23:59まで受付）
+function getDeadlineInfo(event) {
+  const deadline = event.deadline;
+  if (!deadline) return null;
+
+  const today = formatDate(new Date());
+  const toDate = s => new Date(s + "T00:00:00");
+  const daysLeft = Math.round((toDate(deadline) - toDate(today)) / 86400000);
+
+  return {
+    text: formatEventBandDate(deadline),
+    daysLeft,
+    closed: daysLeft < 0
+  };
+}
+
+function renderDeadline(info) {
+  if (!info) return "";
+
+  let chip = "";
+  if (info.closed) chip = '<span class="ec-dl-chip closed">締め切りました</span>';
+  else if (info.daysLeft === 0) chip = '<span class="ec-dl-chip soon">今日まで</span>';
+  else if (info.daysLeft <= 3) chip = `<span class="ec-dl-chip soon">あと${info.daysLeft}日</span>`;
+
+  return `<span class="ec-meta-item ec-deadline ${info.closed ? "is-closed" : ""}">
+    ${ICONS.clock}<span>締切 ${escapeHTML(info.text)}まで</span>${chip}
+  </span>`;
 }
 
 // "09:00～12:00" → "09:00 〜 12:00"
@@ -949,8 +980,21 @@ function renderEventCards(events) {
       : "";
 
     const recruitmentEnabled = event.recruitment_enabled !== false;
+    const deadlineInfo = getDeadlineInfo(event);
 
-    const memberActions = recruitmentEnabled
+    const memberActions = recruitmentEnabled && deadlineInfo && deadlineInfo.closed
+      ? `
+        <span class="recruitment-closed-badge">
+          参加の受付は締め切りました
+        </span>
+
+        <button class="secondary-button"
+          data-action="cancel"
+          data-id="${escapeHTML(event.id)}">
+          参加を取り消す
+        </button>
+      `
+      : recruitmentEnabled
       ? `
         <button class="primary-button"
           data-action="join"
@@ -1000,6 +1044,7 @@ function renderEventCards(events) {
               </a>`
             : `<span class="ec-meta-item">${ICONS.pin}未定</span>`}
           <span class="ec-meta-item">${ICONS.people}参加 ${members.length}人</span>
+          ${recruitmentEnabled ? renderDeadline(deadlineInfo) : ""}
         </div>
 
         <div class="ec-section">
@@ -1182,6 +1227,13 @@ async function joinEvent(id) {
     return;
   }
 
+  const deadlineInfo = event ? getDeadlineInfo(event) : null;
+
+  if (deadlineInfo && deadlineInfo.closed) {
+    alert("このイベントの参加受付は締め切りました。");
+    return;
+  }
+
   const name = prompt("参加する方のお名前を入力してください。");
 
   if (!name || !name.trim()) return;
@@ -1327,6 +1379,7 @@ function startEditEvent(id) {
 
   $("event-title").value = event.title || "";
   $("event-date").value = event.event_date || "";
+  if ($("event-deadline")) $("event-deadline").value = event.deadline || "";
 
   setTimeInputs("event-start", timeParts[0] || "");
   setTimeInputs("event-end", timeParts[1] || "");
@@ -1379,6 +1432,7 @@ function cancelEditEvent() {
   [
     "event-title",
     "event-date",
+    "event-deadline",
     "event-start-hour",
     "event-start-minute",
     "event-end-hour",
@@ -1424,6 +1478,16 @@ async function addEvent() {
 
   const title = $("event-title").value.trim();
   const date = $("event-date").value;
+  const deadline = $("event-deadline") ? $("event-deadline").value : "";
+
+  if (deadline && date && deadline > date) {
+    showMessage(
+      "event-admin-message",
+      "締め切り日は開催日より前（または同じ日）にしてください。",
+      true
+    );
+    return;
+  }
   const location = $("event-location").value.trim();
   const description = $("event-description").value.trim();
 
@@ -1485,6 +1549,7 @@ async function addEvent() {
     const eventData = {
       title,
       event_date: date,
+      deadline: deadline || null,
       event_time: `${start}～${end}`,
       location,
       description,
@@ -1525,7 +1590,12 @@ async function addEvent() {
       }
     }
 
-    if (error) throw error;
+    if (error) {
+      if (String(error.message || "").includes("deadline")) {
+        throw new Error("締め切り日を保存する場所がまだありません。Supabase で deadline の列を追加してください。");
+      }
+      throw error;
+    }
 
     const wasEditing = !!editingEventId;
 
