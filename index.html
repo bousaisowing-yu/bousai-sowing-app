@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=32">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -32,7 +32,7 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=31" defer></script>
+  <script src="app.js?v=32" defer></script>
 </head>
 
 <body>
@@ -250,6 +250,13 @@
           <input id="announcement-title" type="text" lang="ja" autocorrect="on" placeholder="お知らせのタイトル">
           <label for="announcement-content">本文</label>
           <textarea id="announcement-content" lang="ja" autocorrect="on" rows="6" placeholder="お知らせの内容"></textarea>
+          <div class="option-tiles">
+            <label class="option-tile">
+              <input id="announcement-send-notification" type="checkbox" checked>
+              <span class="option-tile-icon">🔔</span>
+              <span class="option-tile-label">会員に通知</span>
+            </label>
+          </div>
           <button id="add-announcement-button" class="primary-button" type="button">お知らせを投稿</button>
           <p id="announcement-admin-message" aria-live="polite"></p>
           <p class="form-note">投稿したお知らせの削除は、「お知らせ」のページの各お知らせの下からできます。</p>

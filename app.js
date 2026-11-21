@@ -1561,33 +1561,20 @@ async function addEvent() {
 
     let error;
 
+    let newEventId = null;
+    let notifyNote = "";
+
     if (editingEventId) {
       ({ error } = await db.from("events")
         .update(eventData)
         .eq("id", editingEventId));
     } else {
-      ({ error } = await db.from("events").insert(eventData));
-
-      // 新規登録かつ通知チェックが入っている場合のみOneSignal経由で通知を送信
-      if (!error && sendNotification) {
-        try {
-          await fetch("https://onesignal.com/api/v1/notifications", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json; charset=utf-8",
-              "Authorization": "Basic 3ugs3bhffuzjfdylj44thl23g"
-            },
-            body: JSON.stringify({
-              app_id: "b7cd02f4-3342-452f-b261-d3bff69f03a9",
-              included_segments: ["All"],
-              contents: { en: `新しいイベント「${title}」が登録されました！` },
-              headings: { en: "防災Sowing 新着イベント" }
-            })
-          });
-        } catch (notifErr) {
-          console.error("プッシュ通知の送信に失敗しました:", notifErr);
-        }
-      }
+      let inserted;
+      ({ data: inserted, error } = await db.from("events")
+        .insert(eventData)
+        .select("id")
+        .single());
+      newEventId = inserted?.id ?? null;
     }
 
     if (error) {
@@ -1597,15 +1584,25 @@ async function addEvent() {
       throw error;
     }
 
+    // 新規登録かつ「会員に通知」にチェックがあるときだけ通知を送る
+    if (!editingEventId && sendNotification) {
+      notifyNote = await notifyMembers({
+        heading: "防災Sowing 新着イベント",
+        message: `新しいイベント「${title}」が登録されました！`,
+        url: newEventId ? getEventShareUrl(newEventId) : getAppUrl()
+      });
+    }
+
     const wasEditing = !!editingEventId;
 
     cancelEditEvent();
 
     showMessage(
       "event-admin-message",
-      wasEditing
+      (wasEditing
         ? "イベントを更新しました！"
-        : "イベントを登録しました！"
+        : "イベントを登録しました！") + notifyNote,
+      notifyNote.includes("送れませんでした")
     );
 
     await loadEvents();
@@ -1621,6 +1618,44 @@ async function addEvent() {
 
   } finally {
     saveButton.disabled = false;
+  }
+}
+
+/* -----------------------------
+   プッシュ通知（会員に知らせる）
+   OneSignal の鍵はアプリに置かず、Supabase の
+   Edge Function「send-push」が管理者を確かめてから送る
+----------------------------- */
+
+function getAppUrl() {
+  return `${location.origin}${location.pathname}`;
+}
+
+// 結果を画面に出す一言を返す（失敗しても登録自体は済んでいる）
+async function notifyMembers({ heading, message, url }) {
+  try {
+    const { data, error } = await db.functions.invoke("send-push", {
+      body: { heading, message, url }
+    });
+
+    if (error) {
+      let detail = error.message;
+      try {
+        const body = await error.context?.json?.();
+        if (body?.error) detail = body.error;
+      } catch (_) { /* 本文が読めないときはそのまま */ }
+      throw new Error(detail);
+    }
+
+    if (data && data.sent === false) {
+      return "（通知を受け取る設定の会員がまだいないため、通知は送られませんでした）";
+    }
+
+    return "（会員に通知を送りました）";
+
+  } catch (notifyError) {
+    console.error("プッシュ通知の送信に失敗しました:", notifyError);
+    return "　※ただし通知は送れませんでした：" + notifyError.message;
   }
 }
 
@@ -1693,27 +1728,49 @@ async function addAnnouncement() {
     return;
   }
 
-  const { error } = await db.from("announcements").insert({
-    title,
-    content
-  });
+  const sendNotification = $("announcement-send-notification")
+    ? $("announcement-send-notification").checked
+    : false;
 
-  if (error) {
+  const button = $("add-announcement-button");
+  button.disabled = true;
+
+  try {
+    const { error } = await db.from("announcements").insert({
+      title,
+      content
+    });
+
+    if (error) {
+      showMessage(
+        "announcement-admin-message",
+        "投稿エラー：" + error.message,
+        true
+      );
+      return;
+    }
+
+    let notifyNote = "";
+
+    if (sendNotification) {
+      notifyNote = await notifyMembers({
+        heading: "防災Sowing お知らせ",
+        message: title,
+        url: getAppUrl()
+      });
+    }
+
+    $("announcement-title").value = "";
+    $("announcement-content").value = "";
+
     showMessage(
       "announcement-admin-message",
-      "投稿エラー：" + error.message,
-      true
+      "お知らせを投稿しました！" + notifyNote,
+      notifyNote.includes("送れませんでした")
     );
-    return;
+  } finally {
+    button.disabled = false;
   }
-
-  $("announcement-title").value = "";
-  $("announcement-content").value = "";
-
-  showMessage(
-    "announcement-admin-message",
-    "お知らせを投稿しました！"
-  );
 
   await loadAnnouncements();
 }
