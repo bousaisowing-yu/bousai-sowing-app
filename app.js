@@ -654,9 +654,8 @@ function setAdminSection(name) {
 }
 
 function switchTab(tab) {
-  ["events", "news", "admin"].forEach(name => {
-    const page = $(name + "-page");
-    if (page) page.hidden = name !== tab;
+  document.querySelectorAll("main .page").forEach(page => {
+    page.hidden = page.id !== tab + "-page";
   });
 
   document.querySelectorAll(".tab-button").forEach(button => {
@@ -1234,7 +1233,10 @@ async function joinEvent(id) {
     return;
   }
 
-  const name = prompt("参加する方のお名前を入力してください。");
+  const name = prompt(
+    "参加する方のお名前を入力してください。",
+    (typeof currentMember !== "undefined" && currentMember?.display_name) || ""
+  );
 
   if (!name || !name.trim()) return;
 
@@ -1266,7 +1268,10 @@ async function cancelEvent(id) {
     return;
   }
 
-  const name = prompt("参加登録したときのお名前を入力してください。");
+  const name = prompt(
+    "参加登録したときのお名前を入力してください。",
+    (typeof currentMember !== "undefined" && currentMember?.display_name) || ""
+  );
 
   if (!name || !name.trim()) return;
 
@@ -1632,10 +1637,10 @@ function getAppUrl() {
 }
 
 // 結果を画面に出す一言を返す（失敗しても登録自体は済んでいる）
-async function notifyMembers({ heading, message, url }) {
+async function notifyMembers({ heading, message, url, audience = "all" }) {
   try {
     const { data, error } = await db.functions.invoke("send-push", {
-      body: { heading, message, url }
+      body: { heading, message, url, audience }
     });
 
     if (error) {
@@ -2152,6 +2157,7 @@ async function login() {
       "管理者としてログインしました。"
     );
 
+    await refreshMembership();
     await loadEvents();
     await loadAnnouncements();
 
@@ -2189,6 +2195,7 @@ async function logout() {
 
   showMessage("auth-message", "ログアウトしました。");
 
+  await refreshMembership();
   await loadEvents();
   await loadAnnouncements();
 
@@ -2518,6 +2525,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   await checkAdmin();
+
+  // 会員かどうか確かめる（会員でなければ合言葉の画面を出す）
+  await refreshMembership();
 
   await loadHeroImage();
   await loadEvents();

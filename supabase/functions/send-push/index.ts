@@ -1,7 +1,7 @@
 // 防災Sowing 会員アプリ：プッシュ通知を送る Supabase Edge Function
 //
-// アプリ（管理者がログインした状態）から呼び出され、
-// 管理者かどうかを確かめてから OneSignal に通知を頼みます。
+// アプリから呼び出され、管理者（または正会員向けの通知なら正会員）か
+// どうかを確かめてから OneSignal に通知を頼みます。
 // OneSignal の鍵はこの関数の「Secrets」にだけ置き、アプリには書きません。
 //
 // 必要な Secrets（Supabase の Edge Functions → Secrets で設定）
@@ -55,20 +55,34 @@ Deno.serve(async (req) => {
   const user = userData?.user;
   if (userError || !user) return reply({ error: "ログインが必要です" }, 401);
 
+  // 2. 送る内容を読み取る
+  let input: Record<string, unknown> = {};
+  try {
+    input = await req.json();
+  } catch {
+    return reply({ error: "送る内容が読み取れません" }, 400);
+  }
+
+  // audience: "all"（全員）または "full"（正会員だけ）
+  const audience = input.audience === "full" ? "full" : "all";
+
   const { data: adminRow, error: adminError } = await admin
     .from("admin_users")
     .select("user_id")
     .eq("user_id", user.id)
     .maybeSingle();
   if (adminError) return reply({ error: "管理者の確認に失敗しました" }, 500);
-  if (!adminRow) return reply({ error: "管理者だけが通知を送れます" }, 403);
 
-  // 2. 送る内容を整える
-  let input: Record<string, unknown> = {};
-  try {
-    input = await req.json();
-  } catch {
-    return reply({ error: "送る内容が読み取れません" }, 400);
+  if (!adminRow) {
+    // 正会員は「正会員だけ」への通知（事業の報告など）なら送れる
+    const { data: memberRow } = await admin
+      .from("members")
+      .select("member_type")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (audience !== "full" || memberRow?.member_type !== "正会員") {
+      return reply({ error: "この通知を送る権限がありません" }, 403);
+    }
   }
 
   const heading = cleanText(input.heading, 60) || "防災Sowingからのお知らせ";
@@ -90,7 +104,10 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       app_id: appId,
       target_channel: "push",
-      included_segments: ["Total Subscriptions"],
+      ...(audience === "full"
+        // 正会員としてログインした端末だけ（アプリがログイン時に印を付ける）
+        ? { filters: [{ field: "tag", key: "member_type", relation: "=", value: "full" }] }
+        : { included_segments: ["Total Subscriptions"] }),
       headings: { en: heading, ja: heading },
       contents: { en: message, ja: message },
       url,
