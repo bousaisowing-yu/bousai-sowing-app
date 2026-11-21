@@ -75,12 +75,13 @@ Deno.serve(async (req) => {
 
   if (!adminRow) {
     // 正会員は「正会員だけ」への通知（事業の報告など）なら送れる
-    const { data: memberRow } = await admin
-      .from("members")
-      .select("member_type")
+    const { data: device } = await admin
+      .from("member_devices")
+      .select("members(member_type, active)")
       .eq("user_id", user.id)
       .maybeSingle();
-    if (audience !== "full" || memberRow?.member_type !== "正会員") {
+    const member = (device as { members?: { member_type?: string; active?: boolean } } | null)?.members;
+    if (audience !== "full" || member?.member_type !== "正会員" || member?.active === false) {
       return reply({ error: "この通知を送る権限がありません" }, 403);
     }
   }

@@ -1924,3 +1924,44 @@ body.gate-open .tab-nav {
   width: auto;
   padding: 6px 8px;
 }
+
+.new-member-result {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--green-soft);
+  text-align: center;
+}
+
+.new-member-result p {
+  margin: 4px 0;
+}
+
+.member-code-big {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--green);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.member-code {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+.member-admin-row {
+  flex-wrap: wrap;
+}
+
+.member-admin-actions {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+#full-gate .primary-button {
+  margin-top: 12px;
+  width: 100%;
+}

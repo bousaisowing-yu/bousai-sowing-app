@@ -1,9 +1,9 @@
 /* =============================================================
    防災Sowing 会員アプリ：会員ログインと正会員ページ
-   - 合言葉＋名前で会員になる（members 表）
+   - 全会員：管理者が配る「会員コード」で1回ログイン（端末ごと）
    - ログインした端末を OneSignal で会員と結びつける
-   - 正会員ページ「事業の進み具合」
-   - 管理画面「会員」（合言葉の変更・会員一覧）
+   - 正会員ページ「事業の進み具合」（正会員の合言葉で開く）
+   - 管理画面「会員」（会員登録・コード・正会員の合言葉・会員一覧）
    app.js の db / $ / currentUser / isAdmin / escapeHTML などを使います。
 ============================================================= */
 
@@ -14,7 +14,8 @@ let allProjects = [];
 let projectStages = [];
 let projectReports = [];
 let projectLeads = [];
-let fullMembersForAdmin = [];
+let allMembersForAdmin = [];
+let memberCodesForAdmin = {};
 const openProjectIds = new Set();
 
 const PROJECT_STATUSES = ["準備中", "進行中", "ひと休み中", "完了"];
@@ -41,10 +42,7 @@ async function fetchMyMember() {
     return;
   }
 
-  const { data, error } = await db.from("members")
-    .select("*")
-    .eq("user_id", currentUser.id)
-    .maybeSingle();
+  const { data, error } = await db.rpc("get_my_member");
 
   if (error) {
     // members 表がまだ無い（SQL 未実行）ときは、今まで通り誰でも使える状態にしておく
@@ -75,10 +73,14 @@ async function refreshMembership() {
 
 function applyMemberUI() {
   const full = membershipReady && isFullMemberNow();
+  const loggedIn = membershipReady && (isAdmin || !!currentMember);
 
-  if ($("projects-tab")) $("projects-tab").hidden = !full;
+  // 正会員タブは会員全員に見せ、正会員でなければ合言葉の入力欄を出す
+  if ($("projects-tab")) $("projects-tab").hidden = !loggedIn;
+  if ($("full-gate")) $("full-gate").hidden = !loggedIn || full;
+  if ($("projects-area")) $("projects-area").hidden = !full;
 
-  if (!full && $("projects-page") && !$("projects-page").hidden) {
+  if (!loggedIn && $("projects-page") && !$("projects-page").hidden) {
     switchTab("events");
   }
 
@@ -118,11 +120,10 @@ function hideGate() {
 }
 
 async function joinAsMember() {
-  const passcode = $("gate-passcode").value.trim();
-  const name = $("gate-name").value.trim();
+  const code = $("gate-code").value.replace(/[^0-9A-Za-z]/g, "").toUpperCase();
 
-  if (!passcode || !name) {
-    showMessage("gate-message", "合言葉とお名前を入力してください。", true);
+  if (!code) {
+    showMessage("gate-message", "会員コードを入力してください。", true);
     return;
   }
 
@@ -132,20 +133,17 @@ async function joinAsMember() {
   try {
     await ensureUserSession();
 
-    const { data, error } = await db.rpc("join_with_passcode", {
-      p_passcode: passcode,
-      p_name: name
-    });
+    const { data, error } = await db.rpc("login_with_code", { p_code: code });
 
     if (error) throw error;
 
     if (!data?.ok) {
-      showMessage("gate-message", data?.message || "合言葉が違います。", true);
+      showMessage("gate-message", data?.message || "会員コードが違います。", true);
       return;
     }
 
     currentMember = data.member;
-    $("gate-passcode").value = "";
+    $("gate-code").value = "";
     showMessage("gate-message", "");
 
     hideGate();
@@ -164,6 +162,44 @@ async function joinAsMember() {
   }
 }
 
+// 正会員の合言葉を入れて正会員になる
+async function becomeFullMember() {
+  const passcode = $("full-passcode").value.trim();
+
+  if (!passcode) {
+    showMessage("full-gate-message", "合言葉を入力してください。", true);
+    return;
+  }
+
+  const button = $("full-join-button");
+  button.disabled = true;
+
+  try {
+    const { data, error } = await db.rpc("become_full_member", { p_passcode: passcode });
+
+    if (error) throw error;
+
+    if (!data?.ok) {
+      showMessage("full-gate-message", data?.message || "合言葉が違います。", true);
+      return;
+    }
+
+    currentMember = data.member;
+    $("full-passcode").value = "";
+    showMessage("full-gate-message", "");
+
+    applyMemberUI();
+    linkOneSignal();
+
+  } catch (error) {
+    console.error(error);
+    showMessage("full-gate-message", "開けませんでした：" + error.message, true);
+
+  } finally {
+    button.disabled = false;
+  }
+}
+
 /* -----------------------------
    通知：この端末を会員と結びつける
 ----------------------------- */
@@ -172,11 +208,12 @@ function linkOneSignal() {
   if (!currentUser || !window.OneSignalDeferred) return;
 
   const memberType = isFullMemberNow() ? "full" : "regular";
-  const userId = currentUser.id;
+  // 同じ会員の複数の端末が1人としてまとまるよう、会員の番号で結びつける
+  const externalId = currentMember?.id || currentUser.id;
 
   window.OneSignalDeferred.push(async function (OneSignal) {
     try {
-      await OneSignal.login(userId);
+      await OneSignal.login(externalId);
       await OneSignal.User.addTags({ member: "1", member_type: memberType });
 
       if (!OneSignal.Notifications.permission) {
@@ -194,10 +231,10 @@ function linkOneSignal() {
 
 function canEditProject(projectId) {
   if (isAdmin) return true;
-  if (!currentUser) return false;
+  if (!currentMember) return false;
   return projectLeads.some(lead =>
     String(lead.project_id) === String(projectId) &&
-    lead.user_id === currentUser.id
+    lead.member_id === currentMember.id
   );
 }
 
@@ -220,7 +257,7 @@ async function loadProjects() {
       .order("created_at", { ascending: true }),
     db.from("project_stages").select("*").order("sort_order", { ascending: true }),
     db.from("project_reports").select("*").order("created_at", { ascending: false }),
-    db.from("project_leads").select("project_id,user_id")
+    db.from("project_leads").select("project_id,member_id")
   ]);
 
   const error = projects.error || stages.error || reports.error || leads.error;
@@ -346,11 +383,11 @@ function renderProjectCard(project) {
       <input id="pj-lead-names-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(leadNames.join("、"))}" placeholder="例：山田、佐藤、鈴木">
       <label>アプリでこの事業を更新できる人 <small class="label-note">正会員から選ぶ</small></label>
       <div class="pj-lead-options">
-        ${fullMembersForAdmin.length
-          ? fullMembersForAdmin.map(member => `
+        ${fullMembersForAdmin().length
+          ? fullMembersForAdmin().map(member => `
             <label class="pj-inline-check">
-              <input type="checkbox" data-pj-lead="${escapeHTML(id)}" value="${escapeHTML(member.user_id)}"
-                ${projectLeads.some(lead => String(lead.project_id) === id && lead.user_id === member.user_id) ? "checked" : ""}>
+              <input type="checkbox" data-pj-lead="${escapeHTML(id)}" value="${escapeHTML(member.id)}"
+                ${projectLeads.some(lead => String(lead.project_id) === id && lead.member_id === member.id) ? "checked" : ""}>
               ${escapeHTML(member.display_name)}
             </label>`).join("")
           : '<p class="form-note">正会員がまだいません。「会員」の画面で正会員にすると、ここに出ます。</p>'}
@@ -544,7 +581,7 @@ async function saveLeads(projectId) {
 
   if (selected.length) {
     const { error: insertError } = await db.from("project_leads")
-      .insert(selected.map(userId => ({ project_id: projectId, user_id: userId })));
+      .insert(selected.map(memberId => ({ project_id: projectId, member_id: memberId })));
 
     if (insertError) return setProjectMessage("担当者を保存できませんでした：" + insertError.message, true);
   }
@@ -595,47 +632,131 @@ async function deleteProject(projectId) {
    管理画面：会員
 ----------------------------- */
 
+function fullMembersForAdmin() {
+  return allMembersForAdmin.filter(member => member.member_type === "正会員" && member.active !== false);
+}
+
+function formatMemberCode(code) {
+  return code ? `${code.slice(0, 4)}-${code.slice(4)}` : "";
+}
+
 async function loadMembersAdmin() {
   const root = $("members-admin-list");
   if (!root || !isAdmin) return;
 
-  const { data, error } = await db.from("members")
-    .select("*")
-    .order("created_at", { ascending: true });
+  const [members, codes] = await Promise.all([
+    db.from("members").select("*").order("created_at", { ascending: true }),
+    db.from("member_codes").select("member_id,code")
+  ]);
 
-  if (error) {
+  if (members.error || codes.error) {
     root.innerHTML = '<p class="muted">会員一覧を読み込めませんでした。</p>';
-    console.error(error);
+    console.error(members.error || codes.error);
     return;
   }
 
-  fullMembersForAdmin = (data || []).filter(member => member.member_type === "正会員");
+  allMembersForAdmin = members.data || [];
+  memberCodesForAdmin = Object.fromEntries((codes.data || []).map(row => [row.member_id, row.code]));
 
-  if (!data || !data.length) {
-    root.innerHTML = '<p class="muted">まだ会員がいません。合言葉を会員に伝えてください。</p>';
-    return;
+  if (!allMembersForAdmin.length) {
+    root.innerHTML = '<p class="muted">まだ会員がいません。上の「会員を登録する」から登録してください。</p>';
+  } else {
+    root.innerHTML = `<ul class="member-admin-list">${allMembersForAdmin.map(member => `
+      <li class="member-admin-row">
+        <div class="member-admin-name">
+          <strong>${escapeHTML(member.display_name)}</strong>
+          <small>コード：<span class="member-code">${escapeHTML(formatMemberCode(memberCodesForAdmin[member.id]))}</span></small>
+        </div>
+        <select data-member-type="${escapeHTML(member.id)}" aria-label="${escapeHTML(member.display_name)}さんの種類">
+          <option value="一般" ${member.member_type !== "正会員" ? "selected" : ""}>会員</option>
+          <option value="正会員" ${member.member_type === "正会員" ? "selected" : ""}>正会員</option>
+        </select>
+        <div class="member-admin-actions">
+          <button type="button" class="pj-mini-button" data-member-action="reset-code" data-id="${escapeHTML(member.id)}">コード作り直し</button>
+          <button type="button" class="pj-mini-button" data-member-action="delete" data-id="${escapeHTML(member.id)}">削除</button>
+        </div>
+      </li>`).join("")}</ul>`;
   }
-
-  root.innerHTML = `<ul class="member-admin-list">${data.map(member => `
-    <li class="member-admin-row">
-      <div class="member-admin-name">
-        <strong>${escapeHTML(member.display_name)}</strong>
-        <small>${escapeHTML(formatShortDateJa(member.created_at))} 登録</small>
-      </div>
-      <select data-member-type="${escapeHTML(member.user_id)}" aria-label="${escapeHTML(member.display_name)}さんの種類">
-        <option value="一般" ${member.member_type !== "正会員" ? "selected" : ""}>会員</option>
-        <option value="正会員" ${member.member_type === "正会員" ? "selected" : ""}>正会員</option>
-      </select>
-      <button type="button" class="pj-mini-button" data-member-action="delete" data-id="${escapeHTML(member.user_id)}">削除</button>
-    </li>`).join("")}</ul>`;
 
   if (allProjects.length) renderProjects();
 }
 
-async function changeMemberType(userId, memberType) {
+function showNewMemberCode(name, code) {
+  const box = $("new-member-result");
+  if (!box) return;
+
+  box.hidden = false;
+  box.innerHTML = `
+    <p><strong>${escapeHTML(name)}</strong> さんの会員コード</p>
+    <p class="member-code-big">${escapeHTML(formatMemberCode(code))}</p>
+    <p class="form-note">このコードとアプリのURLを本人に伝えてください。会員一覧からもあとで確認できます。</p>
+    <button type="button" class="secondary-button" id="copy-member-message">伝える文をコピー</button>`;
+
+  $("copy-member-message").addEventListener("click", async () => {
+    const text =
+      `${name} さん\n防災Sowing 会員アプリのご案内です。\n` +
+      `① 次のURLを開いてください\n${getAppUrl()}\n` +
+      `② 「会員コード」に ${formatMemberCode(code)} を入力してください\n` +
+      `③ 通知の「許可」を押すと、イベントやお知らせが届きます\n` +
+      `※iPhoneの方は、共有ボタンから「ホーム画面に追加」してから開くと通知が届きます。`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("コピーしました。LINEなどに貼り付けて送ってください。");
+    } catch (_) {
+      prompt("この文をコピーしてください", text);
+    }
+  });
+}
+
+async function addMember() {
+  const name = $("new-member-name").value.trim();
+  if (!name) {
+    alert("お名前を入力してください。");
+    return;
+  }
+
+  const button = $("add-member-button");
+  button.disabled = true;
+
+  const { data, error } = await db.rpc("create_member", {
+    p_name: name,
+    p_member_type: $("new-member-full").checked ? "正会員" : "一般"
+  });
+
+  button.disabled = false;
+
+  if (error) {
+    alert("登録できませんでした：" + error.message);
+    return;
+  }
+
+  $("new-member-name").value = "";
+  $("new-member-full").checked = false;
+  showNewMemberCode(name, data.code);
+
+  await loadMembersAdmin();
+}
+
+async function resetMemberCode(memberId) {
+  const member = allMembersForAdmin.find(item => item.id === memberId);
+  if (!confirm(`${member?.display_name || "この会員"} さんのコードを作り直しますか？前のコードは使えなくなります（すでにログイン済みの端末はそのまま使えます）。`)) return;
+
+  const { data, error } = await db.rpc("reset_member_code", { p_member_id: memberId });
+
+  if (error) {
+    alert("作り直せませんでした：" + error.message);
+    return;
+  }
+
+  showNewMemberCode(member?.display_name || "", data);
+  await loadMembersAdmin();
+}
+
+async function changeMemberType(memberId, memberType) {
   const { error } = await db.from("members")
     .update({ member_type: memberType })
-    .eq("user_id", userId);
+    .eq("id", memberId);
 
   if (error) {
     alert("変更できませんでした：" + error.message);
@@ -644,10 +765,11 @@ async function changeMemberType(userId, memberType) {
   await loadMembersAdmin();
 }
 
-async function deleteMember(userId) {
-  if (!confirm("この会員を一覧から外しますか？その人は次に開いたとき、合言葉の入力が必要になります。")) return;
+async function deleteMember(memberId) {
+  const member = allMembersForAdmin.find(item => item.id === memberId);
+  if (!confirm(`${member?.display_name || "この会員"} さんを削除しますか？その人の端末ではアプリが使えなくなります。`)) return;
 
-  const { error } = await db.from("members").delete().eq("user_id", userId);
+  const { error } = await db.from("members").delete().eq("id", memberId);
 
   if (error) {
     alert("削除できませんでした：" + error.message);
@@ -668,7 +790,7 @@ async function savePasscode() {
   const button = $("save-passcode-button");
   button.disabled = true;
 
-  const { error } = await db.rpc("set_member_passcode", { p_passcode: passcode });
+  const { error } = await db.rpc("set_full_passcode", { p_passcode: passcode });
 
   button.disabled = false;
 
@@ -678,7 +800,7 @@ async function savePasscode() {
   }
 
   input.value = "";
-  showMessage("passcode-message", `合言葉を「${passcode}」に変更しました。会員に伝えてください。`);
+  showMessage("passcode-message", `正会員の合言葉を「${passcode}」に変更しました。正会員の方に伝えてください。`);
 }
 
 /* -----------------------------
@@ -688,9 +810,12 @@ async function savePasscode() {
 document.addEventListener("DOMContentLoaded", () => {
   $("gate-join-button")?.addEventListener("click", joinAsMember);
 
-  $("gate-name")?.addEventListener("keydown", event => {
+  $("gate-code")?.addEventListener("keydown", event => {
     if (event.key === "Enter" && !event.isComposing) joinAsMember();
   });
+
+  $("full-join-button")?.addEventListener("click", becomeFullMember);
+  $("add-member-button")?.addEventListener("click", addMember);
 
   $("gate-admin-button")?.addEventListener("click", () => {
     hideGate();
@@ -742,6 +867,7 @@ document.addEventListener("DOMContentLoaded", () => {
   membersRoot?.addEventListener("click", event => {
     const button = event.target.closest("button[data-member-action]");
     if (button?.dataset.memberAction === "delete") deleteMember(button.dataset.id);
+    if (button?.dataset.memberAction === "reset-code") resetMemberCode(button.dataset.id);
   });
 
   // 通知から「#project-…」で開いたとき、その事業を表示する

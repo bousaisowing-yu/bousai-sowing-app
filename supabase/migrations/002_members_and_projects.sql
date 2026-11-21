@@ -1,8 +1,13 @@
--- 防災Sowing 会員アプリ：会員ログイン（合言葉＋名前）と正会員ページ「事業の進み具合」
+-- 防災Sowing 会員アプリ：会員ログイン（個人コード）と正会員ページ「事業の進み具合」
 --
 -- Supabase の「SQL Editor」に全部貼り付けて「Run」を1回押してください。
 -- 新しい表と仕組みを足すだけで、今あるイベント・お知らせのデータは変えません。
 -- 何度実行しても大丈夫なように書いてあります。
+--
+-- しくみ
+--  ・管理者が会員を登録すると、その人専用の「会員コード」ができる
+--  ・会員はアプリを初めて開いたとき、会員コードを1回入れるだけ（端末ごとに1回）
+--  ・正会員ページでは、正会員の「合言葉」を入れると正会員になる
 
 create extension if not exists pgcrypto with schema extensions;
 
@@ -11,29 +16,47 @@ create extension if not exists pgcrypto with schema extensions;
 -- ─────────────────────────────
 
 create table if not exists public.members (
-  user_id uuid primary key references auth.users(id) on delete cascade,
+  id uuid primary key default gen_random_uuid(),
   display_name text not null check (char_length(display_name) between 1 and 40),
   member_type text not null default '一般' check (member_type in ('一般', '正会員')),
+  active boolean not null default true,
   created_at timestamptz not null default now()
 );
 alter table public.members enable row level security;
 
--- 合言葉（暗号化して1つだけ保存。アプリからは直接読めない）
+-- 会員コード（管理者だけが見られる）
+create table if not exists public.member_codes (
+  member_id uuid primary key references public.members(id) on delete cascade,
+  code text not null unique,
+  created_at timestamptz not null default now()
+);
+alter table public.member_codes enable row level security;
+
+-- どの端末（ログイン）がどの会員か
+create table if not exists public.member_devices (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  member_id uuid not null references public.members(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.member_devices enable row level security;
+
+-- 正会員の合言葉（暗号化して1つだけ保存）
 create table if not exists public.member_settings (
   id int primary key default 1 check (id = 1),
-  passcode_hash text,
+  full_passcode_hash text,
   updated_at timestamptz not null default now()
 );
 alter table public.member_settings enable row level security;
 
--- 合言葉の入力記録（何度も試されるのを防ぐため）
-create table if not exists public.passcode_attempts (
+-- コード・合言葉の入力記録（何度も試されるのを防ぐ）
+create table if not exists public.login_attempts (
   id bigint generated always as identity primary key,
   user_id uuid not null,
+  kind text not null,
   ok boolean not null,
   attempted_at timestamptz not null default now()
 );
-alter table public.passcode_attempts enable row level security;
+alter table public.login_attempts enable row level security;
 
 -- だれが何者かを調べる関数
 create or replace function public.is_admin() returns boolean
@@ -41,68 +64,174 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.admin_users where user_id = auth.uid());
 $$;
 
+create or replace function public.current_member_id() returns uuid
+language sql stable security definer set search_path = public as $$
+  select m.id
+  from public.member_devices d
+  join public.members m on m.id = d.member_id
+  where d.user_id = auth.uid() and m.active;
+$$;
+
 create or replace function public.is_member() returns boolean
 language sql stable security definer set search_path = public as $$
-  select public.is_admin()
-      or exists (select 1 from public.members where user_id = auth.uid());
+  select public.is_admin() or public.current_member_id() is not null;
 $$;
 
 create or replace function public.is_full_member() returns boolean
 language sql stable security definer set search_path = public as $$
   select public.is_admin()
       or exists (select 1 from public.members
-                 where user_id = auth.uid() and member_type = '正会員');
+                 where id = public.current_member_id() and member_type = '正会員');
 $$;
 
--- 合言葉と名前で会員になる
-create or replace function public.join_with_passcode(p_passcode text, p_name text)
-returns jsonb
-language plpgsql security definer set search_path = public, extensions as $$
+create or replace function public.too_many_attempts(p_kind text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select (select count(*) from public.login_attempts
+          where user_id = auth.uid() and kind = p_kind and not ok
+            and attempted_at > now() - interval '15 minutes') >= 5
+      or (select count(*) from public.login_attempts
+          where kind = p_kind and not ok
+            and attempted_at > now() - interval '15 minutes') >= 100;
+$$;
+
+-- 自分の会員情報
+create or replace function public.get_my_member() returns jsonb
+language sql stable security definer set search_path = public as $$
+  select to_jsonb(m) from public.members m where m.id = public.current_member_id();
+$$;
+
+-- 会員コードでログインする
+create or replace function public.login_with_code(p_code text) returns jsonb
+language plpgsql security definer set search_path = public as $$
 declare
   v_uid uuid := auth.uid();
-  v_hash text;
-  v_name text := btrim(coalesce(p_name, ''));
-  v_row public.members;
+  v_code text := upper(regexp_replace(coalesce(p_code, ''), '[^0-9A-Za-z]', '', 'g'));
+  v_member public.members;
 begin
   if v_uid is null then
     return jsonb_build_object('ok', false, 'message', 'ログインの準備ができていません。アプリを開き直してください。');
   end if;
 
-  if (select count(*) from public.passcode_attempts
-      where user_id = v_uid and not ok and attempted_at > now() - interval '15 minutes') >= 5
-     or (select count(*) from public.passcode_attempts
-      where not ok and attempted_at > now() - interval '15 minutes') >= 100 then
-    return jsonb_build_object('ok', false, 'message', '合言葉の入力に何度も失敗しました。15分ほど待ってからもう一度お試しください。');
+  if public.too_many_attempts('code') then
+    return jsonb_build_object('ok', false, 'message', '何度も間違えたため、15分ほど待ってからもう一度お試しください。');
   end if;
 
-  if char_length(v_name) < 1 or char_length(v_name) > 40 then
-    return jsonb_build_object('ok', false, 'message', 'お名前を入力してください（40文字まで）。');
+  select m.* into v_member
+  from public.member_codes c
+  join public.members m on m.id = c.member_id
+  where c.code = v_code and m.active;
+
+  if v_member.id is null then
+    insert into public.login_attempts (user_id, kind, ok) values (v_uid, 'code', false);
+    return jsonb_build_object('ok', false, 'message', '会員コードが違います。もう一度確かめてください。');
   end if;
 
-  select passcode_hash into v_hash from public.member_settings where id = 1;
+  insert into public.login_attempts (user_id, kind, ok) values (v_uid, 'code', true);
+
+  insert into public.member_devices (user_id, member_id) values (v_uid, v_member.id)
+  on conflict (user_id) do update set member_id = excluded.member_id, created_at = now();
+
+  return jsonb_build_object('ok', true, 'member', to_jsonb(v_member));
+end;
+$$;
+
+-- 正会員の合言葉を入れて正会員になる
+create or replace function public.become_full_member(p_passcode text) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  v_uid uuid := auth.uid();
+  v_member_id uuid := public.current_member_id();
+  v_hash text;
+  v_member public.members;
+begin
+  if v_member_id is null then
+    return jsonb_build_object('ok', false, 'message', '先に会員コードでログインしてください。');
+  end if;
+
+  if public.too_many_attempts('full') then
+    return jsonb_build_object('ok', false, 'message', '何度も間違えたため、15分ほど待ってからもう一度お試しください。');
+  end if;
+
+  select full_passcode_hash into v_hash from public.member_settings where id = 1;
   if v_hash is null then
     return jsonb_build_object('ok', false, 'message', '合言葉がまだ設定されていません。管理者にお問い合わせください。');
   end if;
 
   if crypt(btrim(coalesce(p_passcode, '')), v_hash) <> v_hash then
-    insert into public.passcode_attempts (user_id, ok) values (v_uid, false);
+    insert into public.login_attempts (user_id, kind, ok) values (v_uid, 'full', false);
     return jsonb_build_object('ok', false, 'message', '合言葉が違います。');
   end if;
 
-  insert into public.passcode_attempts (user_id, ok) values (v_uid, true);
+  insert into public.login_attempts (user_id, kind, ok) values (v_uid, 'full', true);
 
-  insert into public.members (user_id, display_name)
-  values (v_uid, v_name)
-  on conflict (user_id) do update set display_name = excluded.display_name
-  returning * into v_row;
+  update public.members set member_type = '正会員' where id = v_member_id
+  returning * into v_member;
 
-  return jsonb_build_object('ok', true, 'member', to_jsonb(v_row));
+  return jsonb_build_object('ok', true, 'member', to_jsonb(v_member));
 end;
 $$;
 
--- 合言葉を変える（管理者だけ）
-create or replace function public.set_member_passcode(p_passcode text)
-returns void
+-- 会員を登録して会員コードを作る（管理者だけ）
+create or replace function public.create_member(p_name text, p_member_type text default '一般')
+returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  v_member public.members;
+  v_code text;
+  v_chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  i int;
+begin
+  if not public.is_admin() then
+    raise exception '管理者だけが会員を登録できます';
+  end if;
+
+  insert into public.members (display_name, member_type)
+  values (btrim(p_name), case when p_member_type = '正会員' then '正会員' else '一般' end)
+  returning * into v_member;
+
+  loop
+    v_code := '';
+    for i in 1 .. 8 loop
+      v_code := v_code || substr(v_chars, 1 + (get_byte(gen_random_bytes(1), 0) % 32), 1);
+    end loop;
+    exit when not exists (select 1 from public.member_codes where code = v_code);
+  end loop;
+
+  insert into public.member_codes (member_id, code) values (v_member.id, v_code);
+
+  return jsonb_build_object('member', to_jsonb(v_member), 'code', v_code);
+end;
+$$;
+
+-- 会員コードを作り直す（なくした・漏れたとき。管理者だけ）
+create or replace function public.reset_member_code(p_member_id uuid) returns text
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  v_code text;
+  v_chars text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  i int;
+begin
+  if not public.is_admin() then
+    raise exception '管理者だけがコードを作り直せます';
+  end if;
+
+  loop
+    v_code := '';
+    for i in 1 .. 8 loop
+      v_code := v_code || substr(v_chars, 1 + (get_byte(gen_random_bytes(1), 0) % 32), 1);
+    end loop;
+    exit when not exists (select 1 from public.member_codes where code = v_code);
+  end loop;
+
+  insert into public.member_codes (member_id, code) values (p_member_id, v_code)
+  on conflict (member_id) do update set code = excluded.code, created_at = now();
+
+  return v_code;
+end;
+$$;
+
+-- 正会員の合言葉を変える（管理者だけ）
+create or replace function public.set_full_passcode(p_passcode text) returns void
 language plpgsql security definer set search_path = public, extensions as $$
 begin
   if not public.is_admin() then
@@ -111,32 +240,53 @@ begin
   if char_length(btrim(coalesce(p_passcode, ''))) < 4 then
     raise exception '合言葉は4文字以上にしてください';
   end if;
-  insert into public.member_settings (id, passcode_hash, updated_at)
+  insert into public.member_settings (id, full_passcode_hash, updated_at)
   values (1, crypt(btrim(p_passcode), gen_salt('bf')), now())
   on conflict (id) do update
-    set passcode_hash = excluded.passcode_hash, updated_at = now();
+    set full_passcode_hash = excluded.full_passcode_hash, updated_at = now();
 end;
 $$;
 
-revoke all on function public.join_with_passcode(text, text) from public, anon;
-revoke all on function public.set_member_passcode(text) from public, anon;
-grant execute on function public.join_with_passcode(text, text) to authenticated;
-grant execute on function public.set_member_passcode(text) to authenticated;
+revoke all on function public.login_with_code(text) from public, anon;
+revoke all on function public.become_full_member(text) from public, anon;
+revoke all on function public.create_member(text, text) from public, anon;
+revoke all on function public.reset_member_code(uuid) from public, anon;
+revoke all on function public.set_full_passcode(text) from public, anon;
+revoke all on function public.too_many_attempts(text) from public, anon, authenticated;
+grant execute on function public.login_with_code(text) to authenticated;
+grant execute on function public.become_full_member(text) to authenticated;
+grant execute on function public.create_member(text, text) to authenticated;
+grant execute on function public.reset_member_code(uuid) to authenticated;
+grant execute on function public.set_full_passcode(text) to authenticated;
+grant execute on function public.get_my_member() to authenticated;
 grant execute on function public.is_admin() to authenticated, anon;
+grant execute on function public.current_member_id() to authenticated, anon;
 grant execute on function public.is_member() to authenticated, anon;
 grant execute on function public.is_full_member() to authenticated, anon;
 
+-- members：自分の行と、管理者は全員分
 drop policy if exists "members_select" on public.members;
 create policy "members_select" on public.members for select to authenticated
-  using (user_id = auth.uid() or public.is_admin());
-
+  using (id = public.current_member_id() or public.is_admin());
 drop policy if exists "members_update_admin" on public.members;
 create policy "members_update_admin" on public.members for update to authenticated
   using (public.is_admin()) with check (public.is_admin());
-
 drop policy if exists "members_delete_admin" on public.members;
 create policy "members_delete_admin" on public.members for delete to authenticated
   using (public.is_admin());
+
+-- member_codes：管理者だけ
+drop policy if exists "member_codes_admin" on public.member_codes;
+create policy "member_codes_admin" on public.member_codes for select to authenticated
+  using (public.is_admin());
+
+-- member_devices：管理者だけが見て消せる（自分の端末を解除するのは関数経由で不要）
+drop policy if exists "member_devices_admin" on public.member_devices;
+create policy "member_devices_admin" on public.member_devices for select to authenticated
+  using (public.is_admin() or user_id = auth.uid());
+drop policy if exists "member_devices_delete_admin" on public.member_devices;
+create policy "member_devices_delete_admin" on public.member_devices for delete to authenticated
+  using (public.is_admin() or user_id = auth.uid());
 
 -- ─────────────────────────────
 -- 2. 事業の進み具合（正会員だけが見られる）
@@ -157,11 +307,11 @@ create table if not exists public.projects (
   updated_at timestamptz not null default now()
 );
 
--- アプリ上でその事業を更新できる担当者（会員と結びつける）
+-- アプリ上でその事業を更新できる担当者
 create table if not exists public.project_leads (
   project_id uuid not null references public.projects(id) on delete cascade,
-  user_id uuid not null references public.members(user_id) on delete cascade,
-  primary key (project_id, user_id)
+  member_id uuid not null references public.members(id) on delete cascade,
+  primary key (project_id, member_id)
 );
 
 create table if not exists public.project_stages (
@@ -190,11 +340,11 @@ alter table public.project_reports enable row level security;
 create or replace function public.is_project_lead(p_project_id uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.project_leads
-                 where project_id = p_project_id and user_id = auth.uid());
+                 where project_id = p_project_id
+                   and member_id = public.current_member_id());
 $$;
 grant execute on function public.is_project_lead(uuid) to authenticated;
 
--- projects
 drop policy if exists "projects_select" on public.projects;
 create policy "projects_select" on public.projects for select to authenticated
   using (public.is_full_member());
@@ -209,7 +359,6 @@ drop policy if exists "projects_delete" on public.projects;
 create policy "projects_delete" on public.projects for delete to authenticated
   using (public.is_admin());
 
--- project_leads
 drop policy if exists "project_leads_select" on public.project_leads;
 create policy "project_leads_select" on public.project_leads for select to authenticated
   using (public.is_full_member());
@@ -217,7 +366,6 @@ drop policy if exists "project_leads_write" on public.project_leads;
 create policy "project_leads_write" on public.project_leads for all to authenticated
   using (public.is_admin()) with check (public.is_admin());
 
--- project_stages
 drop policy if exists "project_stages_select" on public.project_stages;
 create policy "project_stages_select" on public.project_stages for select to authenticated
   using (public.is_full_member());
@@ -226,7 +374,6 @@ create policy "project_stages_write" on public.project_stages for all to authent
   using (public.is_admin() or public.is_project_lead(project_id))
   with check (public.is_admin() or public.is_project_lead(project_id));
 
--- project_reports
 drop policy if exists "project_reports_select" on public.project_reports;
 create policy "project_reports_select" on public.project_reports for select to authenticated
   using (public.is_full_member());
