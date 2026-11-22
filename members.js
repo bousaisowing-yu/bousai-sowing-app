@@ -204,11 +204,18 @@ async function refreshMembership() {
 function applyMemberUI() {
   const full = membershipReady && isFullMemberNow();
 
-  // 正会員タブは正会員（と管理者）にだけ見せる
-  if ($("projects-tab")) $("projects-tab").hidden = !full;
+  // 正会員タブは会員みんなに見せる。協働会員にはカギをかけて、中身は読み込まない
+  const showTab = membershipReady && (full || !!currentMember);
+  const locked = showTab && !full;
+  if ($("projects-tab")) $("projects-tab").hidden = !showTab;
+  if ($("projects-tab-lock")) $("projects-tab-lock").hidden = !locked;
+  if ($("projects-locked")) $("projects-locked").hidden = !locked;
+  if ($("projects-band")) $("projects-band").hidden = locked;
+  if ($("projects-panel")) $("projects-panel").hidden = locked;
   if ($("projects-area")) $("projects-area").hidden = !full;
+  if (!full && $("projects-list")) $("projects-list").innerHTML = "";
 
-  if (!full && $("projects-page") && !$("projects-page").hidden) {
+  if (!showTab && $("projects-page") && !$("projects-page").hidden) {
     switchTab("events");
   }
 

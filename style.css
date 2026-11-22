@@ -2987,3 +2987,51 @@ body.is-typing .page-top-button {
   font-size: 14px;
   font-weight: 700;
 }
+
+/* 協働会員：正会員タブにカギ */
+.tab-icon {
+  position: relative;
+}
+
+.tab-lock {
+  position: absolute;
+  top: -2px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #6b7a6a;
+  color: white;
+  box-shadow: 0 0 0 2px white;
+}
+
+.tab-icon .tab-lock svg {
+  width: 11px;
+  height: 11px;
+}
+
+.tab-lock[hidden],
+#projects-band[hidden],
+#projects-panel[hidden],
+.pj-locked[hidden] {
+  display: none !important;
+}
+
+.pj-locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.pj-locked p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #3d4a3c;
+}
