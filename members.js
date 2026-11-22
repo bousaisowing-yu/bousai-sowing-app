@@ -445,26 +445,18 @@ function renderProjectCard(project) {
       ${reportForm}
     </section>`;
 
-  // 「この事業のようす」：いまの動き＋ひとこと・手伝ってほしいこと・状況をひとつにまとめる
+  // 「この事業のようす」：いまの動き・次の予定・手伝ってほしいことを一度に入れて保存（担当者に通知）
   const mainBox = `
     <section class="pj-box pj-form-box">
-      ${pjBoxHead(PJ_ICONS.chart, "この事業のようす", editable ? "担当の方が書き直せます" : "")}
+      ${pjBoxHead(PJ_ICONS.chart, "この事業のようす", editable ? "まとめて入れて「保存」を押すと、担当者に通知されます" : "")}
       <h5 class="pj-sub">いまの動き</h5>
       <ul class="pj-checklist">${stageChecklist || '<li class="muted">まだ書かれていません。</li>'}</ul>
       ${editable ? `
-      <div class="pj-add-stage-head">
-        <label for="pj-new-stage-${escapeHTML(id)}">動きを書き足す</label>
-        <button type="button" class="pj-add-button" data-pj-action="add-stage" data-id="${escapeHTML(id)}">${PJ_ICONS.plus}追加</button>
-      </div>
-      <input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：備えリストメーカー作成中／12/5 ○○で打ち合わせ">
-      <p class="form-note">いまの動きは「追加」「済」「鉛筆」「×」を押すとすぐ保存されます。</p>` : ""}
-      ${editable ? `
-      <hr class="pj-sep">
-      ${isAdmin ? `
-      <label for="pj-name-${escapeHTML(id)}">事業の名前</label>
-      <input id="pj-name-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.name || "")}">` : ""}
-      <label for="pj-summary-${escapeHTML(id)}">どんな事業か（ひとこと）</label>
-      <textarea id="pj-summary-${escapeHTML(id)}" rows="2" lang="ja" placeholder="例：家庭の備えをいっしょに考えるリストを作って配る">${escapeHTML(project.summary || "")}</textarea>
+      <label for="pj-new-stage-${escapeHTML(id)}">新しい動き <small class="label-note">あれば</small></label>
+      ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：備えリストメーカー作成中">`)}
+      <label for="pj-next-plan-${escapeHTML(id)}">次の打ち合わせ・予定</label>
+      ${pjField(PJ_ICONS.calendar, `<input id="pj-next-date-${escapeHTML(id)}" type="date" class="pj-date-input" value="${escapeHTML(project.next_date || "")}" aria-label="日付">`)}
+      ${pjField(PJ_ICONS.pencil, `<input id="pj-next-plan-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.next_plan || "")}" placeholder="例：香里園で打ち合わせ">`)}
       <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
       ${pjField(PJ_ICONS.person, `<input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">`)}
       <div class="pj-status-row">
@@ -475,10 +467,22 @@ function renderProjectCard(project) {
         </select>
       </div>
       <label class="pj-inline-check">
-        <input id="pj-update-notify-${escapeHTML(id)}" type="checkbox" checked> 正会員に通知する
+        <input id="pj-update-notify-${escapeHTML(id)}" type="checkbox" checked> 担当者に通知する
       </label>
-      <button type="button" class="primary-button pj-wide-button" data-pj-action="save-project" data-id="${escapeHTML(id)}">${PJ_ICONS.save}ひとこと・手伝い・状況を保存</button>` : ""}
+      <button type="button" class="primary-button pj-wide-button" data-pj-action="save-project" data-id="${escapeHTML(id)}">${PJ_ICONS.save}まとめて保存</button>` : ""}
     </section>`;
+
+  // 事業の説明（ふだんは変えない）
+  const aboutBox = editable ? `
+    <section class="pj-box pj-form-box">
+      ${pjBoxHead(PJ_ICONS.briefcase, "事業の説明", "")}
+      ${isAdmin ? `
+      <label for="pj-name-${escapeHTML(id)}">事業の名前</label>
+      <input id="pj-name-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.name || "")}">` : ""}
+      <label for="pj-summary-${escapeHTML(id)}">どんな事業か</label>
+      <textarea id="pj-summary-${escapeHTML(id)}" rows="2" lang="ja" placeholder="例：家庭の備えをいっしょに考えるリストを作って配る">${escapeHTML(project.summary || "")}</textarea>
+      <button type="button" class="secondary-button pj-wide-button" data-pj-action="save-about" data-id="${escapeHTML(id)}">${PJ_ICONS.save}説明を保存</button>
+    </section>` : "";
 
   const leadsBox = isAdmin ? `
     <section class="pj-box pj-form-box">
@@ -525,6 +529,10 @@ function renderProjectCard(project) {
         </div>
       </div>
 
+      ${(project.next_date || project.next_plan)
+        ? `<p class="pj-next"><span class="pj-label">次の予定</span>${escapeHTML(formatShortDateJa(project.next_date))} ${escapeHTML(project.next_plan || "")}</p>`
+        : ""}
+
       ${project.help_wanted
         ? `<p class="pj-help">🙋 手伝ってほしいこと：${escapeHTML(project.help_wanted)}</p>`
         : ""}
@@ -542,6 +550,7 @@ function renderProjectCard(project) {
         <div class="pj-detail-body">
           ${mainBox}
           ${reportBox}
+          ${aboutBox}
           ${leadsBox}
           <button type="button" class="pj-close-button" data-pj-action="close-details" data-id="${escapeHTML(id)}">${PJ_ICONS.chevron}閉じる</button>
         </div>
@@ -556,31 +565,76 @@ function setProjectMessage(text, error = false) {
 
 async function saveProject(id) {
   const value = key => $(`pj-${key}-${id}`)?.value ?? "";
+  const project = allProjects.find(item => String(item.id) === String(id));
+  const button = document.querySelector(`[data-pj-action="save-project"][data-id="${CSS.escape(String(id))}"]`);
+  if (button) button.disabled = true;
 
+  try {
+    // 1. 新しい動きがあれば足す
+    const newLine = value("new-stage").trim();
+    if (newLine) {
+      const maxOrder = Math.max(0, ...projectStages
+        .filter(stage => String(stage.project_id) === String(id))
+        .map(stage => stage.sort_order || 0));
+      const { error: stageError } = await db.from("project_stages").insert({
+        project_id: id, title: newLine, sort_order: maxOrder + 1
+      });
+      if (stageError) throw stageError;
+    }
+
+    // 2. 次の予定・手伝ってほしいこと・状況
+    const nextDate = value("next-date") || null;
+    const nextPlan = value("next-plan").trim() || null;
+    const help = value("help").trim() || null;
+    const status = value("status");
+
+    const { error } = await db.from("projects").update({
+      status,
+      next_date: nextDate,
+      next_plan: nextPlan,
+      help_wanted: help,
+      updated_at: new Date().toISOString()
+    }).eq("id", id);
+    if (error) throw error;
+
+    // 3. 担当者に通知
+    if ($(`pj-update-notify-${id}`)?.checked) {
+      const parts = [];
+      if (newLine) parts.push(newLine);
+      if (nextPlan || nextDate) parts.push(`次：${formatShortDateJa(nextDate)} ${nextPlan || ""}`.trim());
+      if (help && help !== project?.help_wanted) parts.push(`手伝い募集：${help}`);
+      const note = await notifyMembers({
+        heading: `${project?.name || "事業"}が更新されました`,
+        message: parts.join("／") || `状況：${status}`,
+        url: `${getAppUrl()}#project-${id}`,
+        audience: "leads",
+        projectId: id
+      });
+      if (note.includes("送れませんでした")) alert("保存しました。" + note);
+    }
+
+    openProjectIds.add(String(id));
+    await loadProjects();
+
+  } catch (error) {
+    console.error(error);
+    setProjectMessage("保存できませんでした：" + error.message, true);
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function saveAbout(id) {
+  const value = key => $(`pj-${key}-${id}`)?.value ?? "";
   const changes = {
-    status: value("status"),
-    help_wanted: value("help").trim() || null,
     summary: value("summary").trim() || null,
     updated_at: new Date().toISOString()
   };
-
   const newName = value("name").trim();
   if (isAdmin && newName) changes.name = newName;
 
   const { error } = await db.from("projects").update(changes).eq("id", id);
-
-  if (error) return setProjectMessage("更新できませんでした：" + error.message, true);
-
-  if ($(`pj-update-notify-${id}`)?.checked) {
-    const project = allProjects.find(item => String(item.id) === String(id));
-    const note = await notifyMembers({
-      heading: "防災Sowing 事業の更新",
-      message: `${project?.name || "事業"}の様子が更新されました（${value("status")}）`,
-      url: `${getAppUrl()}#project-${id}`,
-      audience: "full"
-    });
-    if (note.includes("送れませんでした")) alert("更新しました。" + note);
-  }
+  if (error) return setProjectMessage("保存できませんでした：" + error.message, true);
 
   openProjectIds.add(String(id));
   await loadProjects();
@@ -1056,6 +1110,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     switch (button.dataset.pjAction) {
       case "save-project": saveProject(id); break;
+      case "save-about": saveAbout(id); break;
       case "add-stage": addStage(id); break;
       case "delete-stage": deleteStage(id); break;
       case "edit-stage": editStage(id); break;

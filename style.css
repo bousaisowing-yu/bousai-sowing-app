@@ -2875,3 +2875,7 @@ body.is-typing .page-top-button {
   color: var(--text);
   font-size: 14px;
 }
+
+.pj-box .pj-field + .pj-field {
+  margin-top: 6px;
+}

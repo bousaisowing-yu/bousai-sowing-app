@@ -1710,10 +1710,10 @@ function getAppUrl() {
 }
 
 // 結果を画面に出す一言を返す（失敗しても登録自体は済んでいる）
-async function notifyMembers({ heading, message, url, audience = "all" }) {
+async function notifyMembers({ heading, message, url, audience = "all", projectId = null }) {
   try {
     const { data, error } = await db.functions.invoke("send-push", {
-      body: { heading, message, url, audience }
+      body: { heading, message, url, audience, project_id: projectId }
     });
 
     if (error) {
@@ -1723,6 +1723,10 @@ async function notifyMembers({ heading, message, url, audience = "all" }) {
         if (body?.error) detail = body.error;
       } catch (_) { /* 本文が読めないときはそのまま */ }
       throw new Error(detail);
+    }
+
+    if (data && data.sent === false && data.reason === "no_leads") {
+      return "（ほかに担当者がいないため、通知は送りませんでした）";
     }
 
     if (data && data.sent === false) {
