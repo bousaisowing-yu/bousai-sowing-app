@@ -1564,3 +1564,404 @@ input[type="date"]::-webkit-date-and-time-value {
 @media (max-width: 380px) {
   .splash-hint { display: block; }
 }
+
+/* ==========================================
+   会員の入口（合言葉＋名前）
+   ========================================== */
+.member-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.member-gate[hidden] {
+  display: none;
+}
+
+body.gate-open {
+  overflow: hidden;
+}
+
+body.gate-open .tab-nav {
+  display: none;
+}
+
+.gate-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 24px 18px;
+  box-shadow: var(--shadow);
+}
+
+.gate-logo {
+  display: block;
+  width: 70%;
+  max-width: 240px;
+  margin: 0 auto 8px;
+}
+
+.gate-card h2 {
+  margin: 8px 0 4px;
+  text-align: center;
+  color: var(--green);
+}
+
+.gate-card .primary-button {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.gate-link {
+  display: block;
+  margin: 14px auto 0;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: underline;
+}
+
+.member-greeting {
+  margin: 10px 4px 0;
+  color: var(--green);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ==========================================
+   正会員ページ：事業の進み具合
+   ========================================== */
+#projects-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+#add-project-button {
+  margin-top: 14px;
+  width: 100%;
+}
+
+.project-card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+  background: var(--white);
+  scroll-margin-top: 16px;
+}
+
+.pj-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pj-name {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.pj-status {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pj-status-prep { background: #fff4d6; color: #8a5a00; }
+.pj-status-active { background: var(--green-soft); color: var(--green); }
+.pj-status-pause { background: #eef0f2; color: #5b6670; }
+.pj-status-done { background: #e3eefb; color: #1f5a9a; }
+
+.pj-summary {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.pj-label {
+  display: inline-block;
+  margin-right: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pj-leads {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 0 0;
+}
+
+.pj-lead-chip {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  font-size: 13px;
+}
+
+.pj-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pj-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: #e6ece6;
+  overflow: hidden;
+}
+
+.pj-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--green-light);
+  transition: width 0.3s;
+}
+
+.pj-percent {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.pj-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pj-step {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pj-step.done {
+  border-color: var(--green-light);
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.pj-step-mark {
+  font-weight: 700;
+}
+
+.pj-next,
+.pj-latest {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.pj-help {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fff4d6;
+  font-size: 14px;
+}
+
+.pj-details {
+  margin-top: 10px;
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+}
+
+.pj-details summary {
+  cursor: pointer;
+  color: var(--green);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.pj-details h4 {
+  margin: 14px 0 6px;
+  font-size: 14px;
+}
+
+.pj-checklist,
+.pj-reports {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pj-check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pj-check-row label,
+.pj-inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.pj-report {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.pj-report-head {
+  display: flex;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pj-report-body {
+  white-space: pre-wrap;
+  font-size: 14px;
+}
+
+.pj-report-image {
+  margin-top: 6px;
+  border-radius: 10px;
+  max-height: 220px;
+  object-fit: contain;
+}
+
+.pj-mini-button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--muted);
+  padding: 2px 10px;
+  font-size: 12px;
+}
+
+.pj-form {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--bg);
+}
+
+.pj-form h4 {
+  margin-top: 0;
+}
+
+.pj-form .primary-button,
+.pj-form .secondary-button {
+  margin-top: 10px;
+}
+
+.pj-row {
+  display: flex;
+  gap: 6px;
+}
+
+.pj-row .secondary-button {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.pj-lead-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+}
+
+/* 管理画面：会員一覧 */
+.member-admin-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.member-admin-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.member-admin-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-admin-name small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.member-admin-row select {
+  width: auto;
+  padding: 6px 8px;
+}
+
+.new-member-result {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--green-soft);
+  text-align: center;
+}
+
+.new-member-result p {
+  margin: 4px 0;
+}
+
+.member-code-big {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--green);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.member-code {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+}
+
+.member-admin-row {
+  flex-wrap: wrap;
+}
+
+.member-admin-actions {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+#full-gate .primary-button {
+  margin-top: 12px;
+  width: 100%;
+}

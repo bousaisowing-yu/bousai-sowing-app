@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=38">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -26,13 +26,13 @@
         serviceWorkerParam: { scope: "/bousai-sowing-app/" }
       });
 
-      // 自動でスライドプロンプト（通知許可のポップアップ）を表示させるコード
-      OneSignal.Slidedown.promptPush();
+      // 通知許可のお願いは、会員だと確認できてから members.js が出す
     });
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=31" defer></script>
+  <script src="app.js?v=38" defer></script>
+  <script src="members.js?v=38" defer></script>
 </head>
 
 <body>
@@ -56,6 +56,23 @@
       if (s) s.classList.add("hide");
     }, 20000);
   </script>
+  <!-- 会員の入口（会員コード） -->
+  <div id="member-gate" class="member-gate" hidden>
+    <div class="gate-card">
+      <img src="logo-sowing.png" alt="特定非営利活動法人 防災Sowing" class="gate-logo">
+      <h2>会員の方へ</h2>
+      <p class="muted">はじめに、防災Sowingからお渡しした「会員コード」（英数字8文字）を入力してください。次からは入力しなくても開けます。</p>
+
+      <label for="gate-code">会員コード</label>
+      <input id="gate-code" type="text" inputmode="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="12" placeholder="例：AB12CD34">
+
+      <button id="gate-join-button" class="primary-button" type="button">はじめる</button>
+      <p id="gate-message" aria-live="polite"></p>
+
+      <button id="gate-admin-button" class="gate-link" type="button">管理者の方はこちら</button>
+    </div>
+  </div>
+
   <header class="site-header">
     <div class="brand">
       <img src="logo-sowing.png" alt="特定非営利活動法人 防災Sowing" class="brand-logo">
@@ -74,6 +91,8 @@
       </div>
     </section>
 
+    <p id="member-greeting" class="member-greeting" hidden></p>
+
     <nav class="tab-nav" aria-label="メニュー">
       <button class="tab-button active" data-tab="events" type="button">
         <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M7 2.5v3.5M17 2.5v3.5"/><rect x="3" y="4.5" width="18" height="16.5" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path fill="currentColor" d="M3 8h18v2H3z"/><rect x="6.5" y="12.5" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="10.5" y="12.5" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="14.5" y="12.5" width="3" height="2.6" rx=".6" fill="currentColor"/></svg></span>
@@ -82,6 +101,10 @@
       <button class="tab-button" data-tab="news" type="button">
         <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" d="M6 16V10.5a6 6 0 0 1 12 0V16l1.8 2.2H4.2z"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M10 21h4"/></svg></span>
         <span class="tab-label">お知らせ</span>
+      </button>
+      <button class="tab-button" data-tab="projects" id="projects-tab" type="button" hidden>
+        <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+        <span class="tab-label">正会員</span>
       </button>
       <button class="tab-button" data-tab="admin" id="admin-tab" type="button" hidden>
         <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2.2"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M4.5 20.5c.8-3.6 3.9-6 7.5-6s6.7 2.4 7.5 6"/></svg></span>
@@ -125,6 +148,19 @@
       </div>
     </section>
 
+    <section id="projects-page" class="page" hidden>
+      <div class="panel">
+        <p class="eyebrow">FOR FULL MEMBERS</p>
+        <h2>事業の進み具合</h2>
+
+        <div id="projects-area" hidden>
+          <p class="muted">正会員のみなさんで進めている事業の様子です。「くわしく見る」を押すと、報告や段階の内容が見られます。</p>
+          <div id="projects-list"><p class="muted">読み込み中…</p></div>
+        </div>
+        <button id="add-project-button" class="secondary-button" type="button" hidden>＋ 事業を追加</button>
+      </div>
+    </section>
+
     <section id="admin-page" class="page" hidden>
       <div class="panel auth-panel">
         <p class="eyebrow">ADMINISTRATOR</p>
@@ -148,6 +184,7 @@
           <button type="button" class="admin-switch-button active" data-admin-section="events">イベント</button>
           <button type="button" class="admin-switch-button" data-admin-section="news">お知らせ</button>
           <button type="button" class="admin-switch-button" data-admin-section="hero">トップ画像</button>
+          <button type="button" class="admin-switch-button" data-admin-section="members">会員</button>
         </div>
 
         <!-- ▼ イベント登録・編集 -->
@@ -213,7 +250,7 @@
               <span class="option-tile-label">参加を募集</span>
             </label>
           </div>
-          <p class="form-note">通知は新しく登録したときだけ送られます。「参加を募集」を外すと、会員側の参加ボタンが出ません。</p>
+          <p class="form-note">「会員に通知」にチェックがあると、新しく登録したときも、内容を変えたときも会員に通知が届きます。誤字の直しなど小さな変更のときはチェックを外してください。「参加を募集」を外すと、会員側の参加ボタンが出ません。</p>
 
           <h3 class="form-heading">マーク <small>押して選ぶ・いくつでも</small></h3>
           <div class="tag-chips">
@@ -250,6 +287,13 @@
           <input id="announcement-title" type="text" lang="ja" autocorrect="on" placeholder="お知らせのタイトル">
           <label for="announcement-content">本文</label>
           <textarea id="announcement-content" lang="ja" autocorrect="on" rows="6" placeholder="お知らせの内容"></textarea>
+          <div class="option-tiles">
+            <label class="option-tile">
+              <input id="announcement-send-notification" type="checkbox" checked>
+              <span class="option-tile-icon">🔔</span>
+              <span class="option-tile-label">会員に通知</span>
+            </label>
+          </div>
           <button id="add-announcement-button" class="primary-button" type="button">お知らせを投稿</button>
           <p id="announcement-admin-message" aria-live="polite"></p>
           <p class="form-note">投稿したお知らせの削除は、「お知らせ」のページの各お知らせの下からできます。</p>
@@ -264,6 +308,28 @@
           <input id="hero-image-file" type="file" accept="image/*">
           <button id="save-hero-image-button" class="primary-button" type="button">トップ画像を保存</button>
           <p id="hero-image-message" aria-live="polite"></p>
+        </div>
+
+        <!-- ▼ 会員の管理 -->
+        <div class="panel admin-section" id="admin-section-members" hidden>
+          <p class="eyebrow">MEMBERS</p>
+          <h2>会員の管理</h2>
+
+          <h3 class="form-heading">会員を登録する</h3>
+          <p class="form-note">登録すると、その人専用の「会員コード」ができます。コードを本人に渡してください（LINEや紙でOK）。正会員で登録した人のコードなら、最初から正会員ページも見られます。</p>
+          <label for="new-member-name">お名前</label>
+          <input id="new-member-name" type="text" lang="ja" placeholder="例：防災 太郎">
+          <label>会員の種類</label>
+          <div class="member-type-choice">
+            <label class="pj-inline-check"><input type="radio" name="new-member-type" value="協働会員" checked> 協働会員</label>
+            <label class="pj-inline-check"><input type="radio" name="new-member-type" value="正会員"> 正会員 <small class="label-note">事業の進み具合も見られる</small></label>
+          </div>
+          <button id="add-member-button" class="primary-button" type="button">会員を登録</button>
+          <div id="new-member-result" class="new-member-result" hidden></div>
+
+          <h3 class="form-heading">会員一覧</h3>
+          <p class="form-note">会員の種類（協働会員／正会員）の切り替え、コードの確認・作り直し、削除ができます。退会した人を削除すると、その人の端末では使えなくなります。</p>
+          <div id="members-admin-list"><p class="muted">読み込み中…</p></div>
         </div>
 
         <div class="logout-row">
