@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=56">
+  <link rel="stylesheet" href="style.css?v=57">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -50,8 +50,8 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=56" defer></script>
-  <script src="members.js?v=56" defer></script>
+  <script src="app.js?v=57" defer></script>
+  <script src="members.js?v=57" defer></script>
 </head>
 
 <body>
@@ -218,16 +218,6 @@
 
       <div id="admin-functions" hidden>
 
-        <!-- 会員からどう見えるかを確かめる（見るだけ・保存はされない） -->
-        <div class="panel preview-panel">
-          <h3>会員からの見え方を確かめる</h3>
-          <p class="muted">ボタンを押すと、その会員から見える画面に切り替わります。見るだけで、何を押しても保存はされません。</p>
-          <div class="preview-buttons">
-            <button type="button" class="secondary-button" data-preview-as="協働会員">協働会員の見え方</button>
-            <button type="button" class="secondary-button" data-preview-as="正会員">正会員の見え方</button>
-          </div>
-        </div>
-
         <!-- 管理メニューの切り替え -->
         <div class="admin-switch" role="tablist">
           <button type="button" class="admin-switch-button active" data-admin-section="events">イベント</button>
@@ -383,6 +373,16 @@
 
         <div class="logout-row">
           <button id="logout-button" class="secondary-button" type="button">管理者ログアウト</button>
+        </div>
+
+        <!-- 会員からどう見えるかを確かめる（見るだけ・保存はされない） -->
+        <div class="panel preview-panel">
+          <h3>会員からの見え方を確かめる</h3>
+          <p class="muted">ボタンを押すと、その会員から見える画面に切り替わります。見るだけで、何を押しても保存はされません。</p>
+          <div class="preview-buttons">
+            <button type="button" class="secondary-button" data-preview-as="協働会員">協働会員の見え方</button>
+            <button type="button" class="secondary-button" data-preview-as="正会員">正会員の見え方</button>
+          </div>
         </div>
       </div>
     </section>
