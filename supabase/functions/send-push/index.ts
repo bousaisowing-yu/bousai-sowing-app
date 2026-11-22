@@ -7,7 +7,7 @@
 // 必要な Secrets（Supabase の Edge Functions → Secrets で設定）
 //   ONESIGNAL_APP_ID        … OneSignal の App ID
 //   ONESIGNAL_REST_API_KEY  … OneSignal で新しく作った REST API キー（os_v2_app_ で始まる）
-// SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY は Supabase が自動で用意します。
+// SUPABASE_URL は Supabase が自動で用意します。
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -41,19 +41,22 @@ Deno.serve(async (req) => {
     return reply({ error: "通知の鍵がまだ設定されていません（Secrets を確認してください）" }, 500);
   }
 
-  // 1. 呼び出した人が管理者か確かめる
-  const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (!token) return reply({ error: "ログインが必要です" }, 401);
+  // 1. 呼び出した人を確かめる
+  //    アプリから届いた本人のログイン情報（と公開用キー）をそのまま使って、
+  //    データベースの関数 is_admin() / is_full_member() に聞く
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (!/^Bearer\s+\S+/i.test(authHeader)) return reply({ error: "ログインが必要です" }, 401);
 
-  const admin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false } },
-  );
+  const apiKeyHeader =
+    req.headers.get("apikey") ??
+    Deno.env.get("SUPABASE_ANON_KEY") ??
+    Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ??
+    "";
 
-  const { data: userData, error: userError } = await admin.auth.getUser(token);
-  const user = userData?.user;
-  if (userError || !user) return reply({ error: "ログインが必要です" }, 401);
+  const asCaller = createClient(Deno.env.get("SUPABASE_URL")!, apiKeyHeader, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: authHeader } },
+  });
 
   // 2. 送る内容を読み取る
   let input: Record<string, unknown> = {};
@@ -66,22 +69,16 @@ Deno.serve(async (req) => {
   // audience: "all"（全員）または "full"（正会員だけ）
   const audience = input.audience === "full" ? "full" : "all";
 
-  const { data: adminRow, error: adminError } = await admin
-    .from("admin_users")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (adminError) return reply({ error: "管理者の確認に失敗しました" }, 500);
+  const { data: isAdmin, error: adminError } = await asCaller.rpc("is_admin");
+  if (adminError) {
+    console.error("is_admin error", adminError);
+    return reply({ error: `管理者の確認に失敗しました（${adminError.message}）` }, 500);
+  }
 
-  if (!adminRow) {
+  if (!isAdmin) {
     // 正会員は「正会員だけ」への通知（事業の報告など）なら送れる
-    const { data: device } = await admin
-      .from("member_devices")
-      .select("members(member_type, active)")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    const member = (device as { members?: { member_type?: string; active?: boolean } } | null)?.members;
-    if (audience !== "full" || member?.member_type !== "正会員" || member?.active === false) {
+    const { data: isFull } = await asCaller.rpc("is_full_member");
+    if (audience !== "full" || !isFull) {
       return reply({ error: "この通知を送る権限がありません" }, 403);
     }
   }
