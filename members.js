@@ -831,6 +831,7 @@ async function loadMembersAdmin() {
         </select>
         <div class="member-admin-actions">
           <button type="button" class="pj-mini-button" data-member-action="copy-invite" data-id="${escapeHTML(member.id)}">案内文</button>
+          <button type="button" class="pj-mini-button" data-member-action="rename" data-id="${escapeHTML(member.id)}">名前を変える</button>
           <button type="button" class="pj-mini-button" data-member-action="reset-code" data-id="${escapeHTML(member.id)}">コード作り直し</button>
           <button type="button" class="pj-mini-button" data-member-action="delete" data-id="${escapeHTML(member.id)}">削除</button>
         </div>
@@ -972,6 +973,37 @@ async function changeMemberType(memberId, memberType) {
   await loadMembersAdmin();
 }
 
+async function renameMember(memberId) {
+  const member = allMembersForAdmin.find(item => item.id === memberId);
+  if (!member) return;
+
+  const input = prompt(`${member.display_name} さんの新しい名前を入れてください`, member.display_name);
+  if (input === null) return;
+  const newName = input.replace(/[\s　]+/g, " ").trim();
+  if (!newName || newName === member.display_name) return;
+  if (newName.length > 40) {
+    alert("名前が長すぎます（40文字まで）");
+    return;
+  }
+
+  const { error } = await db.from("members")
+    .update({ display_name: newName })
+    .eq("id", memberId);
+
+  if (error) {
+    alert("変更できませんでした：" + error.message);
+    return;
+  }
+
+  // これまでのイベントの「参加する」も新しい名前にそろえる（取り消しができるように）
+  const { error: responseError } = await db.from("event_responses")
+    .update({ member_name: newName })
+    .eq("member_name", member.display_name);
+  if (responseError) console.warn("参加の記録の名前は変えられませんでした:", responseError.message);
+
+  await loadMembersAdmin();
+}
+
 async function deleteMember(memberId) {
   const member = allMembersForAdmin.find(item => item.id === memberId);
   if (!confirm(`${member?.display_name || "この会員"} さんを削除しますか？その人の端末ではアプリが使えなくなります。`)) return;
@@ -1068,6 +1100,7 @@ document.addEventListener("DOMContentLoaded", () => {
   membersRoot?.addEventListener("click", event => {
     const button = event.target.closest("button[data-member-action]");
     if (button?.dataset.memberAction === "delete") deleteMember(button.dataset.id);
+    if (button?.dataset.memberAction === "rename") renameMember(button.dataset.id);
     if (button?.dataset.memberAction === "reset-code") resetMemberCode(button.dataset.id);
     if (button?.dataset.memberAction === "copy-invite") {
       const member = allMembersForAdmin.find(item => item.id === button.dataset.id);
