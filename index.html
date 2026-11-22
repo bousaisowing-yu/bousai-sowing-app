@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=41">
+  <link rel="stylesheet" href="style.css?v=42">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -23,7 +23,26 @@
       await OneSignal.init({
         appId: "b7cd02f4-3342-452f-b261-d3bff69f03a9",
         serviceWorkerPath: "/bousai-sowing-app/OneSignalSDKWorker.js",
-        serviceWorkerParam: { scope: "/bousai-sowing-app/" }
+        serviceWorkerParam: { scope: "/bousai-sowing-app/" },
+        // 通知の許可をお願いする時の案内（英語のままにならないよう日本語で指定）
+        promptOptions: {
+          slidedown: {
+            prompts: [{
+              type: "push",
+              autoPrompt: false,
+              text: {
+                actionMessage: "防災Sowingからイベントやお知らせの通知を受け取りますか？",
+                acceptButton: "受け取る",
+                cancelButton: "あとで"
+              }
+            }]
+          }
+        },
+        // 通知をONにした直後に届くお礼の通知
+        welcomeNotification: {
+          title: "防災Sowing",
+          message: "通知がONになりました。イベントやお知らせをお届けします。"
+        }
       });
 
       // 通知許可のお願いは、会員だと確認できてから members.js が出す
@@ -31,8 +50,8 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=41" defer></script>
-  <script src="members.js?v=41" defer></script>
+  <script src="app.js?v=42" defer></script>
+  <script src="members.js?v=42" defer></script>
 </head>
 
 <body>
