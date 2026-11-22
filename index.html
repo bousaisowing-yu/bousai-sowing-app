@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=40">
+  <link rel="stylesheet" href="style.css?v=41">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -31,8 +31,8 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=40" defer></script>
-  <script src="members.js?v=40" defer></script>
+  <script src="app.js?v=41" defer></script>
+  <script src="members.js?v=41" defer></script>
 </head>
 
 <body>
@@ -113,29 +113,34 @@
     </nav>
 
     <section id="events-page" class="page">
-      <div class="panel">
-        <p class="eyebrow">EVENT INFORMATION</p>
-        <h2>イベント</h2>
-        <p class="muted">イベントの詳細を確認し、参加予定や「気になる」を登録できます。</p>
+      <div class="panel events-head">
+        <p class="events-head-label">イベント情報</p>
+        <div class="events-head-row">
+          <span class="events-head-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M7 2.5v3.5M17 2.5v3.5"/><rect x="3" y="4.5" width="18" height="16.5" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path fill="currentColor" d="M3 8h18v2H3z"/><rect x="6.5" y="12" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="10.5" y="12" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="14.5" y="12" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="6.5" y="16" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="10.5" y="16" width="3" height="2.6" rx=".6" fill="currentColor"/></svg></span>
+          <div>
+            <h2>イベント</h2>
+            <p class="muted">イベントの詳細を確認し、参加予定や「気になる」を登録できます。</p>
+          </div>
+        </div>
 
         <div class="event-view-switch">
           <button id="event-list-view-button" class="primary-button" type="button">一覧</button>
-          <button id="event-calendar-view-button" class="secondary-button" type="button">カレンダー</button>
+          <button id="event-calendar-view-button" class="secondary-button" type="button"><span class="btn-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M7 2.5v3.5M17 2.5v3.5"/><rect x="3" y="4.5" width="18" height="16.5" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path fill="currentColor" d="M3 8h18v2H3z"/><rect x="6.5" y="12" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="10.5" y="12" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="14.5" y="12" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="6.5" y="16" width="3" height="2.6" rx=".6" fill="currentColor"/><rect x="10.5" y="16" width="3" height="2.6" rx=".6" fill="currentColor"/></svg></span>カレンダー</button>
         </div>
+      </div>
 
-        <div id="events-list"><p class="muted">読み込み中…</p></div>
+      <div id="events-list"><p class="muted">読み込み中…</p></div>
 
-        <div id="events-calendar" hidden>
-          <div class="calendar-header">
-            <button id="calendar-prev" type="button" aria-label="前の月">‹</button>
-            <h3 id="calendar-month"></h3>
-            <button id="calendar-next" type="button" aria-label="次の月">›</button>
-          </div>
-          <div id="calendar-grid" class="calendar-grid"></div>
-          <div class="calendar-selected-events">
-            <h3 id="calendar-selected-date">日付を選択してください</h3>
-            <div id="calendar-day-events"></div>
-          </div>
+      <div id="events-calendar" class="panel events-calendar-panel" hidden>
+        <div class="calendar-header">
+          <button id="calendar-prev" type="button" aria-label="前の月">‹</button>
+          <h3 id="calendar-month"></h3>
+          <button id="calendar-next" type="button" aria-label="次の月">›</button>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+        <div class="calendar-selected-events">
+          <h3 id="calendar-selected-date">日付を選択してください</h3>
+          <div id="calendar-day-events"></div>
         </div>
       </div>
     </section>

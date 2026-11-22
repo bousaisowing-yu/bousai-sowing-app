@@ -81,6 +81,10 @@ ICONS.share = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" str
 
 ICONS.clock = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 7v5l3.5 2"/></svg>';
 
+ICONS.trash = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 6h17M9 6V3.8h6V6M5.8 6l1 14.2h10.4l1-14.2M10 10.5v6M14 10.5v6"/></svg>';
+
+ICONS.pencil = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" d="M4 20l1-4.5L16.2 4.3a2 2 0 0 1 2.8 0l.7.7a2 2 0 0 1 0 2.8L8.5 19zM14 6.5l3.5 3.5"/></svg>';
+
 const WEEKDAYS_JA = ["日", "月", "火", "水", "木", "金", "土"];
 
 // "2026-12-19" → "2026年12月19日（土）"
@@ -876,6 +880,10 @@ function setHeroImage(url) {
   const preview = $("hero-image-preview");
 
   if (heroImage) heroImage.src = url;
+
+  // 写真が設定されているときは、写真の上に文字を重ねる見た目にする
+  const heroPanel = document.querySelector(".hero-panel");
+  if (heroPanel) heroPanel.classList.add("has-photo");
   if (preview) preview.src = url;
 }
 
@@ -990,7 +998,7 @@ function renderEventCards(events) {
         <button class="secondary-button"
           data-action="cancel"
           data-id="${escapeHTML(event.id)}">
-          参加を取り消す
+          ${ICONS.trash}参加を取り消す
         </button>
       `
       : recruitmentEnabled
@@ -998,13 +1006,13 @@ function renderEventCards(events) {
         <button class="primary-button"
           data-action="join"
           data-id="${escapeHTML(event.id)}">
-          参加する
+          ${ICONS.calendar}参加する
         </button>
 
         <button class="secondary-button"
           data-action="cancel"
           data-id="${escapeHTML(event.id)}">
-          参加を取り消す
+          ${ICONS.trash}参加を取り消す
         </button>
       `
       : `
@@ -1016,6 +1024,7 @@ function renderEventCards(events) {
     return `
       <article class="event-card ec" id="event-${escapeHTML(event.id)}">
         <div class="ec-band">
+          <span class="ec-band-icon">${ICONS.calendar}</span>
           <span class="ec-band-date">${escapeHTML(formatEventBandDate(event.event_date))}</span>
           <span class="ec-band-time">${escapeHTML(formatEventTimeJa(event.event_time))}</span>
           <button type="button" class="ec-share"
@@ -1083,13 +1092,13 @@ function renderEventCards(events) {
               <button class="secondary-button"
                 data-action="edit-event"
                 data-id="${escapeHTML(event.id)}">
-                編集
+                ${ICONS.pencil}編集
               </button>
 
               <button class="secondary-button danger-button"
                 data-action="delete-event"
                 data-id="${escapeHTML(event.id)}">
-                削除
+                ${ICONS.trash}削除
               </button>
             `
             : ""}
