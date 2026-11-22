@@ -1283,29 +1283,82 @@ function askMemberName(confirmText, promptText) {
   return typed ? typed.trim() : "";
 }
 
-async function joinEvent(id) {
-  const event = allEvents.find(item =>
-    String(item.id) === String(id)
-  );
+/* 参加登録：自分で参加／代わりに登録（子どもなど携帯を持っていない人）を切り替える */
+const PROXY_SUFFIX = name => `（${name}さんの代理）`;
 
+function myMemberName() {
+  return (typeof currentMember !== "undefined" && currentMember?.display_name) || "";
+}
+
+function closeJoinPanels() {
+  document.querySelectorAll(".ec-join-panel").forEach(panel => panel.remove());
+}
+
+function checkCanJoin(event) {
   if (event && event.recruitment_enabled === false) {
     alert("このイベントは現在、参加募集を行っていません。");
-    return;
+    return false;
   }
-
   const deadlineInfo = event ? getDeadlineInfo(event) : null;
-
   if (deadlineInfo && deadlineInfo.closed) {
     alert("このイベントの参加受付は締め切りました。");
-    return;
+    return false;
   }
+  return true;
+}
 
-  const name = askMemberName(
-    "として参加登録しますか？",
-    "参加する方のお名前を入力してください。"
-  );
+function openJoinPanel(id, mode = "self") {
+  const event = allEvents.find(item => String(item.id) === String(id));
+  if (!checkCanJoin(event)) return;
 
-  if (!name) return;
+  const card = document.getElementById(`event-${id}`);
+  const actions = card?.querySelector(".ec-actions");
+  if (!actions) return;
+
+  closeJoinPanels();
+  const me = myMemberName();
+  const sid = escapeHTML(String(id));
+
+  const panel = document.createElement("div");
+  panel.className = "ec-join-panel";
+  panel.innerHTML = `
+    <p class="ec-join-title">だれが参加しますか？</p>
+    <div class="ec-join-switch" role="group" aria-label="参加の登録のしかた">
+      <button type="button" class="${mode === "self" ? "active" : ""}" data-action="join-mode" data-mode="self" data-id="${sid}">自分が参加</button>
+      <button type="button" class="${mode === "proxy" ? "active" : ""}" data-action="join-mode" data-mode="proxy" data-id="${sid}">代わりに登録</button>
+    </div>
+    ${mode === "proxy"
+      ? `<p class="ec-join-note">18歳未満の子や、携帯を持っていない人の分を登録できます。</p>
+         <label for="ec-join-name-${sid}">参加する人のお名前</label>
+         <input id="ec-join-name-${sid}" type="text" lang="ja" autocomplete="off" placeholder="例：竹内 たろう">`
+      : me
+        ? `<p class="ec-join-note"><strong>${escapeHTML(me)} さん</strong>として参加登録します。</p>`
+        : `<label for="ec-join-name-${sid}">参加する方のお名前</label>
+           <input id="ec-join-name-${sid}" type="text" lang="ja" autocomplete="off">`}
+    <div class="ec-join-buttons">
+      <button type="button" class="primary-button" data-action="join-submit" data-mode="${mode}" data-id="${sid}">参加を登録</button>
+      <button type="button" class="secondary-button" data-action="join-close">やめる</button>
+    </div>
+  `;
+  actions.after(panel);
+  panel.querySelector("input")?.focus();
+}
+
+async function submitJoin(id, mode) {
+  const event = allEvents.find(item => String(item.id) === String(id));
+  if (!checkCanJoin(event)) return;
+
+  const me = myMemberName();
+  const typed = ($(`ec-join-name-${id}`)?.value || "").trim();
+  let name = "";
+
+  if (mode === "proxy") {
+    if (!typed) return alert("参加する人のお名前を入れてください。");
+    name = me ? `${typed}${PROXY_SUFFIX(me)}` : typed;
+  } else {
+    name = me || typed;
+    if (!name) return alert("お名前を入れてください。");
+  }
 
   const { error } = await db.from("event_responses").upsert({
     event_id: id,
@@ -1320,26 +1373,60 @@ async function joinEvent(id) {
     return;
   }
 
-  alert("参加登録しました！");
-
+  closeJoinPanels();
+  alert(mode === "proxy" ? `${typed} さんの参加を登録しました！` : "参加登録しました！");
   await loadEvents();
 }
 
-async function cancelEvent(id) {
-  const event = allEvents.find(item =>
-    String(item.id) === String(id)
-  );
+async function joinEvent(id) {
+  openJoinPanel(id, "self");
+}
 
+function openCancelPanel(id) {
+  const event = allEvents.find(item => String(item.id) === String(id));
   if (event && event.recruitment_enabled === false) {
     alert("このイベントは現在、参加募集を行っていません。");
     return;
   }
 
-  const name = askMemberName(
-    "の参加を取り消しますか？",
-    "参加登録したときのお名前を入力してください。"
-  );
+  const me = myMemberName();
+  if (!me) return cancelByName(id, askMemberName("", "参加登録したときのお名前を入力してください。"));
 
+  // 自分の分と、自分が代わりに登録した分
+  const suffix = PROXY_SUFFIX(me);
+  const mine = getEventMembers(id)
+    .map(response => response.member_name)
+    .filter(name => name === me || name.endsWith(suffix));
+
+  if (!mine.length) {
+    alert("このイベントに、あなたが登録した参加はありません。");
+    return;
+  }
+
+  const card = document.getElementById(`event-${id}`);
+  const actions = card?.querySelector(".ec-actions");
+  if (!actions) return;
+
+  closeJoinPanels();
+  const sid = escapeHTML(String(id));
+  const panel = document.createElement("div");
+  panel.className = "ec-join-panel";
+  panel.innerHTML = `
+    <p class="ec-join-title">どの参加を取り消しますか？</p>
+    <div class="ec-cancel-list">
+      ${mine.map(name => `
+        <button type="button" class="secondary-button" data-action="cancel-name" data-id="${sid}" data-name="${escapeHTML(name)}">
+          ${ICONS.trash}${escapeHTML(name === me ? `${me} さん（自分）` : `${name.slice(0, -suffix.length)} さん`)}
+        </button>`).join("")}
+    </div>
+    <div class="ec-join-buttons">
+      <button type="button" class="secondary-button" data-action="join-close">やめる</button>
+    </div>
+  `;
+  actions.after(panel);
+}
+
+async function cancelByName(id, name) {
   if (!name) return;
 
   const { error } = await db.from("event_responses")
@@ -1352,9 +1439,13 @@ async function cancelEvent(id) {
     return;
   }
 
+  closeJoinPanels();
   alert("参加を取り消しました。");
-
   await loadEvents();
+}
+
+async function cancelEvent(id) {
+  openCancelPanel(id);
 }
 
 /* -----------------------------
@@ -2584,6 +2675,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (action === "cancel") {
       cancelEvent(id);
+      return;
+    }
+
+    if (action === "join-mode") {
+      openJoinPanel(id, button.dataset.mode);
+      return;
+    }
+
+    if (action === "join-submit") {
+      submitJoin(id, button.dataset.mode);
+      return;
+    }
+
+    if (action === "cancel-name") {
+      cancelByName(id, button.dataset.name);
+      return;
+    }
+
+    if (action === "join-close") {
+      closeJoinPanels();
       return;
     }
 
