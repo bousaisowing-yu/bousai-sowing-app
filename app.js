@@ -2793,3 +2793,26 @@ document.addEventListener("DOMContentLoaded", async () => {
   hideSplash();
   openSharedEvent();
 });
+
+/* 時間の数字を打ち終わったら、次の欄へ自動で進む
+   （時：2けた、または 3〜9 の1けた／分：2けた、または 6〜9 の1けた） */
+document.addEventListener("input", event => {
+  const box = event.target;
+  if (!(box instanceof HTMLInputElement) || !box.classList.contains("time-box")) return;
+  if (event.inputType && !event.inputType.startsWith("insert")) return;
+
+  const digits = String(box.value || "")
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/\D/g, "");
+  const max = Number(box.dataset.max || 59);
+  const full = digits.length >= 2 || (digits.length === 1 && Number(digits) * 10 > max);
+  if (!full) return;
+
+  const fields = [...document.querySelectorAll("input, textarea, select")]
+    .filter(el => !el.disabled && el.type !== "hidden" && el.offsetParent !== null);
+  const next = fields[fields.indexOf(box) + 1];
+  if (next) {
+    next.focus();
+    if (typeof next.select === "function" && next.classList.contains("time-box")) next.select();
+  }
+});

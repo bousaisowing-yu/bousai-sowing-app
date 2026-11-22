@@ -118,7 +118,7 @@ function splitProgressTime(time) {
 function progressTimeFieldsHtml(idOf, time) {
   const parts = splitProgressTime(time);
   const box = (key, label, max) =>
-    `<input id="${idOf(key)}" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" value="${escapeHTML(parts[key])}" aria-label="${label}" data-max="${max}">`;
+    `<input id="${idOf(key)}" class="time-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" value="${escapeHTML(parts[key])}" aria-label="${label}" data-max="${max}">`;
   return `
     <div class="pj-time" role="group" aria-label="時間（なくてもよい）">
       <span class="pj-time-part">${box("sh", "始まりの時", 23)}時${box("sm", "始まりの分", 59)}分<span class="pj-time-sep">〜</span></span>
