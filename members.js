@@ -26,6 +26,43 @@ const PROJECT_STATUS_CLASS = {
   "完了": "pj-status-done"
 };
 
+/* 事業ごとのマーク（名前の言葉で選ぶ） */
+const PJ_ICONS = {
+  briefcase: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 3h6a2 2 0 0 1 2 2v1.5h2.5A2.5 2.5 0 0 1 22 9v3.2h-8.2v-1h-3.6v1H2V9a2.5 2.5 0 0 1 2.5-2.5H7V5a2 2 0 0 1 2-2zm0 2v1.5h6V5zM2 13.8h8.2v1.4h3.6v-1.4H22V18.5A2.5 2.5 0 0 1 19.5 21h-15A2.5 2.5 0 0 1 2 18.5z"/></svg>',
+  helmet: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 3.5h2a1 1 0 0 1 1 1v.7A7.5 7.5 0 0 1 19.5 12v1.5H21a1 1 0 0 1 1 1V16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1.5a1 1 0 0 1 1-1h1.5V12A7.5 7.5 0 0 1 10 5.2v-.7a1 1 0 0 1 1-1zM6.5 19.5h11l-1 1.5h-9z"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 4 5v6.2c0 5 3.4 9.4 8 10.8 4.6-1.4 8-5.8 8-10.8V5zm-1.3 6h2.6v3h3v2.6h-3v3h-2.6v-3h-3V11h3z"/></svg>',
+  hands: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 9.5 5 6l3.2 1.2L11 6l1.5.6L8.4 10a1.4 1.4 0 0 0 1.9 2l3.4-2.7 6.3 5.4-1 1.1a1.2 1.2 0 0 1-1.7.1l-.4-.3.2.3a1.2 1.2 0 0 1-1.7 1.6l-.6-.5.3.4a1.2 1.2 0 0 1-1.8 1.4l-.7-.6a1.2 1.2 0 0 1-1.8 1.3L4.5 14.6zM13 5.5l2.4-.9 3.6 1.4 4 3.5-2.6 4.4-6.6-5.6-2.7 2.1a.5.5 0 0 1-.6-.7z"/></svg>',
+  people: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="3.3" fill="currentColor"/><circle cx="5" cy="8.5" r="2.5" fill="currentColor"/><circle cx="19" cy="8.5" r="2.5" fill="currentColor"/><path fill="currentColor" d="M6 20v-2.5c0-3.3 2.7-6 6-6s6 2.7 6 6V20zM0.5 19v-1.6c0-2.3 1.8-4.2 4.2-4.2.6 0 1.1.1 1.6.3A7.4 7.4 0 0 0 4.6 18v1zM23.5 19v-1.6c0-2.3-1.8-4.2-4.2-4.2-.6 0-1.1.1-1.6.3a7.4 7.4 0 0 1 1.7 4.5v1z"/></svg>',
+  sprout: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 21v-7.2C6.4 13.8 3 10.9 3 6V5h1c4 0 6.7 2.1 7.6 5.3C12.6 6.6 15.5 4 20 4h1v1c0 5-3.4 8-8 8.2V21z"/></svg>',
+  person: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="4" fill="currentColor"/><path fill="currentColor" d="M4 21c0-4.4 3.6-7.5 8-7.5s8 3.1 8 7.5z"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  note: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-5 4V5a2 2 0 0 1 2-2zm3 5v2h10V8zm0 4v2h7v-2z" transform="translate(-2 0)"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M7 2.5v3.5M17 2.5v3.5"/><rect x="3" y="4.5" width="18" height="16.5" rx="3" fill="none" stroke="currentColor" stroke-width="2.2"/><path fill="currentColor" d="M3 8h18v2H3z"/></svg>',
+  pencil: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" d="M4 20l1-4.5L16.2 4.3a2 2 0 0 1 2.8 0l.7.7a2 2 0 0 1 0 2.8L8.5 19zM14 6.5l3.5 3.5"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 6h17M9 6V3.8h6V6M5.8 6l1 14.2h10.4l1-14.2M10 10.5v6M14 10.5v6"/></svg>',
+  save: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 2v4h8V5zm5 8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path stroke="white" stroke-width="2.4" stroke-linecap="round" d="M12 7.5v9M7.5 12h9"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>'
+};
+
+function projectIconFor(name) {
+  const text = String(name || "");
+  if (/備え|備蓄|提供/.test(text)) return PJ_ICONS.briefcase;
+  if (/解体|トレ|訓練/.test(text)) return PJ_ICONS.helmet;
+  if (/教育|学習|講習/.test(text)) return PJ_ICONS.shield;
+  if (/ボランティア|サポート|支援/.test(text)) return PJ_ICONS.hands;
+  if (/自治会|地域|町内/.test(text)) return PJ_ICONS.people;
+  return PJ_ICONS.sprout;
+}
+
+function pjField(icon, inputHtml) {
+  return `<div class="pj-field"><span class="pj-field-icon">${icon}</span>${inputHtml}</div>`;
+}
+
+function pjBoxHead(icon, title, note) {
+  return `<div class="pj-box-head"><span class="pj-box-icon">${icon}</span><div><h4>${title}</h4>${note ? `<p>${note}</p>` : ""}</div></div>`;
+}
+
 function isFullMemberNow() {
   return isAdmin || currentMember?.member_type === "正会員";
 }
@@ -383,7 +420,7 @@ function renderProjectCard(project) {
 
   const reportForm = editable ? `
     <div class="pj-form">
-      <h4>報告を書く</h4>
+      <label for="pj-report-${escapeHTML(id)}">報告を書く</label>
       <textarea id="pj-report-${escapeHTML(id)}" rows="3" lang="ja" placeholder="例：11/20 に打ち合わせをして、会場が決まりました。"></textarea>
       <input id="pj-report-image-${escapeHTML(id)}" type="file" accept="image/*">
       <label class="pj-inline-check">
@@ -392,77 +429,101 @@ function renderProjectCard(project) {
       <button type="button" class="primary-button" data-pj-action="add-report" data-id="${escapeHTML(id)}">報告を載せる</button>
     </div>` : "";
 
-  const editForm = editable ? `
-    <div class="pj-form">
-      <h4>様子を更新する</h4>
-      ${isAdmin ? `
-      <label>事業の名前</label>
-      <input id="pj-name-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.name || "")}">` : ""}
-      <label>状況</label>
-      <select id="pj-status-${escapeHTML(id)}">
-        ${PROJECT_STATUSES.map(status =>
-          `<option value="${status}" ${status === project.status ? "selected" : ""}>${status}</option>`).join("")}
-      </select>
-      <label>次の予定の日付</label>
-      <input id="pj-next-date-${escapeHTML(id)}" type="date" value="${escapeHTML(project.next_date || "")}">
-      <label>次の予定</label>
-      <input id="pj-next-plan-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.next_plan || "")}" placeholder="例：打ち合わせ">
-      <label>手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
-      <input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">
-      <label>どんな事業か（ひとこと）</label>
-      <textarea id="pj-summary-${escapeHTML(id)}" rows="2" lang="ja">${escapeHTML(project.summary || "")}</textarea>
-      <label>段階を足す</label>
-      <div class="pj-row">
-        <input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：会場の予約">
-        <button type="button" class="secondary-button" data-pj-action="add-stage" data-id="${escapeHTML(id)}">追加</button>
+  // 進捗・予定（段階のチェックと、段階を足す）
+  const stageBox = `
+    <section class="pj-box">
+      ${pjBoxHead(PJ_ICONS.chart, "進捗・予定", editable ? "終わった段階にチェックを入れてください" : "")}
+      <ul class="pj-checklist">${stageChecklist || '<li class="muted">段階はまだありません。</li>'}</ul>
+      ${editable ? `
+      <div class="pj-add-stage-head">
+        <label for="pj-new-stage-${escapeHTML(id)}">段階を足す</label>
+        <button type="button" class="pj-add-button" data-pj-action="add-stage" data-id="${escapeHTML(id)}">${PJ_ICONS.plus}追加</button>
       </div>
+      <input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：会場の予約">` : ""}
+    </section>`;
+
+  const reportBox = `
+    <section class="pj-box">
+      ${pjBoxHead(PJ_ICONS.note, "活動の報告", "")}
+      <ul class="pj-reports">${reportList}</ul>
+      ${reportForm}
+    </section>`;
+
+  const editBox = editable ? `
+    <section class="pj-box pj-form-box">
+      ${pjBoxHead(PJ_ICONS.briefcase, "事業情報", "事業の様子を入力してください")}
+      ${isAdmin ? `
+      <label for="pj-name-${escapeHTML(id)}">事業の名前</label>
+      <input id="pj-name-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.name || "")}">` : ""}
+      <div class="pj-status-row">
+        <label for="pj-status-${escapeHTML(id)}">状況</label>
+        <select id="pj-status-${escapeHTML(id)}">
+          ${PROJECT_STATUSES.map(status =>
+            `<option value="${status}" ${status === project.status ? "selected" : ""}>${status}</option>`).join("")}
+        </select>
+      </div>
+      <label for="pj-next-date-${escapeHTML(id)}">次の予定の日付</label>
+      ${pjField(PJ_ICONS.calendar, `<input id="pj-next-date-${escapeHTML(id)}" type="date" value="${escapeHTML(project.next_date || "")}">`)}
+      <label for="pj-next-plan-${escapeHTML(id)}">次の予定</label>
+      ${pjField(PJ_ICONS.pencil, `<input id="pj-next-plan-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.next_plan || "")}" placeholder="例：打ち合わせ">`)}
+      <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
+      ${pjField(PJ_ICONS.person, `<input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">`)}
+      <label for="pj-summary-${escapeHTML(id)}">どんな事業か（ひとこと）</label>
+      <textarea id="pj-summary-${escapeHTML(id)}" rows="2" lang="ja" placeholder="事業の内容をかんたんに">${escapeHTML(project.summary || "")}</textarea>
       <label class="pj-inline-check">
         <input id="pj-update-notify-${escapeHTML(id)}" type="checkbox" checked> 正会員に通知する
       </label>
-      <button type="button" class="primary-button" data-pj-action="save-project" data-id="${escapeHTML(id)}">更新する</button>
-    </div>` : "";
+      <button type="button" class="primary-button pj-wide-button" data-pj-action="save-project" data-id="${escapeHTML(id)}">${PJ_ICONS.save}更新する</button>
+    </section>` : "";
 
-  const leadsForm = isAdmin ? `
-    <div class="pj-form">
-      <h4>担当者（管理者だけが変更できます）</h4>
-      <label>表示する担当者の名前 <small class="label-note">「、」で区切って何人でも</small></label>
-      <input id="pj-lead-names-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(leadNames.join("、"))}" placeholder="例：山田、佐藤、鈴木">
+  const leadsBox = isAdmin ? `
+    <section class="pj-box pj-form-box">
+      ${pjBoxHead(PJ_ICONS.person, "担当者", "管理者だけが変更できます")}
+      <label for="pj-lead-names-${escapeHTML(id)}">表示する担当者の名前 <small class="label-note">「、」で区切って何人でも</small></label>
+      ${pjField(PJ_ICONS.person, `<input id="pj-lead-names-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(leadNames.join("、"))}" placeholder="例：山田、佐藤、鈴木">`)}
       <label>アプリでこの事業を更新できる人 <small class="label-note">正会員から選ぶ</small></label>
       <div class="pj-lead-options">
         ${fullMembersForAdmin().length
           ? fullMembersForAdmin().map(member => `
-            <label class="pj-inline-check">
+            <label class="pj-lead-pill">
               <input type="checkbox" data-pj-lead="${escapeHTML(id)}" value="${escapeHTML(member.id)}"
                 ${projectLeads.some(lead => String(lead.project_id) === id && lead.member_id === member.id) ? "checked" : ""}>
-              ${escapeHTML(member.display_name)}
+              <span>${escapeHTML(member.display_name)}</span>
             </label>`).join("")
           : '<p class="form-note">正会員がまだいません。「会員」の画面で正会員にすると、ここに出ます。</p>'}
       </div>
-      <button type="button" class="primary-button" data-pj-action="save-leads" data-id="${escapeHTML(id)}">担当者を保存</button>
-      <button type="button" class="secondary-button danger-button" data-pj-action="delete-project" data-id="${escapeHTML(id)}">この事業を削除</button>
+    </section>
+    <div class="pj-bottom-buttons">
+      <button type="button" class="secondary-button danger-button" data-pj-action="delete-project" data-id="${escapeHTML(id)}">${PJ_ICONS.trash}この事業を削除</button>
+      <button type="button" class="primary-button" data-pj-action="save-leads" data-id="${escapeHTML(id)}">${PJ_ICONS.save}担当者を保存</button>
     </div>` : "";
 
   return `
     <article class="project-card" id="project-${escapeHTML(id)}">
-      <div class="pj-head">
-        <h3 class="pj-name">${escapeHTML(project.name)}</h3>
-        <span class="pj-status ${statusClass}">${escapeHTML(project.status)}</span>
+      <div class="pj-top">
+        <span class="pj-icon">${projectIconFor(project.name)}</span>
+        <div class="pj-main">
+          <div class="pj-head">
+            <h3 class="pj-name">${escapeHTML(project.name)}</h3>
+            <span class="pj-status ${statusClass}">${escapeHTML(project.status)}</span>
+          </div>
+
+          <p class="pj-leads">
+            <span class="pj-label">担当</span>
+            ${leadNames.length
+              ? leadNames.map(name => `<span class="pj-lead-chip">${escapeHTML(name)}</span>`).join("")
+              : '<span class="pj-undecided">未定</span>'}
+          </p>
+
+          <div class="pj-progress" aria-label="進み具合 ${percent}%">
+            <div class="pj-bar"><span style="width:${percent}%"></span></div>
+            <span class="pj-percent">${percent}%</span>
+          </div>
+          ${stages.length ? `<ol class="pj-steps">${stepChips}</ol>` : ""}
+        </div>
       </div>
 
       ${project.summary ? `<p class="pj-summary">${escapeHTML(project.summary)}</p>` : ""}
-
-      <p class="pj-leads">
-        <span class="pj-label">担当</span>
-        ${leadNames.length
-          ? leadNames.map(name => `<span class="pj-lead-chip">${escapeHTML(name)}</span>`).join("")
-          : '<span class="muted">未定</span>'}
-      </p>
-
-      <div class="pj-progress" aria-label="進み具合 ${percent}%">
-        <div class="pj-bar"><span style="width:${percent}%"></span></div>
-        <span class="pj-percent">${percent}%</span>
-      </div>
-      ${stages.length ? `<ol class="pj-steps">${stepChips}</ol>` : ""}
 
       ${(project.next_date || project.next_plan)
         ? `<p class="pj-next"><span class="pj-label">次の予定</span>${escapeHTML(formatShortDateJa(project.next_date))} ${escapeHTML(project.next_plan || "")}</p>`
@@ -477,14 +538,18 @@ function renderProjectCard(project) {
         : ""}
 
       <details class="pj-details" data-project-id="${escapeHTML(id)}" ${openProjectIds.has(id) ? "open" : ""}>
-        <summary>くわしく見る</summary>
-        <h4>段階</h4>
-        <ul class="pj-checklist">${stageChecklist || '<li class="muted">段階はまだありません。</li>'}</ul>
-        <h4>活動の報告</h4>
-        <ul class="pj-reports">${reportList}</ul>
-        ${reportForm}
-        ${editForm}
-        ${leadsForm}
+        <summary>
+          <span class="pj-sum-chevron">${PJ_ICONS.chevron}</span>
+          <span class="pj-sum-open">くわしく見る</span>
+          <span class="pj-sum-close">閉じる</span>
+        </summary>
+        <div class="pj-detail-body">
+          ${stageBox}
+          ${reportBox}
+          ${editBox}
+          ${leadsBox}
+          <button type="button" class="pj-close-button" data-pj-action="close-details" data-id="${escapeHTML(id)}">${PJ_ICONS.chevron}閉じる</button>
+        </div>
       </details>
     </article>`;
 }
@@ -940,6 +1005,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("add-project-button")?.addEventListener("click", addProject);
 
+  $("projects-back-button")?.addEventListener("click", () => {
+    switchTab("events");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  // ページトップボタン（下までスクロールしたときだけ出す）
+  const pageTop = $("page-top-button");
+  if (pageTop) {
+    const updatePageTop = () => { pageTop.hidden = window.scrollY < 500; };
+    window.addEventListener("scroll", updatePageTop, { passive: true });
+    pageTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+    updatePageTop();
+  }
+
   const projectsRoot = $("projects-list");
 
   projectsRoot?.addEventListener("click", event => {
@@ -956,6 +1035,13 @@ document.addEventListener("DOMContentLoaded", () => {
       case "delete-report": deleteReport(id); break;
       case "save-leads": saveLeads(id); break;
       case "delete-project": deleteProject(id); break;
+      case "close-details": {
+        const card = $(`project-${id}`);
+        const details = card?.querySelector("details");
+        if (details) details.open = false;
+        card?.scrollIntoView({ behavior: "smooth", block: "start" });
+        break;
+      }
     }
   });
 
