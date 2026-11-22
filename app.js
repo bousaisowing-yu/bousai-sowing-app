@@ -1603,13 +1603,19 @@ async function addEvent() {
       throw error;
     }
 
-    // 新規登録かつ「会員に通知」にチェックがあるときだけ通知を送る
-    if (!editingEventId && sendNotification) {
-      notifyNote = await notifyMembers({
-        heading: "防災Sowing 新着イベント",
-        message: `新しいイベント「${title}」が登録されました！`,
-        url: newEventId ? getEventShareUrl(newEventId) : getAppUrl()
-      });
+    // 「会員に通知」にチェックがあれば、新規登録・変更のどちらでも通知を送る
+    if (sendNotification) {
+      notifyNote = editingEventId
+        ? await notifyMembers({
+            heading: "防災Sowing イベントの変更",
+            message: `イベント「${title}」の内容が変わりました。`,
+            url: getEventShareUrl(editingEventId)
+          })
+        : await notifyMembers({
+            heading: "防災Sowing 新着イベント",
+            message: `新しいイベント「${title}」が登録されました！`,
+            url: newEventId ? getEventShareUrl(newEventId) : getAppUrl()
+          });
     }
 
     const wasEditing = !!editingEventId;

@@ -333,6 +333,9 @@ function renderProjectCard(project) {
         <input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：会場の予約">
         <button type="button" class="secondary-button" data-pj-action="add-stage" data-id="${escapeHTML(id)}">追加</button>
       </div>
+      <label class="pj-inline-check">
+        <input id="pj-update-notify-${escapeHTML(id)}" type="checkbox" checked> 正会員に通知する
+      </label>
       <button type="button" class="primary-button" data-pj-action="save-project" data-id="${escapeHTML(id)}">更新する</button>
     </div>` : "";
 
@@ -422,6 +425,18 @@ async function saveProject(id) {
 
   if (error) return setProjectMessage("更新できませんでした：" + error.message, true);
 
+  if ($(`pj-update-notify-${id}`)?.checked) {
+    const project = allProjects.find(item => String(item.id) === String(id));
+    const note = await notifyMembers({
+      heading: "防災Sowing 事業の更新",
+      message: `${project?.name || "事業"}の様子が更新されました（${value("status")}）`,
+      url: `${getAppUrl()}#project-${id}`,
+      audience: "full"
+    });
+    if (note.includes("送れませんでした")) alert("更新しました。" + note);
+  }
+
+  openProjectIds.add(String(id));
   await loadProjects();
 }
 
