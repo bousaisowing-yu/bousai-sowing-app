@@ -2856,3 +2856,26 @@ body.is-typing .page-top-button {
   width: 16px;
   height: 16px;
 }
+
+/* 「この事業のようす」ひとつのカードにまとめた見出し */
+.pj-box .pj-sub {
+  margin: 6px 0 2px;
+  color: var(--green);
+  font-size: 15px;
+}
+
+.pj-sep {
+  margin: 16px 0 4px;
+  border: none;
+  border-top: 1.5px dashed var(--border);
+}
+
+.pj-main .pj-summary {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.pj-box .pj-field + .pj-field {
+  margin-top: 6px;
+}
