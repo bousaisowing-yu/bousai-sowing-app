@@ -2915,3 +2915,36 @@ body.is-typing .page-top-button {
   width: 18px;
   height: 18px;
 }
+
+/* 時間：数字だけの小さな枠 */
+.pj-time {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  padding: 6px 8px;
+  font-size: 15px;
+  color: #3d4a3c;
+}
+
+.pj-box .pj-field .pj-time input {
+  flex: 0 0 auto;
+  width: 2.3em;
+  margin: 0 2px;
+  padding: 6px 0;
+  border: 1.5px solid #d3dfd2;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.pj-time-part {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.pj-time-sep {
+  margin-left: 4px;
+}

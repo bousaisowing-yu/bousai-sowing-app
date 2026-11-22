@@ -102,6 +102,49 @@ function parseProgressTitle(title) {
   return { date, time, place, text: rest };
 }
 
+/* 時間は数字だけ入れる：［14］時［00］分 〜 ［16］時［30］分 */
+function splitProgressTime(time) {
+  const one = String.raw`(午前|午後)?(\d{1,2})(?:[:：](\d{1,2})|時(?:(\d{1,2})分|(半))?)`;
+  const m = String(time || "").match(new RegExp(`^${one}(?:\\s*[〜~～\\-ー]\\s*(?:${one})?)?`));
+  if (!m) return { sh: "", sm: "", eh: "", em: "" };
+  const hour = (ampm, h) => (h === undefined ? "" : String(Number(h) + (ampm === "午後" && Number(h) < 12 ? 12 : 0)));
+  const minute = (a, b, half, h) => (h === undefined ? "" : String(a ?? b ?? (half ? "30" : "00")).padStart(2, "0"));
+  return {
+    sh: hour(m[1], m[2]), sm: minute(m[3], m[4], m[5], m[2]),
+    eh: hour(m[6], m[7]), em: minute(m[8], m[9], m[10], m[7])
+  };
+}
+
+function progressTimeFieldsHtml(idOf, time) {
+  const parts = splitProgressTime(time);
+  const box = (key, label, max) =>
+    `<input id="${idOf(key)}" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" autocomplete="off" value="${escapeHTML(parts[key])}" aria-label="${label}" data-max="${max}">`;
+  return `
+    <div class="pj-time" role="group" aria-label="時間（なくてもよい）">
+      <span class="pj-time-part">${box("sh", "始まりの時", 23)}時${box("sm", "始まりの分", 59)}分<span class="pj-time-sep">〜</span></span>
+      <span class="pj-time-part">${box("eh", "終わりの時", 23)}時${box("em", "終わりの分", 59)}分</span>
+    </div>
+  `;
+}
+
+/* 入れた数字を「14時00分〜16時30分」にする。おかしいときは null */
+function readProgressTime(valueOf) {
+  const num = key => String(valueOf(key) || "")
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/\D/g, "");
+  const sh = num("sh"), sm = num("sm"), eh = num("eh"), em = num("em");
+  const one = (h, m) => {
+    if (!h) return m ? null : "";
+    if (Number(h) > 23 || (m && Number(m) > 59)) return null;
+    return `${Number(h)}時${String(Number(m || 0)).padStart(2, "0")}分`;
+  };
+  const start = one(sh, sm);
+  const end = one(eh, em);
+  if (start === null || end === null) return null;
+  if (!start) return end ? null : "";
+  return end ? `${start}〜${end}` : start;
+}
+
 let editingStageId = null;
 
 function pjField(icon, inputHtml) {
@@ -486,7 +529,7 @@ function renderProjectCard(project) {
     <li class="pj-check-row pj-stage-edit">
       <div class="pj-stage-edit-fields">
         ${pjField(PJ_ICONS.calendar, `<input id="pj-edit-date-${sid}" type="date" value="${escapeHTML(parts.date)}" aria-label="日付">`)}
-        ${pjField(PJ_ICONS.clock, `<input id="pj-edit-time-${sid}" type="text" inputmode="text" lang="ja" value="${escapeHTML(parts.time)}" placeholder="時間（例：14:00〜16:00）" aria-label="時間">`)}
+        ${pjField(PJ_ICONS.clock, progressTimeFieldsHtml(key => `pj-edit-${key}-${sid}`, parts.time))}
         ${pjField(PJ_ICONS.pin, `<input id="pj-edit-place-${sid}" type="text" lang="ja" value="${escapeHTML(parts.place)}" placeholder="場所" aria-label="場所">`)}
         ${pjField(PJ_ICONS.pencil, `<input id="pj-edit-text-${sid}" type="text" lang="ja" value="${escapeHTML(parts.text)}" placeholder="やること" aria-label="やること">`)}
         <div class="pj-stage-edit-buttons">
@@ -555,7 +598,7 @@ function renderProjectCard(project) {
       ${editable ? `
       <label for="pj-new-stage-${escapeHTML(id)}">進捗を足す <small class="label-note">日付・時間・場所は予定があるときだけ</small></label>
       ${pjField(PJ_ICONS.calendar, `<input id="pj-new-date-${escapeHTML(id)}" type="date" class="pj-date-input" aria-label="日付（なくてもよい）">`)}
-      ${pjField(PJ_ICONS.clock, `<input id="pj-new-time-${escapeHTML(id)}" type="text" inputmode="text" lang="ja" placeholder="時間（例：14:00〜16:00）" aria-label="時間（なくてもよい）">`)}
+      ${pjField(PJ_ICONS.clock, progressTimeFieldsHtml(key => `pj-new-${key}-${escapeHTML(id)}`, ""))}
       ${pjField(PJ_ICONS.pin, `<input id="pj-new-place-${escapeHTML(id)}" type="text" lang="ja" placeholder="場所（例：寝屋川市役所）" aria-label="場所（なくてもよい）">`)}
       ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="やること（例：打ち合わせ／備えリストメーカー作成中）">`)}
       <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
@@ -666,7 +709,11 @@ async function saveProject(id) {
     // 1. 新しい動き（日付があれば頭に付ける）と、前の版の「次の予定」を動きに移す
     const newText = value("new-stage").trim();
     const newDate = value("new-date");
-    const newTime = value("new-time").trim();
+    const newTime = readProgressTime(key => value(`new-${key}`));
+    if (newTime === null) {
+      if (button) button.disabled = false;
+      return setProjectMessage("時間の数字を見直してください（時は0〜23、分は0〜59。始まりの時から入れてください）。", true);
+    }
     const newLine = buildProgressTitle({
       date: newDate,
       time: newTime,
@@ -787,9 +834,12 @@ async function saveEditStage(stageId) {
   const text = value("text").trim();
   if (!text) return setProjectMessage("やることを入れてください。", true);
 
+  const time = readProgressTime(value);
+  if (time === null) return setProjectMessage("時間の数字を見直してください（時は0〜23、分は0〜59。始まりの時から入れてください）。", true);
+
   const title = buildProgressTitle({
     date: value("date"),
-    time: value("time").trim(),
+    time,
     place: value("place").trim(),
     text
   });
