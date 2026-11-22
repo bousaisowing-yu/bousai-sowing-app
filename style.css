@@ -1965,3 +1965,32 @@ body.gate-open .tab-nav {
   margin-top: 12px;
   width: 100%;
 }
+
+.invite-preview {
+  margin-top: 10px;
+  text-align: left;
+}
+
+.invite-preview summary {
+  cursor: pointer;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.invite-preview pre {
+  margin: 8px 0 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--white);
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.new-member-result .primary-button {
+  width: 100%;
+  margin-top: 8px;
+}
