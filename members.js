@@ -419,7 +419,7 @@ function renderProjectCard(project) {
 
   const statusClass = PROJECT_STATUS_CLASS[project.status] || "pj-status-prep";
 
-  // カードに出す「いまの動き」（終わったものは下にうすく、新しい3つまで）
+  // カードに出す「進捗状況」（終わったものは下にうすく、新しい3つまで）
   const recentDone = doneStages.slice(-3).reverse();
   const nowList = (activeStages.length || recentDone.length)
     ? `<ul class="pj-now-list">
@@ -480,18 +480,16 @@ function renderProjectCard(project) {
       ${reportForm}
     </section>`;
 
-  // 「この事業のようす」：いまの動き・次の予定・手伝ってほしいことを一度に入れて保存（担当者に通知）
+  // 「この事業のようす」：進捗状況・次の予定・手伝ってほしいことを一度に入れて保存（担当者に通知）
   const mainBox = `
     <section class="pj-box pj-form-box">
       ${pjBoxHead(PJ_ICONS.chart, "この事業のようす", editable ? "まとめて入れて「保存」を押すと、担当者に通知されます" : "")}
-      <h5 class="pj-sub">いまの動き</h5>
+      <h5 class="pj-sub">進捗状況</h5>
       <ul class="pj-checklist">${stageChecklist || '<li class="muted">まだ書かれていません。</li>'}</ul>
       ${editable ? `
-      <label for="pj-new-stage-${escapeHTML(id)}">新しい動き <small class="label-note">あれば</small></label>
-      ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：備えリストメーカー作成中">`)}
-      <label for="pj-next-plan-${escapeHTML(id)}">次の打ち合わせ・予定</label>
-      ${pjField(PJ_ICONS.calendar, `<input id="pj-next-date-${escapeHTML(id)}" type="date" class="pj-date-input" value="${escapeHTML(project.next_date || "")}" aria-label="日付">`)}
-      ${pjField(PJ_ICONS.pencil, `<input id="pj-next-plan-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.next_plan || "")}" placeholder="例：香里園で打ち合わせ">`)}
+      <label for="pj-new-stage-${escapeHTML(id)}">進捗を足す <small class="label-note">日付は予定があるときだけ</small></label>
+      ${pjField(PJ_ICONS.calendar, `<input id="pj-new-date-${escapeHTML(id)}" type="date" class="pj-date-input" aria-label="日付（なくてもよい）">`)}
+      ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：香里園で打ち合わせ／備えリストメーカー作成中">`)}
       <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
       ${pjField(PJ_ICONS.person, `<input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">`)}
       <div class="pj-status-row">
@@ -558,14 +556,14 @@ function renderProjectCard(project) {
           </p>
 
           <div class="pj-now">
-            <p class="pj-now-label">いまの動き</p>
+            <p class="pj-now-label">進捗状況</p>
             ${nowList}
           </div>
         </div>
       </div>
 
       ${(project.next_date || project.next_plan)
-        ? `<p class="pj-next"><span class="pj-label">次の予定</span>${escapeHTML(formatShortDateJa(project.next_date))} ${escapeHTML(project.next_plan || "")}</p>`
+        ? `<p class="pj-next"><span class="pj-label">予定</span>${escapeHTML(formatShortDateJa(project.next_date))} ${escapeHTML(project.next_plan || "")}</p>`
         : ""}
 
       ${project.help_wanted
@@ -605,28 +603,35 @@ async function saveProject(id) {
   if (button) button.disabled = true;
 
   try {
-    // 1. 新しい動きがあれば足す
-    const newLine = value("new-stage").trim();
-    if (newLine) {
-      const maxOrder = Math.max(0, ...projectStages
-        .filter(stage => String(stage.project_id) === String(id))
-        .map(stage => stage.sort_order || 0));
+    // 1. 新しい動き（日付があれば頭に付ける）と、前の版の「次の予定」を動きに移す
+    const newText = value("new-stage").trim();
+    const newDate = value("new-date");
+    const newLine = newText ? `${newDate ? formatShortDateJa(newDate) + " " : ""}${newText}` : "";
+
+    const lines = [];
+    if (project?.next_plan || project?.next_date) {
+      lines.push(`${formatShortDateJa(project.next_date)} ${project.next_plan || ""}`.trim());
+    }
+    if (newLine) lines.push(newLine);
+
+    let maxOrder = Math.max(0, ...projectStages
+      .filter(stage => String(stage.project_id) === String(id))
+      .map(stage => stage.sort_order || 0));
+    for (const title of lines.filter(Boolean)) {
       const { error: stageError } = await db.from("project_stages").insert({
-        project_id: id, title: newLine, sort_order: maxOrder + 1
+        project_id: id, title, sort_order: ++maxOrder
       });
       if (stageError) throw stageError;
     }
 
-    // 2. 次の予定・手伝ってほしいこと・状況
-    const nextDate = value("next-date") || null;
-    const nextPlan = value("next-plan").trim() || null;
+    // 2. 手伝ってほしいこと・状況
     const help = value("help").trim() || null;
     const status = value("status");
 
     const { error } = await db.from("projects").update({
       status,
-      next_date: nextDate,
-      next_plan: nextPlan,
+      next_date: null,
+      next_plan: null,
       help_wanted: help,
       updated_at: new Date().toISOString()
     }).eq("id", id);
@@ -636,7 +641,6 @@ async function saveProject(id) {
     if ($(`pj-update-notify-${id}`)?.checked) {
       const parts = [];
       if (newLine) parts.push(newLine);
-      if (nextPlan || nextDate) parts.push(`次：${formatShortDateJa(nextDate)} ${nextPlan || ""}`.trim());
       if (help && help !== project?.help_wanted) parts.push(`手伝い募集：${help}`);
       const note = await notifyMembers({
         heading: `${project?.name || "事業"}が更新されました`,
@@ -711,7 +715,7 @@ async function editStage(stageId) {
 }
 
 async function deleteStage(stageId) {
-  if (!confirm("この動きを消しますか？")) return;
+  if (!confirm("この進捗を消しますか？")) return;
   const { error } = await db.from("project_stages").delete().eq("id", stageId);
   if (error) return setProjectMessage("消せませんでした：" + error.message, true);
   await loadProjects();
