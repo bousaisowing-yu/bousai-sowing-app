@@ -93,6 +93,9 @@ function applyMemberUI() {
     }
   }
 
+  // 会員でなくなったら（ログアウトなど）通知ボタンも隠す
+  if (!currentMember && $("push-enable-box")) $("push-enable-box").hidden = true;
+
   if ($("add-project-button")) $("add-project-button").hidden = !isAdmin;
 
   if (full) loadProjects();
@@ -181,13 +184,79 @@ function linkOneSignal() {
       }
 
       // 管理画面で「入室済み・通知ON/OFF」が分かるように記録する
-      const report = () => reportMyDevice(!!OneSignal.User?.PushSubscription?.optedIn);
+      const report = () => {
+        reportMyDevice(!!OneSignal.User?.PushSubscription?.optedIn);
+        updatePushButton(OneSignal);
+      };
       report();
       OneSignal.User?.PushSubscription?.addEventListener?.("change", report);
+      OneSignal.Notifications?.addEventListener?.("permissionChange", report);
+      setupPushButton(OneSignal);
     } catch (error) {
       console.error("通知の設定ができませんでした:", error);
     }
   });
+}
+
+/* 「あとで」を押した人が、あとから自分で通知をONにできるボタン */
+function updatePushButton(OneSignal) {
+  const box = $("push-enable-box");
+  if (!box) return;
+  const on = !!OneSignal.Notifications?.permission &&
+    !!OneSignal.User?.PushSubscription?.optedIn;
+  box.hidden = on || !currentMember;
+}
+
+let pushButtonReady = false;
+function setupPushButton(OneSignal) {
+  const button = $("push-enable-btn");
+  const help = $("push-enable-help");
+  if (!button || pushButtonReady) return;
+  pushButtonReady = true;
+
+  button.addEventListener("click", async () => {
+    if (help) help.hidden = true;
+
+    // 携帯の確認で「許可しない」を選んだ場合は、アプリからはもう聞けない
+    if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+      if (help) {
+        help.textContent = isIOSDevice()
+          ? "通知が止められています。iPhoneの「設定」→「通知」→「防災Sowing」を開き、「通知を許可」をONにしてください。"
+          : "通知が止められています。ブラウザやスマホの設定で、このアプリの通知を「許可」にしてください。";
+        help.hidden = false;
+      }
+      return;
+    }
+
+    if (typeof Notification === "undefined" && isIOSDevice()) {
+      if (help) {
+        help.textContent = "iPhoneでは、ホーム画面に追加した「防災Sowing」のアイコンから開くと、通知をONにできます。";
+        help.hidden = false;
+      }
+      return;
+    }
+
+    button.disabled = true;
+    try {
+      if (!OneSignal.Notifications.permission) {
+        await OneSignal.Notifications.requestPermission();
+      }
+      if (OneSignal.Notifications.permission && !OneSignal.User.PushSubscription.optedIn) {
+        await OneSignal.User.PushSubscription.optIn();
+      }
+    } catch (error) {
+      console.error("通知をONにできませんでした:", error);
+    } finally {
+      button.disabled = false;
+      updatePushButton(OneSignal);
+      reportMyDevice(!!OneSignal.User?.PushSubscription?.optedIn);
+    }
+  });
+}
+
+function isIOSDevice() {
+  return /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
 async function reportMyDevice(pushEnabled) {
@@ -737,8 +806,9 @@ function buildInviteMessage(name, code, memberType) {
     "",
     "④ 「会員コード」に上のコードを入れて「はじめる」を押します",
     "",
-    "⑤ 「通知を受け取りますか？」と出たら「許可」を押してください",
+    "⑤ 「通知を受け取りますか？」と出たら「受け取る」を押し、続けて出る確認で「許可」を押してください",
     "イベントやお知らせの通知が届くようになります。",
+    "（「あとで」を押した場合も、画面上の「通知を受け取る」ボタンからいつでもONにできます）",
     ...(memberType === "正会員"
       ? ["", "正会員の方は、下のメニューの「正会員」から、事業の進み具合も見られます。"]
       : []),
