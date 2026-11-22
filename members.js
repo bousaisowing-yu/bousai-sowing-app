@@ -655,6 +655,7 @@ async function loadMembersAdmin() {
           <option value="正会員" ${member.member_type === "正会員" ? "selected" : ""}>正会員</option>
         </select>
         <div class="member-admin-actions">
+          <button type="button" class="pj-mini-button" data-member-action="copy-invite" data-id="${escapeHTML(member.id)}">案内文</button>
           <button type="button" class="pj-mini-button" data-member-action="reset-code" data-id="${escapeHTML(member.id)}">コード作り直し</button>
           <button type="button" class="pj-mini-button" data-member-action="delete" data-id="${escapeHTML(member.id)}">削除</button>
         </div>
@@ -664,32 +665,71 @@ async function loadMembersAdmin() {
   if (allProjects.length) renderProjects();
 }
 
+// LINE などにそのまま送れる案内文
+function buildInviteMessage(name, code, memberType) {
+  const typeLabel = memberType === "正会員" ? "正会員" : "協働会員";
+
+  return [
+    `${name} さん`,
+    "",
+    "防災Sowing 会員専用アプリのご案内です。",
+    `${name} さんの${typeLabel}用の会員コードは`,
+    `【 ${formatMemberCode(code)} 】`,
+    "です。",
+    "",
+    "▼はじめ方",
+    "① 下のURLを Safari または Chrome で開いてください",
+    "https://bousaisowing-yu.github.io/bousai-sowing-app/",
+    "（LINEの中で開いた場合は、画面の「…」などから「ブラウザで開く」を選んでください）",
+    "",
+    "② ホーム画面に追加します",
+    "・iPhone：画面下の共有ボタン（四角から↑が出ているマーク）→「ホーム画面に追加」→「追加」",
+    "・Android：右上の「︙」→「ホーム画面に追加」（または「アプリをインストール」）",
+    "",
+    "③ ホーム画面にできた「防災Sowing」のアイコンから開きます",
+    "",
+    "④ 「会員コード」に上のコードを入れて「はじめる」を押します",
+    "",
+    "⑤ 「通知を受け取りますか？」と出たら「許可」を押してください",
+    "イベントやお知らせの通知が届くようになります。",
+    ...(memberType === "正会員"
+      ? ["", "正会員の方は、下のメニューの「正会員」から、事業の進み具合も見られます。"]
+      : []),
+    "",
+    "次からはコードを入れなくても開けます。",
+    "分からないことがあれば、気軽に聞いてください。",
+    "",
+    "特定非営利活動法人 防災Sowing"
+  ].join("\n");
+}
+
+async function copyInviteMessage(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    alert("案内文をコピーしました。LINEなどに貼り付けて送ってください。");
+  } catch (_) {
+    prompt("この文をコピーしてください", text);
+  }
+}
+
 function showNewMemberCode(name, code, memberType) {
   const box = $("new-member-result");
   if (!box) return;
+
+  const text = buildInviteMessage(name, code, memberType);
 
   box.hidden = false;
   box.innerHTML = `
     <p><strong>${escapeHTML(name)}</strong> さんの${memberType ? escapeHTML(memberType) + "用の" : ""}会員コード</p>
     <p class="member-code-big">${escapeHTML(formatMemberCode(code))}</p>
-    <p class="form-note">このコードとアプリのURLを本人に伝えてください。会員一覧からもあとで確認できます。</p>
-    <button type="button" class="secondary-button" id="copy-member-message">伝える文をコピー</button>`;
+    <button type="button" class="primary-button" id="copy-member-message">案内文をコピー</button>
+    <details class="invite-preview">
+      <summary>送る文を見る</summary>
+      <pre>${escapeHTML(text)}</pre>
+    </details>
+    <p class="form-note">会員一覧の「案内文」からも、あとでコピーできます。</p>`;
 
-  $("copy-member-message").addEventListener("click", async () => {
-    const text =
-      `${name} さん\n防災Sowing 会員アプリのご案内です。\n` +
-      `① 次のURLを開いてください\n${getAppUrl()}\n` +
-      `② 「会員コード」に ${formatMemberCode(code)} を入力してください\n` +
-      `③ 通知の「許可」を押すと、イベントやお知らせが届きます\n` +
-      `※iPhoneの方は、共有ボタンから「ホーム画面に追加」してから開くと通知が届きます。`;
-
-    try {
-      await navigator.clipboard.writeText(text);
-      alert("コピーしました。LINEなどに貼り付けて送ってください。");
-    } catch (_) {
-      prompt("この文をコピーしてください", text);
-    }
-  });
+  $("copy-member-message").addEventListener("click", () => copyInviteMessage(text));
 }
 
 async function addMember() {
@@ -826,6 +866,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const button = event.target.closest("button[data-member-action]");
     if (button?.dataset.memberAction === "delete") deleteMember(button.dataset.id);
     if (button?.dataset.memberAction === "reset-code") resetMemberCode(button.dataset.id);
+    if (button?.dataset.memberAction === "copy-invite") {
+      const member = allMembersForAdmin.find(item => item.id === button.dataset.id);
+      const code = member && memberCodesForAdmin[member.id];
+      if (member && code) {
+        copyInviteMessage(buildInviteMessage(member.display_name, code, member.member_type));
+      } else {
+        alert("この会員のコードがありません。「コード作り直し」でコードを作ってください。");
+      }
+    }
   });
 
   // 通知から「#project-…」で開いたとき、その事業を表示する
