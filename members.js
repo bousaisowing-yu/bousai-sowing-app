@@ -309,9 +309,8 @@ function linkOneSignal() {
       await OneSignal.login(externalId);
       await OneSignal.User.addTags({ member: "1", member_type: memberType });
 
-      if (!OneSignal.Notifications.permission) {
-        OneSignal.Slidedown.promptPush();
-      }
+      // 通知のお願いは OneSignal の英語の案内を使わず、
+      // 画面の「通知を受け取る」ボタン（日本語）で出す
 
       // 管理画面で「入室済み・通知ON/OFF」が分かるように記録する
       const report = () => {
@@ -1099,9 +1098,8 @@ function buildInviteMessage(name, code, memberType) {
     "",
     "④ 「会員コード」に上のコードを入れて「はじめる」を押します",
     "",
-    "⑤ 「通知を受け取りますか？」と出たら「受け取る」を押し、続けて出る確認で「許可」を押してください",
+    "⑤ 名前の下に出る緑の「通知を受け取る」ボタンを押し、続けて出る確認で「許可」を押してください",
     "イベントやお知らせの通知が届くようになります。",
-    "（「あとで」を押した場合も、画面上の「通知を受け取る」ボタンからいつでもONにできます）",
     ...(memberType === "正会員"
       ? ["", "正会員の方は、下のメニューの「正会員」から、事業の進み具合も見られます。"]
       : []),
