@@ -351,6 +351,41 @@ async function loadProjects() {
   projectLeads = leads.data || [];
 
   renderProjects();
+  syncLeadNames();
+}
+
+// 管理者が開いたとき、「担当」の表示名を、選ばれている正会員の名前にそろえる
+// （前の版で名前が空のまま保存された事業も、これで直る）
+let leadNameSyncBusy = false;
+async function syncLeadNames() {
+  if (!isAdmin || leadNameSyncBusy || !allMembersForAdmin.length || !allProjects.length) return;
+  leadNameSyncBusy = true;
+
+  try {
+    let changed = false;
+
+    for (const project of allProjects) {
+      const names = projectLeads
+        .filter(lead => String(lead.project_id) === String(project.id))
+        .map(lead => allMembersForAdmin.find(member => String(member.id) === String(lead.member_id))?.display_name)
+        .filter(Boolean);
+
+      const current = (project.lead_names || []).filter(Boolean);
+      if (!names.length || names.join("、") === current.join("、")) continue;
+
+      const { error } = await db.from("projects").update({ lead_names: names }).eq("id", project.id);
+      if (error) {
+        console.warn("担当の名前をそろえられませんでした:", error.message);
+        continue;
+      }
+      project.lead_names = names;
+      changed = true;
+    }
+
+    if (changed) renderProjects();
+  } finally {
+    leadNameSyncBusy = false;
+  }
 }
 
 function formatShortDateJa(dateText) {
@@ -862,6 +897,7 @@ async function loadMembersAdmin() {
   }
 
   allMembersForAdmin = members.data || [];
+  syncLeadNames();
   memberCodesForAdmin = Object.fromEntries((codes.data || []).map(row => [row.member_id, row.code]));
 
   if (!allMembersForAdmin.length) {
