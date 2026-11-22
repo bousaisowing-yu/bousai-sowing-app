@@ -1994,3 +1994,203 @@ body.gate-open .tab-nav {
   width: 100%;
   margin-top: 8px;
 }
+
+/* ==========================================
+   イベント画面の新デザイン（2026-11）
+   ========================================== */
+
+/* 背景にうすい葉っぱの飾り（操作のじゃまにならない） */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  width: 180px;
+  height: 260px;
+  pointer-events: none;
+  opacity: 0.45;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 180'%3E%3Cg fill='%23b5d98f'%3E%3Cpath d='M20 170C10 120 30 80 70 60 70 100 55 140 20 170z'/%3E%3Cpath d='M30 120C5 100 0 70 10 40 35 60 42 90 30 120z' opacity='.7'/%3E%3Cpath d='M60 150c20-30 45-40 60-38-8 25-30 40-60 38z' opacity='.8'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+body::before {
+  left: -40px;
+  bottom: 40px;
+}
+
+body::after {
+  right: -40px;
+  top: 120px;
+  transform: scaleX(-1);
+}
+
+/* トップ画像：写真の上に文字を重ねる */
+.hero-panel.has-photo {
+  position: relative;
+}
+
+.hero-panel.has-photo .hero-image {
+  aspect-ratio: 16 / 8.5;
+  max-height: 320px;
+}
+
+.hero-panel.has-photo .hero-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px 18px 18px;
+  background: linear-gradient(90deg, rgba(15, 74, 44, 0.92) 0%, rgba(15, 74, 44, 0.7) 38%, rgba(15, 74, 44, 0) 72%);
+  color: white;
+}
+
+.hero-panel.has-photo .eyebrow {
+  color: white;
+  letter-spacing: 0.06em;
+}
+
+.hero-panel.has-photo .hero-overlay h2 {
+  color: white;
+  font-size: clamp(22px, 7vw, 34px);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.hero-panel.has-photo .hero-overlay p:last-child {
+  color: white;
+  font-size: clamp(12px, 3.6vw, 15px);
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* 「イベント情報」の見出しカード */
+#events-page .panel.events-head,
+#events-page .panel.events-calendar-panel {
+  background: white;
+  border: 1px solid #cfe0cc;
+  box-shadow: 0 6px 18px rgba(24, 61, 43, 0.1);
+}
+
+#events-page .panel.events-head {
+  padding: 16px 16px 14px;
+}
+
+.events-head-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  color: var(--green);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.events-head-label::before {
+  content: "";
+  width: 4px;
+  height: 1.2em;
+  border-radius: 2px;
+  background: var(--green);
+}
+
+.events-head-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 4px;
+}
+
+.events-head-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--green);
+}
+
+.events-head-icon svg {
+  width: 44px;
+  height: 44px;
+}
+
+#events-page .events-head h2 {
+  font-size: 24px;
+  margin: 0 0 2px;
+  padding: 0;
+}
+
+#events-page .events-head .muted {
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.event-view-switch button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-icon {
+  display: inline-flex;
+}
+
+.btn-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* カレンダーも白いカードの中に */
+#events-page .panel.events-calendar-panel {
+  padding: 16px 12px;
+}
+
+/* 日付の帯にカレンダーのマーク */
+.ec .ec-band-icon {
+  display: inline-flex;
+}
+
+.ec .ec-band-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.ec .ec-share {
+  margin-left: auto;
+}
+
+/* 場所・参加人数・締切を横にならべる（入りきらないときは折り返す） */
+.ec .ec-meta {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+}
+
+.ec .ec-meta-item {
+  align-items: center;
+}
+
+.ec .ec-meta-item svg {
+  margin-top: 0;
+}
+
+/* ボタンのマーク */
+.ec .ec-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ec .ec-actions button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ec .ec-actions [data-action="edit-event"] svg,
+.ec .ec-actions [data-action="delete-event"] svg {
+  width: 18px;
+  height: 18px;
+}
