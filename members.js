@@ -376,30 +376,38 @@ function renderProjectCard(project) {
   const id = String(project.id);
   const stages = projectStages.filter(stage => String(stage.project_id) === id);
   const reports = projectReports.filter(report => String(report.project_id) === id);
-  const doneCount = stages.filter(stage => stage.done).length;
-  const percent = stages.length ? Math.round(doneCount / stages.length * 100) : 0;
+  const activeStages = stages.filter(stage => !stage.done);
+  const doneStages = stages.filter(stage => stage.done);
   const editable = canEditProject(id);
   const latest = reports[0];
   const leadNames = (project.lead_names || []).filter(Boolean);
 
   const statusClass = PROJECT_STATUS_CLASS[project.status] || "pj-status-prep";
 
-  const stepChips = stages.map(stage => `
-    <li class="pj-step ${stage.done ? "done" : ""}">
-      <span class="pj-step-mark">${stage.done ? "✓" : ""}</span>${escapeHTML(stage.title)}
-    </li>`).join("");
+  // カードに出す「いまの動き」（終わったものは下にうすく、新しい3つまで）
+  const recentDone = doneStages.slice(-3).reverse();
+  const nowList = (activeStages.length || recentDone.length)
+    ? `<ul class="pj-now-list">
+        ${activeStages.map(stage => `
+          <li class="pj-now-item"><span class="pj-now-dot" aria-hidden="true"></span><span>${escapeHTML(stage.title)}</span></li>`).join("")}
+        ${recentDone.map(stage => `
+          <li class="pj-now-item done"><span class="pj-now-check" aria-hidden="true">✓</span><span>${escapeHTML(stage.title)}</span><span class="pj-now-done-tag">済</span></li>`).join("")}
+      </ul>`
+    : '<p class="pj-now-empty">まだ書かれていません</p>';
 
   const stageChecklist = stages.map(stage => `
-    <li class="pj-check-row">
-      <label>
-        <input type="checkbox" data-pj-stage="${escapeHTML(stage.id)}"
-          ${stage.done ? "checked" : ""} ${editable ? "" : "disabled"}>
-        <span>${escapeHTML(stage.title)}</span>
-      </label>
-      ${editable
-        ? `<button type="button" class="pj-mini-button" data-pj-action="delete-stage" data-id="${escapeHTML(stage.id)}" aria-label="この段階を消す">×</button>`
-        : ""}
-    </li>`).join("");
+    <li class="pj-check-row ${stage.done ? "done" : ""}">
+      <span class="pj-check-title">${escapeHTML(stage.title)}</span>
+      ${editable ? `
+      <span class="pj-check-tools">
+        <label class="pj-done-toggle">
+          <input type="checkbox" data-pj-stage="${escapeHTML(stage.id)}" ${stage.done ? "checked" : ""}>
+          <span>済</span>
+        </label>
+        <button type="button" class="pj-mini-button" data-pj-action="edit-stage" data-id="${escapeHTML(stage.id)}" aria-label="書き直す">${PJ_ICONS.pencil}</button>
+        <button type="button" class="pj-mini-button" data-pj-action="delete-stage" data-id="${escapeHTML(stage.id)}" aria-label="消す">×</button>
+      </span>` : (stage.done ? '<span class="pj-now-done-tag">済</span>' : "")}
+    </li>`).join("")
 
   const reportList = reports.length
     ? reports.map(report => `
@@ -432,14 +440,14 @@ function renderProjectCard(project) {
   // 進捗・予定（段階のチェックと、段階を足す）
   const stageBox = `
     <section class="pj-box">
-      ${pjBoxHead(PJ_ICONS.chart, "進捗・予定", editable ? "終わった段階にチェックを入れてください" : "")}
-      <ul class="pj-checklist">${stageChecklist || '<li class="muted">段階はまだありません。</li>'}</ul>
+      ${pjBoxHead(PJ_ICONS.chart, "いまの動き", editable ? "終わったら「済」にチェック。書き直しは鉛筆、消すときは×" : "")}
+      <ul class="pj-checklist">${stageChecklist || '<li class="muted">まだ書かれていません。</li>'}</ul>
       ${editable ? `
       <div class="pj-add-stage-head">
-        <label for="pj-new-stage-${escapeHTML(id)}">段階を足す</label>
+        <label for="pj-new-stage-${escapeHTML(id)}">動きを書き足す</label>
         <button type="button" class="pj-add-button" data-pj-action="add-stage" data-id="${escapeHTML(id)}">${PJ_ICONS.plus}追加</button>
       </div>
-      <input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：会場の予約">` : ""}
+      <input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：備えリストメーカー作成中／12/5 ○○で打ち合わせ">` : ""}
     </section>`;
 
   const reportBox = `
@@ -515,11 +523,10 @@ function renderProjectCard(project) {
               : '<span class="pj-undecided">未定</span>'}
           </p>
 
-          <div class="pj-progress" aria-label="進み具合 ${percent}%">
-            <div class="pj-bar"><span style="width:${percent}%"></span></div>
-            <span class="pj-percent">${percent}%</span>
+          <div class="pj-now">
+            <p class="pj-now-label">いまの動き</p>
+            ${nowList}
           </div>
-          ${stages.length ? `<ol class="pj-steps">${stepChips}</ol>` : ""}
         </div>
       </div>
 
@@ -595,7 +602,7 @@ async function saveProject(id) {
 
 async function toggleStage(stageId, done) {
   const { error } = await db.from("project_stages").update({ done }).eq("id", stageId);
-  if (error) setProjectMessage("段階を更新できませんでした：" + error.message, true);
+  if (error) setProjectMessage("更新できませんでした：" + error.message, true);
   await loadProjects();
 }
 
@@ -614,12 +621,22 @@ async function addStage(projectId) {
     sort_order: maxOrder + 1
   });
 
-  if (error) return setProjectMessage("段階を追加できませんでした：" + error.message, true);
+  if (error) return setProjectMessage("追加できませんでした：" + error.message, true);
+  await loadProjects();
+}
+
+async function editStage(stageId) {
+  const stage = projectStages.find(item => String(item.id) === String(stageId));
+  if (!stage) return;
+  const title = prompt("書き直してください。", stage.title || "");
+  if (title === null || !title.trim() || title.trim() === stage.title) return;
+  const { error } = await db.from("project_stages").update({ title: title.trim() }).eq("id", stageId);
+  if (error) return setProjectMessage("書き直せませんでした：" + error.message, true);
   await loadProjects();
 }
 
 async function deleteStage(stageId) {
-  if (!confirm("この段階を消しますか？")) return;
+  if (!confirm("この動きを消しますか？")) return;
   const { error } = await db.from("project_stages").delete().eq("id", stageId);
   if (error) return setProjectMessage("消せませんでした：" + error.message, true);
   await loadProjects();
@@ -732,14 +749,6 @@ async function addProject() {
     .single();
 
   if (error) return setProjectMessage("事業を追加できませんでした：" + error.message, true);
-
-  await db.from("project_stages").insert(
-    ["企画", "準備", "実施", "ふり返り"].map((title, index) => ({
-      project_id: data.id,
-      title,
-      sort_order: index + 1
-    }))
-  );
 
   openProjectIds.add(String(data.id));
   await loadProjects();
@@ -1063,6 +1072,7 @@ document.addEventListener("DOMContentLoaded", () => {
       case "save-project": saveProject(id); break;
       case "add-stage": addStage(id); break;
       case "delete-stage": deleteStage(id); break;
+      case "edit-stage": editStage(id); break;
       case "add-report": addReport(id, button); break;
       case "delete-report": deleteReport(id); break;
       case "save-leads": saveLeads(id); break;

@@ -2728,3 +2728,131 @@ body.is-typing .page-top-button {
 .project-card {
   overflow: hidden;
 }
+
+/* ==========================================
+   正会員ページ：「いまの動き」を文で見せる
+   ========================================== */
+.pj-now {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #f4f8f2;
+}
+
+.pj-now-label {
+  margin: 0 0 4px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.pj-now-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pj-now-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.pj-now-dot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--green-light);
+  box-shadow: 0 0 0 3px #d6ead0;
+}
+
+.pj-now-item.done {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pj-now-check {
+  flex-shrink: 0;
+  width: 9px;
+  color: var(--green-light);
+  font-weight: 700;
+}
+
+.pj-now-done-tag {
+  flex-shrink: 0;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #e6ece6;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.pj-now-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* くわしい画面の一覧（済・書き直す・消す） */
+.pj-checklist .pj-check-row {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.pj-check-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.pj-check-row.done .pj-check-title {
+  color: var(--muted);
+  font-weight: 500;
+  text-decoration: line-through;
+}
+
+.pj-check-tools {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.pj-box .pj-done-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.pj-check-tools .pj-mini-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  font-size: 16px;
+}
+
+.pj-check-tools .pj-mini-button svg {
+  width: 16px;
+  height: 16px;
+}
