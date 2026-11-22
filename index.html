@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=34">
+  <link rel="stylesheet" href="style.css?v=35">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -31,8 +31,8 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=34" defer></script>
-  <script src="members.js?v=34" defer></script>
+  <script src="app.js?v=35" defer></script>
+  <script src="members.js?v=35" defer></script>
 </head>
 
 <body>
@@ -152,15 +152,6 @@
       <div class="panel">
         <p class="eyebrow">FOR FULL MEMBERS</p>
         <h2>事業の進み具合</h2>
-
-        <!-- 正会員になっていない会員には合言葉の入力欄を出す -->
-        <div id="full-gate" hidden>
-          <p class="muted">このページは正会員の方専用です。正会員の方は、お伝えしている「合言葉」を入力してください。</p>
-          <label for="full-passcode">正会員の合言葉</label>
-          <input id="full-passcode" type="text" autocomplete="off" autocapitalize="off" spellcheck="false">
-          <button id="full-join-button" class="primary-button" type="button">正会員ページを開く</button>
-          <p id="full-gate-message" aria-live="polite"></p>
-        </div>
 
         <div id="projects-area" hidden>
           <p class="muted">正会員のみなさんで進めている事業の様子です。「くわしく見る」を押すと、報告や段階の内容が見られます。</p>
@@ -325,21 +316,19 @@
           <h2>会員の管理</h2>
 
           <h3 class="form-heading">会員を登録する</h3>
-          <p class="form-note">登録すると、その人専用の「会員コード」ができます。コードを本人に渡してください（LINEや紙でOK）。</p>
+          <p class="form-note">登録すると、その人専用の「会員コード」ができます。コードを本人に渡してください（LINEや紙でOK）。正会員で登録した人のコードなら、最初から正会員ページも見られます。</p>
           <label for="new-member-name">お名前</label>
           <input id="new-member-name" type="text" lang="ja" placeholder="例：防災 太郎">
-          <label class="pj-inline-check"><input id="new-member-full" type="checkbox"> 正会員として登録する</label>
+          <label>会員の種類</label>
+          <div class="member-type-choice">
+            <label class="pj-inline-check"><input type="radio" name="new-member-type" value="協働会員" checked> 協働会員</label>
+            <label class="pj-inline-check"><input type="radio" name="new-member-type" value="正会員"> 正会員 <small class="label-note">事業の進み具合も見られる</small></label>
+          </div>
           <button id="add-member-button" class="primary-button" type="button">会員を登録</button>
           <div id="new-member-result" class="new-member-result" hidden></div>
 
-          <h3 class="form-heading">正会員の合言葉</h3>
-          <p class="form-note">会員が正会員ページで入力すると、その人が正会員になります。外の人に知られたと思ったら変えてください（すでに正会員の人はそのまま）。</p>
-          <input id="passcode-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="新しい合言葉（4文字以上）">
-          <button id="save-passcode-button" class="primary-button" type="button">合言葉を変更</button>
-          <p id="passcode-message" aria-live="polite"></p>
-
           <h3 class="form-heading">会員一覧</h3>
-          <p class="form-note">会員の種類の切り替え、コードの確認・作り直し、削除ができます。退会した人は削除すると、その人の端末では使えなくなります。</p>
+          <p class="form-note">会員の種類（協働会員／正会員）の切り替え、コードの確認・作り直し、削除ができます。退会した人を削除すると、その人の端末では使えなくなります。</p>
           <div id="members-admin-list"><p class="muted">読み込み中…</p></div>
         </div>
 

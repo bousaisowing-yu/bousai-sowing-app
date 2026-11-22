@@ -2,8 +2,8 @@
    防災Sowing 会員アプリ：会員ログインと正会員ページ
    - 全会員：管理者が配る「会員コード」で1回ログイン（端末ごと）
    - ログインした端末を OneSignal で会員と結びつける
-   - 正会員ページ「事業の進み具合」（正会員の合言葉で開く）
-   - 管理画面「会員」（会員登録・コード・正会員の合言葉・会員一覧）
+   - 正会員ページ「事業の進み具合」（正会員として登録された人だけ）
+   - 管理画面「会員」（協働会員／正会員の登録・コード・会員一覧）
    app.js の db / $ / currentUser / isAdmin / escapeHTML などを使います。
 ============================================================= */
 
@@ -73,14 +73,12 @@ async function refreshMembership() {
 
 function applyMemberUI() {
   const full = membershipReady && isFullMemberNow();
-  const loggedIn = membershipReady && (isAdmin || !!currentMember);
 
-  // 正会員タブは会員全員に見せ、正会員でなければ合言葉の入力欄を出す
-  if ($("projects-tab")) $("projects-tab").hidden = !loggedIn;
-  if ($("full-gate")) $("full-gate").hidden = !loggedIn || full;
+  // 正会員タブは正会員（と管理者）にだけ見せる
+  if ($("projects-tab")) $("projects-tab").hidden = !full;
   if ($("projects-area")) $("projects-area").hidden = !full;
 
-  if (!loggedIn && $("projects-page") && !$("projects-page").hidden) {
+  if (!full && $("projects-page") && !$("projects-page").hidden) {
     switchTab("events");
   }
 
@@ -88,7 +86,7 @@ function applyMemberUI() {
 
   if (greeting) {
     if (currentMember) {
-      greeting.textContent = `${currentMember.display_name} さん（${currentMember.member_type === "正会員" ? "正会員" : "会員"}）`;
+      greeting.textContent = `${currentMember.display_name} さん（${currentMember.member_type === "正会員" ? "正会員" : "協働会員"}）`;
       greeting.hidden = false;
     } else {
       greeting.hidden = true;
@@ -102,7 +100,7 @@ function applyMemberUI() {
 }
 
 /* -----------------------------
-   入口（合言葉＋名前）
+   入口（会員コード）
 ----------------------------- */
 
 function showGate() {
@@ -156,44 +154,6 @@ async function joinAsMember() {
   } catch (error) {
     console.error(error);
     showMessage("gate-message", "はじめられませんでした：" + error.message, true);
-
-  } finally {
-    button.disabled = false;
-  }
-}
-
-// 正会員の合言葉を入れて正会員になる
-async function becomeFullMember() {
-  const passcode = $("full-passcode").value.trim();
-
-  if (!passcode) {
-    showMessage("full-gate-message", "合言葉を入力してください。", true);
-    return;
-  }
-
-  const button = $("full-join-button");
-  button.disabled = true;
-
-  try {
-    const { data, error } = await db.rpc("become_full_member", { p_passcode: passcode });
-
-    if (error) throw error;
-
-    if (!data?.ok) {
-      showMessage("full-gate-message", data?.message || "合言葉が違います。", true);
-      return;
-    }
-
-    currentMember = data.member;
-    $("full-passcode").value = "";
-    showMessage("full-gate-message", "");
-
-    applyMemberUI();
-    linkOneSignal();
-
-  } catch (error) {
-    console.error(error);
-    showMessage("full-gate-message", "開けませんでした：" + error.message, true);
 
   } finally {
     button.disabled = false;
@@ -668,7 +628,7 @@ async function loadMembersAdmin() {
           <small>コード：<span class="member-code">${escapeHTML(formatMemberCode(memberCodesForAdmin[member.id]))}</span></small>
         </div>
         <select data-member-type="${escapeHTML(member.id)}" aria-label="${escapeHTML(member.display_name)}さんの種類">
-          <option value="一般" ${member.member_type !== "正会員" ? "selected" : ""}>会員</option>
+          <option value="協働会員" ${member.member_type !== "正会員" ? "selected" : ""}>協働会員</option>
           <option value="正会員" ${member.member_type === "正会員" ? "selected" : ""}>正会員</option>
         </select>
         <div class="member-admin-actions">
@@ -681,13 +641,13 @@ async function loadMembersAdmin() {
   if (allProjects.length) renderProjects();
 }
 
-function showNewMemberCode(name, code) {
+function showNewMemberCode(name, code, memberType) {
   const box = $("new-member-result");
   if (!box) return;
 
   box.hidden = false;
   box.innerHTML = `
-    <p><strong>${escapeHTML(name)}</strong> さんの会員コード</p>
+    <p><strong>${escapeHTML(name)}</strong> さんの${memberType ? escapeHTML(memberType) + "用の" : ""}会員コード</p>
     <p class="member-code-big">${escapeHTML(formatMemberCode(code))}</p>
     <p class="form-note">このコードとアプリのURLを本人に伝えてください。会員一覧からもあとで確認できます。</p>
     <button type="button" class="secondary-button" id="copy-member-message">伝える文をコピー</button>`;
@@ -716,12 +676,15 @@ async function addMember() {
     return;
   }
 
+  const memberType =
+    document.querySelector('input[name="new-member-type"]:checked')?.value || "協働会員";
+
   const button = $("add-member-button");
   button.disabled = true;
 
   const { data, error } = await db.rpc("create_member", {
     p_name: name,
-    p_member_type: $("new-member-full").checked ? "正会員" : "一般"
+    p_member_type: memberType
   });
 
   button.disabled = false;
@@ -732,8 +695,7 @@ async function addMember() {
   }
 
   $("new-member-name").value = "";
-  $("new-member-full").checked = false;
-  showNewMemberCode(name, data.code);
+  showNewMemberCode(name, data.code, memberType);
 
   await loadMembersAdmin();
 }
@@ -749,7 +711,7 @@ async function resetMemberCode(memberId) {
     return;
   }
 
-  showNewMemberCode(member?.display_name || "", data);
+  showNewMemberCode(member?.display_name || "", data, member?.member_type);
   await loadMembersAdmin();
 }
 
@@ -778,31 +740,6 @@ async function deleteMember(memberId) {
   await loadMembersAdmin();
 }
 
-async function savePasscode() {
-  const input = $("passcode-input");
-  const passcode = input.value.trim();
-
-  if (passcode.length < 4) {
-    showMessage("passcode-message", "合言葉は4文字以上にしてください。", true);
-    return;
-  }
-
-  const button = $("save-passcode-button");
-  button.disabled = true;
-
-  const { error } = await db.rpc("set_full_passcode", { p_passcode: passcode });
-
-  button.disabled = false;
-
-  if (error) {
-    showMessage("passcode-message", "変更できませんでした：" + error.message, true);
-    return;
-  }
-
-  input.value = "";
-  showMessage("passcode-message", `正会員の合言葉を「${passcode}」に変更しました。正会員の方に伝えてください。`);
-}
-
 /* -----------------------------
    ボタンの設定
 ----------------------------- */
@@ -814,7 +751,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.key === "Enter" && !event.isComposing) joinAsMember();
   });
 
-  $("full-join-button")?.addEventListener("click", becomeFullMember);
   $("add-member-button")?.addEventListener("click", addMember);
 
   $("gate-admin-button")?.addEventListener("click", () => {
@@ -822,7 +758,6 @@ document.addEventListener("DOMContentLoaded", () => {
     switchTab("admin");
   });
 
-  $("save-passcode-button")?.addEventListener("click", savePasscode);
   $("add-project-button")?.addEventListener("click", addProject);
 
   const projectsRoot = $("projects-list");

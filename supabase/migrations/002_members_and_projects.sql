@@ -5,11 +5,11 @@
 -- 何度実行しても大丈夫なように書いてあります。
 --
 -- しくみ
---  ・管理者が会員を登録すると、その人専用の「会員コード」ができる
+--  ・管理者が会員を「協働会員」か「正会員」として登録すると、その人専用の「会員コード」ができる
 --  ・会員はアプリを初めて開いたとき、会員コードを1回入れるだけ（端末ごとに1回）
---  ・正会員ページでは、正会員の「合言葉」を入れると正会員になる
+--  ・正会員として登録された人には、正会員ページ（事業の進み具合）が表示される
 
-create extension if not exists pgcrypto with schema extensions;
+create extension if not exists pgcrypto with schema extensions;  -- コードの乱数づくりに使う
 
 -- ─────────────────────────────
 -- 1. 会員
@@ -18,7 +18,7 @@ create extension if not exists pgcrypto with schema extensions;
 create table if not exists public.members (
   id uuid primary key default gen_random_uuid(),
   display_name text not null check (char_length(display_name) between 1 and 40),
-  member_type text not null default '一般' check (member_type in ('一般', '正会員')),
+  member_type text not null default '協働会員' check (member_type in ('協働会員', '正会員')),
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -40,15 +40,7 @@ create table if not exists public.member_devices (
 );
 alter table public.member_devices enable row level security;
 
--- 正会員の合言葉（暗号化して1つだけ保存）
-create table if not exists public.member_settings (
-  id int primary key default 1 check (id = 1),
-  full_passcode_hash text,
-  updated_at timestamptz not null default now()
-);
-alter table public.member_settings enable row level security;
-
--- コード・合言葉の入力記録（何度も試されるのを防ぐ）
+-- 会員コードの入力記録（何度も試されるのを防ぐ）
 create table if not exists public.login_attempts (
   id bigint generated always as identity primary key,
   user_id uuid not null,
@@ -135,44 +127,8 @@ begin
 end;
 $$;
 
--- 正会員の合言葉を入れて正会員になる
-create or replace function public.become_full_member(p_passcode text) returns jsonb
-language plpgsql security definer set search_path = public, extensions as $$
-declare
-  v_uid uuid := auth.uid();
-  v_member_id uuid := public.current_member_id();
-  v_hash text;
-  v_member public.members;
-begin
-  if v_member_id is null then
-    return jsonb_build_object('ok', false, 'message', '先に会員コードでログインしてください。');
-  end if;
-
-  if public.too_many_attempts('full') then
-    return jsonb_build_object('ok', false, 'message', '何度も間違えたため、15分ほど待ってからもう一度お試しください。');
-  end if;
-
-  select full_passcode_hash into v_hash from public.member_settings where id = 1;
-  if v_hash is null then
-    return jsonb_build_object('ok', false, 'message', '合言葉がまだ設定されていません。管理者にお問い合わせください。');
-  end if;
-
-  if crypt(btrim(coalesce(p_passcode, '')), v_hash) <> v_hash then
-    insert into public.login_attempts (user_id, kind, ok) values (v_uid, 'full', false);
-    return jsonb_build_object('ok', false, 'message', '合言葉が違います。');
-  end if;
-
-  insert into public.login_attempts (user_id, kind, ok) values (v_uid, 'full', true);
-
-  update public.members set member_type = '正会員' where id = v_member_id
-  returning * into v_member;
-
-  return jsonb_build_object('ok', true, 'member', to_jsonb(v_member));
-end;
-$$;
-
 -- 会員を登録して会員コードを作る（管理者だけ）
-create or replace function public.create_member(p_name text, p_member_type text default '一般')
+create or replace function public.create_member(p_name text, p_member_type text default '協働会員')
 returns jsonb
 language plpgsql security definer set search_path = public, extensions as $$
 declare
@@ -186,7 +142,7 @@ begin
   end if;
 
   insert into public.members (display_name, member_type)
-  values (btrim(p_name), case when p_member_type = '正会員' then '正会員' else '一般' end)
+  values (btrim(p_name), case when p_member_type = '正会員' then '正会員' else '協働会員' end)
   returning * into v_member;
 
   loop
@@ -230,34 +186,13 @@ begin
 end;
 $$;
 
--- 正会員の合言葉を変える（管理者だけ）
-create or replace function public.set_full_passcode(p_passcode text) returns void
-language plpgsql security definer set search_path = public, extensions as $$
-begin
-  if not public.is_admin() then
-    raise exception '管理者だけが合言葉を変更できます';
-  end if;
-  if char_length(btrim(coalesce(p_passcode, ''))) < 4 then
-    raise exception '合言葉は4文字以上にしてください';
-  end if;
-  insert into public.member_settings (id, full_passcode_hash, updated_at)
-  values (1, crypt(btrim(p_passcode), gen_salt('bf')), now())
-  on conflict (id) do update
-    set full_passcode_hash = excluded.full_passcode_hash, updated_at = now();
-end;
-$$;
-
 revoke all on function public.login_with_code(text) from public, anon;
-revoke all on function public.become_full_member(text) from public, anon;
 revoke all on function public.create_member(text, text) from public, anon;
 revoke all on function public.reset_member_code(uuid) from public, anon;
-revoke all on function public.set_full_passcode(text) from public, anon;
 revoke all on function public.too_many_attempts(text) from public, anon, authenticated;
 grant execute on function public.login_with_code(text) to authenticated;
-grant execute on function public.become_full_member(text) to authenticated;
 grant execute on function public.create_member(text, text) to authenticated;
 grant execute on function public.reset_member_code(uuid) to authenticated;
-grant execute on function public.set_full_passcode(text) to authenticated;
 grant execute on function public.get_my_member() to authenticated;
 grant execute on function public.is_admin() to authenticated, anon;
 grant execute on function public.current_member_id() to authenticated, anon;

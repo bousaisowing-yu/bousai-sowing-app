@@ -2526,7 +2526,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   await checkAdmin();
 
-  // 会員かどうか確かめる（会員でなければ合言葉の画面を出す）
+  // 会員かどうか確かめる（会員でなければ会員コードの画面を出す）
   await refreshMembership();
 
   await loadHeroImage();
