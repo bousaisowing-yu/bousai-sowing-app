@@ -2879,3 +2879,39 @@ body.is-typing .page-top-button {
 .pj-box .pj-field + .pj-field {
   margin-top: 6px;
 }
+
+/* 進捗を書き直す（日付・時間・場所・やること） */
+.pj-check-row.pj-stage-edit {
+  display: block;
+}
+
+.pj-stage-edit-fields {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+}
+
+.pj-box .pj-stage-edit-fields .pj-field + .pj-field {
+  margin-top: 0;
+}
+
+.pj-stage-edit-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pj-stage-edit-buttons button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 15px;
+}
+
+.pj-stage-edit-buttons svg {
+  width: 18px;
+  height: 18px;
+}

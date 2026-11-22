@@ -57,6 +57,52 @@ function projectIconFor(name) {
   return PJ_ICONS.sprout;
 }
 
+/* 進捗の1行：「12月13日（日） 14:00 ＠寝屋川市役所 打ち合わせ」の形で保存する */
+function buildProgressTitle({ date, time, place, text }) {
+  const head = [
+    date ? formatShortDateJa(date) : "",
+    time || "",
+    place ? `＠${place}` : ""
+  ].filter(Boolean).join(" ");
+  return text ? `${head ? head + " " : ""}${text}` : "";
+}
+
+function parseProgressTitle(title) {
+  let rest = String(title || "").trim();
+  let date = "";
+  let time = "";
+  let place = "";
+
+  const dateMatch = rest.match(/^(\d{1,2})月(\d{1,2})日(?:（.）)?\s*/);
+  if (dateMatch) {
+    const now = new Date();
+    const month = Number(dateMatch[1]);
+    const day = Number(dateMatch[2]);
+    // 年は書いていないので、今日から見て近いほうの年にする
+    let year = now.getFullYear();
+    if (month - (now.getMonth() + 1) > 6) year -= 1;
+    if ((now.getMonth() + 1) - month > 6) year += 1;
+    date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    rest = rest.slice(dateMatch[0].length);
+  }
+
+  const timeMatch = rest.match(/^(\d{1,2}:\d{2})\s*/);
+  if (timeMatch) {
+    time = timeMatch[1].padStart(5, "0");
+    rest = rest.slice(timeMatch[0].length);
+  }
+
+  const placeMatch = rest.match(/^＠(\S+)\s*/);
+  if (placeMatch) {
+    place = placeMatch[1];
+    rest = rest.slice(placeMatch[0].length);
+  }
+
+  return { date, time, place, text: rest };
+}
+
+let editingStageId = null;
+
 function pjField(icon, inputHtml) {
   return `<div class="pj-field"><span class="pj-field-icon">${icon}</span>${inputHtml}</div>`;
 }
@@ -431,7 +477,25 @@ function renderProjectCard(project) {
       </ul>`
     : '<p class="pj-now-empty">まだ書かれていません</p>';
 
-  const stageChecklist = stages.map(stage => `
+  const stageChecklist = stages.map(stage => editable && String(editingStageId) === String(stage.id)
+    ? (() => {
+        const parts = parseProgressTitle(stage.title);
+        const sid = escapeHTML(stage.id);
+        return `
+    <li class="pj-check-row pj-stage-edit">
+      <div class="pj-stage-edit-fields">
+        ${pjField(PJ_ICONS.calendar, `<input id="pj-edit-date-${sid}" type="date" value="${escapeHTML(parts.date)}" aria-label="日付">`)}
+        ${pjField(PJ_ICONS.clock, `<input id="pj-edit-time-${sid}" type="time" step="300" value="${escapeHTML(parts.time)}" aria-label="時間">`)}
+        ${pjField(PJ_ICONS.pin, `<input id="pj-edit-place-${sid}" type="text" lang="ja" value="${escapeHTML(parts.place)}" placeholder="場所" aria-label="場所">`)}
+        ${pjField(PJ_ICONS.pencil, `<input id="pj-edit-text-${sid}" type="text" lang="ja" value="${escapeHTML(parts.text)}" placeholder="やること" aria-label="やること">`)}
+        <div class="pj-stage-edit-buttons">
+          <button type="button" class="secondary-button" data-pj-action="cancel-edit-stage" data-id="${sid}">やめる</button>
+          <button type="button" class="primary-button" data-pj-action="save-edit-stage" data-id="${sid}">${PJ_ICONS.save}保存</button>
+        </div>
+      </div>
+    </li>`;
+      })()
+    : `
     <li class="pj-check-row ${stage.done ? "done" : ""}">
       <span class="pj-check-title">${escapeHTML(stage.title)}</span>
       ${editable ? `
@@ -602,9 +666,12 @@ async function saveProject(id) {
     const newText = value("new-stage").trim();
     const newDate = value("new-date");
     const newTime = value("new-time");
-    const newPlace = value("new-place").trim();
-    const when = [newDate ? formatShortDateJa(newDate) : "", newTime, newPlace ? `＠${newPlace}` : ""].filter(Boolean).join(" ");
-    const newLine = newText ? `${when ? when + " " : ""}${newText}` : "";
+    const newLine = buildProgressTitle({
+      date: newDate,
+      time: newTime,
+      place: value("new-place").trim(),
+      text: newText
+    });
 
     const lines = [];
     if (project?.next_plan || project?.next_date) {
@@ -700,13 +767,36 @@ async function addStage(projectId) {
   await loadProjects();
 }
 
-async function editStage(stageId) {
+function editStage(stageId) {
   const stage = projectStages.find(item => String(item.id) === String(stageId));
   if (!stage) return;
-  const title = prompt("書き直してください。", stage.title || "");
-  if (title === null || !title.trim() || title.trim() === stage.title) return;
-  const { error } = await db.from("project_stages").update({ title: title.trim() }).eq("id", stageId);
+  editingStageId = stage.id;
+  openProjectIds.add(String(stage.project_id));
+  renderProjects();
+  $(`pj-edit-text-${stageId}`)?.focus();
+}
+
+function cancelEditStage() {
+  editingStageId = null;
+  renderProjects();
+}
+
+async function saveEditStage(stageId) {
+  const value = key => $(`pj-edit-${key}-${stageId}`)?.value ?? "";
+  const text = value("text").trim();
+  if (!text) return setProjectMessage("やることを入れてください。", true);
+
+  const title = buildProgressTitle({
+    date: value("date"),
+    time: value("time"),
+    place: value("place").trim(),
+    text
+  });
+
+  const { error } = await db.from("project_stages").update({ title }).eq("id", stageId);
   if (error) return setProjectMessage("書き直せませんでした：" + error.message, true);
+
+  editingStageId = null;
   await loadProjects();
 }
 
@@ -1150,6 +1240,8 @@ document.addEventListener("DOMContentLoaded", () => {
       case "add-stage": addStage(id); break;
       case "delete-stage": deleteStage(id); break;
       case "edit-stage": editStage(id); break;
+      case "cancel-edit-stage": cancelEditStage(); break;
+      case "save-edit-stage": saveEditStage(id); break;
       case "add-report": addReport(id, button); break;
       case "delete-report": deleteReport(id); break;
       case "save-leads": saveLeads(id); break;
