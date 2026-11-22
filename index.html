@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=63">
+  <link rel="stylesheet" href="style.css?v=64">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -50,8 +50,8 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=63" defer></script>
-  <script src="members.js?v=63" defer></script>
+  <script src="app.js?v=64" defer></script>
+  <script src="members.js?v=64" defer></script>
 </head>
 
 <body>
@@ -252,15 +252,15 @@
             <label>時間</label>
             <div class="time-range">
               <div class="time-input-group">
-                <input id="event-start-hour" type="number" inputmode="numeric" min="0" max="23" placeholder="9">
+                <input id="event-start-hour" class="time-box" data-max="23" type="number" inputmode="numeric" min="0" max="23" placeholder="9">
                 <span>:</span>
-                <input id="event-start-minute" type="number" inputmode="numeric" min="0" max="59" placeholder="00">
+                <input id="event-start-minute" class="time-box" data-max="59" type="number" inputmode="numeric" min="0" max="59" placeholder="00">
               </div>
               <span class="time-range-sep">〜</span>
               <div class="time-input-group">
-                <input id="event-end-hour" type="number" inputmode="numeric" min="0" max="23" placeholder="12">
+                <input id="event-end-hour" class="time-box" data-max="23" type="number" inputmode="numeric" min="0" max="23" placeholder="12">
                 <span>:</span>
-                <input id="event-end-minute" type="number" inputmode="numeric" min="0" max="59" placeholder="00">
+                <input id="event-end-minute" class="time-box" data-max="59" type="number" inputmode="numeric" min="0" max="59" placeholder="00">
               </div>
             </div>
 
