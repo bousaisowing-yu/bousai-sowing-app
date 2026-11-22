@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=64">
+  <link rel="stylesheet" href="style.css?v=65">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -50,8 +50,8 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=64" defer></script>
-  <script src="members.js?v=64" defer></script>
+  <script src="app.js?v=65" defer></script>
+  <script src="members.js?v=65" defer></script>
 </head>
 
 <body>
@@ -227,6 +227,7 @@
           <button type="button" class="admin-switch-button" data-admin-section="news">お知らせ</button>
           <button type="button" class="admin-switch-button" data-admin-section="hero">トップ画像</button>
           <button type="button" class="admin-switch-button" data-admin-section="members">会員</button>
+          <button type="button" class="admin-switch-button" data-admin-section="backup">バックアップ</button>
         </div>
 
         <!-- ▼ イベント登録・編集 -->
@@ -378,6 +379,17 @@
           <h3 class="form-heading">会員一覧</h3>
           <p class="form-note">会員の種類（協働会員／正会員）の切り替え、コードの確認・作り直し、削除ができます。退会した人を削除すると、その人の端末では使えなくなります。</p>
           <div id="members-admin-list"><p class="muted">読み込み中…</p></div>
+        </div>
+
+        <!-- ▼ バックアップ -->
+        <div class="panel admin-section" id="admin-section-backup" hidden>
+          <p class="eyebrow">BACKUP</p>
+          <h2>データのバックアップ</h2>
+          <p class="form-note">アプリに登録されている情報（会員・会員コード・イベント・参加・お知らせ・事業の進み具合など）を、ぜんぶまとめて1つのファイルに保存します。もしデータが消えても、このファイルから元に戻せます。</p>
+          <p class="form-note">月に1回くらい、または大事な登録をした後に押してください。保存したファイルは、パソコンやGoogleドライブなど、アプリとは別の場所にしまっておいてください。</p>
+          <p class="form-note">※ 会員コードも入っているので、ほかの人には渡さないでください。※ 写真そのものは入りません（写真は元の画像を手元に残しておいてください）。</p>
+          <button id="backup-download-button" class="primary-button" type="button">バックアップをダウンロード</button>
+          <p id="backup-message" aria-live="polite"></p>
         </div>
 
         <div class="logout-row">

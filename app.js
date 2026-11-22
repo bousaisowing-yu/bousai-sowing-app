@@ -2816,3 +2816,113 @@ document.addEventListener("input", event => {
     if (typeof next.select === "function" && next.classList.contains("time-box")) next.select();
   }
 });
+
+/* -----------------------------
+   バックアップ（管理者だけ）
+   すべての表を1つのファイル（JSON）にまとめてダウンロードする
+----------------------------- */
+const BACKUP_TABLES = [
+  "members",
+  "member_codes",
+  "member_devices",
+  "events",
+  "event_responses",
+  "announcements",
+  "projects",
+  "project_leads",
+  "project_stages",
+  "project_reports",
+  "site_settings"
+];
+
+async function fetchAllRows(table) {
+  const pageSize = 1000;
+  const rows = [];
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await db.from(table).select("*").range(from, from + pageSize - 1);
+    if (error) throw error;
+    rows.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+  }
+  return rows;
+}
+
+function showLastBackupDate() {
+  const message = document.getElementById("backup-message");
+  if (!message || message.textContent) return;
+  try {
+    const last = localStorage.getItem("bousai-last-backup");
+    if (last) message.textContent = "この端末で前回保存した日：" + last;
+  } catch (_) { /* 保存できない端末では何もしない */ }
+}
+
+async function downloadBackup() {
+  const button = document.getElementById("backup-download-button");
+  const message = document.getElementById("backup-message");
+  if (!isAdmin) {
+    message.textContent = "管理者ログインしてから押してください。";
+    return;
+  }
+
+  button.disabled = true;
+  message.textContent = "データを集めています…";
+
+  const backup = {
+    app: "防災Sowing 会員専用アプリ",
+    created_at: new Date().toISOString(),
+    tables: {},
+    counts: {},
+    errors: {}
+  };
+
+  for (const table of BACKUP_TABLES) {
+    try {
+      const rows = await fetchAllRows(table);
+      backup.tables[table] = rows;
+      backup.counts[table] = rows.length;
+    } catch (error) {
+      backup.errors[table] = error.message || String(error);
+    }
+  }
+
+  const now = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+  const fileName = `bousai-sowing-backup_${stamp}.json`;
+
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+  const labels = {
+    members: "会員", member_codes: "会員コード", member_devices: "端末",
+    events: "イベント", event_responses: "参加", announcements: "お知らせ",
+    projects: "事業", project_leads: "事業の担当者", project_stages: "進捗",
+    project_reports: "活動の報告", site_settings: "設定"
+  };
+  const summary = Object.entries(backup.counts)
+    .map(([table, count]) => `${labels[table] || table} ${count}件`).join("、");
+  const failed = Object.keys(backup.errors).map(table => labels[table] || table);
+
+  message.textContent =
+    `「${fileName}」を保存しました（${summary}）。` +
+    (failed.length ? ` ※ 読み込めなかったもの：${failed.join("、")}` : "");
+
+  try {
+    localStorage.setItem("bousai-last-backup", `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`);
+  } catch (_) { /* 保存できない端末では何もしない */ }
+
+  button.disabled = false;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const button = document.getElementById("backup-download-button");
+  if (button) button.addEventListener("click", downloadBackup);
+  showLastBackupDate();
+});
