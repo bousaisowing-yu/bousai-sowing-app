@@ -2948,3 +2948,41 @@ body.is-typing .page-top-button {
 .pj-time-sep {
   margin-left: 4px;
 }
+
+/* 管理者用：会員からの見え方を確かめる */
+.preview-panel h3 { margin: 0 0 6px; }
+.preview-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+.preview-banner {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff1d6;
+  border: 2px solid #e0a63a;
+  color: #5a3a00;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.preview-banner[hidden] { display: none; }
+.preview-banner span { flex: 1; }
+.preview-banner button {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 10px;
+  background: var(--green);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}

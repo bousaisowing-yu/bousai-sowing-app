@@ -185,6 +185,7 @@ async function fetchMyMember() {
 }
 
 async function refreshMembership() {
+  if (previewState) endPreview({ reload: false });
   await fetchMyMember();
 
   if (!membershipReady || currentMember || isAdmin) {
@@ -564,7 +565,7 @@ function renderProjectCard(project) {
         ${report.image_url
           ? `<a href="${escapeHTML(report.image_url)}" target="_blank" rel="noopener"><img class="pj-report-image" src="${escapeHTML(report.image_url)}" alt="報告の写真" loading="lazy"></a>`
           : ""}
-        ${(isAdmin || (currentUser && report.created_by === currentUser.id))
+        ${(isAdmin || (!previewState && currentUser && report.created_by === currentUser.id))
           ? `<button type="button" class="pj-mini-button" data-pj-action="delete-report" data-id="${escapeHTML(report.id)}">この報告を消す</button>`
           : ""}
       </li>`).join("")
@@ -1244,10 +1245,128 @@ async function deleteMember(memberId) {
 }
 
 /* -----------------------------
+   管理者用：会員からの見え方を確かめる
+   本当の会員としてログインはせず、画面の出し方だけを切り替える。
+   この間は保存・送信を止める。
+----------------------------- */
+
+let previewState = null;
+
+const PREVIEW_WRITE_METHODS = ["insert", "update", "upsert", "delete"];
+const PREVIEW_BLOCKED_RPCS = [
+  "toggle_event_interest", "report_my_device", "create_member",
+  "reset_member_code", "login_with_code"
+];
+const PREVIEW_BLOCK_MESSAGE = "見え方の確認中なので保存しません";
+
+function previewBlockedResult() {
+  const result = { data: null, error: { message: PREVIEW_BLOCK_MESSAGE } };
+  // .eq() や .select() をつなげても、最後に「保存しませんでした」を返す
+  const chain = new Proxy(function () {}, {
+    get(target, prop) {
+      if (prop === "then") return resolve => resolve(result);
+      return () => chain;
+    },
+    apply() { return chain; }
+  });
+  return chain;
+}
+
+function startPreview(memberType) {
+  if (!isAdmin && !previewState) return;
+
+  if (!previewState) {
+    const realFrom = db.from.bind(db);
+    const realRpc = db.rpc.bind(db);
+    const realInvoke = db.functions?.invoke?.bind(db.functions);
+
+    previewState = { isAdmin, currentMember, realFrom, realRpc, realInvoke };
+
+    db.from = table => {
+      const builder = realFrom(table);
+      return new Proxy(builder, {
+        get(target, prop) {
+          if (PREVIEW_WRITE_METHODS.includes(prop)) return () => previewBlockedResult();
+          const value = target[prop];
+          return typeof value === "function" ? value.bind(target) : value;
+        }
+      });
+    };
+    db.rpc = (name, args) => PREVIEW_BLOCKED_RPCS.includes(name)
+      ? previewBlockedResult()
+      : realRpc(name, args);
+    if (db.functions && realInvoke) {
+      db.functions.invoke = async () => ({ data: null, error: { message: PREVIEW_BLOCK_MESSAGE } });
+    }
+  }
+
+  previewState.type = memberType;
+  isAdmin = false;
+  currentMember = {
+    id: "preview",
+    display_name: "（例）会員",
+    member_type: memberType,
+    active: true
+  };
+
+  $("preview-banner-text").textContent =
+    `いま「${memberType}」からの見え方を表示しています（見るだけ・保存されません）`;
+  $("preview-banner").hidden = false;
+  $("admin-tab").hidden = true;
+  if ($("push-enable-box")) $("push-enable-box").hidden = true;
+  document.body.classList.add("previewing");
+
+  hideGate();
+  applyMemberUI();
+  switchTab("events");
+  reloadForPreview();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function endPreview({ reload = true } = {}) {
+  if (!previewState) return;
+
+  db.from = previewState.realFrom;
+  db.rpc = previewState.realRpc;
+  if (db.functions && previewState.realInvoke) db.functions.invoke = previewState.realInvoke;
+
+  isAdmin = previewState.isAdmin;
+  currentMember = previewState.currentMember;
+  previewState = null;
+
+  $("preview-banner").hidden = true;
+  $("admin-tab").hidden = false;
+  document.body.classList.remove("previewing");
+
+  if (!reload) return;
+  applyMemberUI();
+  reloadForPreview();
+  switchTab("admin");
+}
+
+async function reloadForPreview() {
+  try {
+    if (typeof loadEvents === "function") await loadEvents();
+    if (typeof loadAnnouncements === "function") await loadAnnouncements();
+    if (isFullMemberNow()) {
+      allProjects = [];
+      await loadProjects();
+    }
+  } catch (error) {
+    console.error("見え方の切り替えで読み込みに失敗しました:", error);
+  }
+}
+
+/* -----------------------------
    ボタンの設定
 ----------------------------- */
 
 document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("[data-preview-as]").forEach(button => {
+    button.addEventListener("click", () => startPreview(button.dataset.previewAs));
+  });
+  $("preview-exit-button")?.addEventListener("click", () => endPreview());
+
   $("gate-join-button")?.addEventListener("click", joinAsMember);
 
   $("gate-code")?.addEventListener("keydown", event => {
