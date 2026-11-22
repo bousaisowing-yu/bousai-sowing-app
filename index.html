@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=58">
+  <link rel="stylesheet" href="style.css?v=59">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -50,8 +50,8 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=58" defer></script>
-  <script src="members.js?v=58" defer></script>
+  <script src="app.js?v=59" defer></script>
+  <script src="members.js?v=59" defer></script>
 </head>
 
 <body>
@@ -133,7 +133,7 @@
         <span class="tab-label">お知らせ</span>
       </button>
       <button class="tab-button" data-tab="projects" id="projects-tab" type="button" hidden>
-        <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+        <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="tab-lock" id="projects-tab-lock" hidden aria-label="正会員専用"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10.5" rx="2.2" fill="currentColor"/><path fill="none" stroke="currentColor" stroke-width="2.6" d="M8.2 10.5V8a3.8 3.8 0 0 1 7.6 0v2.5"/></svg></span></span>
         <span class="tab-label">正会員</span>
       </button>
       <button class="tab-button" data-tab="admin" id="admin-tab" type="button" hidden>
@@ -184,13 +184,16 @@
     </section>
 
     <section id="projects-page" class="page" hidden>
-      <div class="pj-page-band">
+      <div id="projects-locked" class="pj-locked" hidden>
+        <p>🔒 このページは正会員専用です</p>
+      </div>
+      <div class="pj-page-band" id="projects-band">
         <button type="button" class="pj-back-button" id="projects-back-button" aria-label="イベントの画面にもどる">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m15 5-7 7 7 7"/></svg>
         </button>
         <h2>事業の進み具合</h2>
       </div>
-      <div class="panel pj-page-panel">
+      <div class="panel pj-page-panel" id="projects-panel">
 
         <div id="projects-area" hidden>
           <p class="muted">正会員のみなさんで進めている事業の様子です。「くわしく見る」を押すと、報告が見られます。担当の方は「進捗状況」を書き足したり、書き直したりできます。</p>
