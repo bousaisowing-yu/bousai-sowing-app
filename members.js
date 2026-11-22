@@ -130,6 +130,9 @@ function applyMemberUI() {
     }
   }
 
+  // 会員でなくなったら（ログアウトなど）通知ボタンも隠す
+  if (!currentMember && $("push-enable-box")) $("push-enable-box").hidden = true;
+
   if ($("add-project-button")) $("add-project-button").hidden = !isAdmin;
 
   if (full) loadProjects();
@@ -216,10 +219,87 @@ function linkOneSignal() {
       if (!OneSignal.Notifications.permission) {
         OneSignal.Slidedown.promptPush();
       }
+
+      // 管理画面で「入室済み・通知ON/OFF」が分かるように記録する
+      const report = () => {
+        reportMyDevice(!!OneSignal.User?.PushSubscription?.optedIn);
+        updatePushButton(OneSignal);
+      };
+      report();
+      OneSignal.User?.PushSubscription?.addEventListener?.("change", report);
+      OneSignal.Notifications?.addEventListener?.("permissionChange", report);
+      setupPushButton(OneSignal);
     } catch (error) {
       console.error("通知の設定ができませんでした:", error);
     }
   });
+}
+
+/* 「あとで」を押した人が、あとから自分で通知をONにできるボタン */
+function updatePushButton(OneSignal) {
+  const box = $("push-enable-box");
+  if (!box) return;
+  const on = !!OneSignal.Notifications?.permission &&
+    !!OneSignal.User?.PushSubscription?.optedIn;
+  box.hidden = on || !currentMember;
+}
+
+let pushButtonReady = false;
+function setupPushButton(OneSignal) {
+  const button = $("push-enable-btn");
+  const help = $("push-enable-help");
+  if (!button || pushButtonReady) return;
+  pushButtonReady = true;
+
+  button.addEventListener("click", async () => {
+    if (help) help.hidden = true;
+
+    // 携帯の確認で「許可しない」を選んだ場合は、アプリからはもう聞けない
+    if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+      if (help) {
+        help.textContent = isIOSDevice()
+          ? "通知が止められています。iPhoneの「設定」→「通知」→「防災Sowing」を開き、「通知を許可」をONにしてください。"
+          : "通知が止められています。ブラウザやスマホの設定で、このアプリの通知を「許可」にしてください。";
+        help.hidden = false;
+      }
+      return;
+    }
+
+    if (typeof Notification === "undefined" && isIOSDevice()) {
+      if (help) {
+        help.textContent = "iPhoneでは、ホーム画面に追加した「防災Sowing」のアイコンから開くと、通知をONにできます。";
+        help.hidden = false;
+      }
+      return;
+    }
+
+    button.disabled = true;
+    try {
+      if (!OneSignal.Notifications.permission) {
+        await OneSignal.Notifications.requestPermission();
+      }
+      if (OneSignal.Notifications.permission && !OneSignal.User.PushSubscription.optedIn) {
+        await OneSignal.User.PushSubscription.optIn();
+      }
+    } catch (error) {
+      console.error("通知をONにできませんでした:", error);
+    } finally {
+      button.disabled = false;
+      updatePushButton(OneSignal);
+      reportMyDevice(!!OneSignal.User?.PushSubscription?.optedIn);
+    }
+  });
+}
+
+function isIOSDevice() {
+  return /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+async function reportMyDevice(pushEnabled) {
+  if (!currentMember) return; // 管理者だけのログインでは記録しない
+  const { error } = await db.rpc("report_my_device", { p_push_enabled: pushEnabled });
+  if (error) console.warn("端末の状態を記録できませんでした:", error.message);
 }
 
 /* -----------------------------
@@ -680,6 +760,28 @@ async function deleteProject(projectId) {
    管理画面：会員
 ----------------------------- */
 
+function renderMemberStatus(devices) {
+  if (!devices.length) {
+    return '<span class="member-status"><span class="ms-badge ms-off">未入室</span></span>';
+  }
+
+  const pushOn = devices.some(device => device.push_enabled === true);
+  const pushKnown = devices.some(device => device.push_enabled !== null && device.push_enabled !== undefined);
+  const lastSeen = devices
+    .map(device => device.last_seen_at || device.created_at)
+    .filter(Boolean)
+    .sort()
+    .pop();
+
+  return `<span class="member-status">
+    <span class="ms-badge ms-on">入室済み${devices.length > 1 ? `（${devices.length}台）` : ""}</span>
+    ${pushKnown
+      ? `<span class="ms-badge ${pushOn ? "ms-on" : "ms-warn"}">${pushOn ? "通知ON" : "通知OFF"}</span>`
+      : ""}
+    ${lastSeen ? `<small>最後に開いた日：${escapeHTML(formatShortDateJa(lastSeen))}</small>` : ""}
+  </span>`;
+}
+
 function fullMembersForAdmin() {
   return allMembersForAdmin.filter(member => member.member_type === "正会員" && member.active !== false);
 }
@@ -692,10 +794,17 @@ async function loadMembersAdmin() {
   const root = $("members-admin-list");
   if (!root || !isAdmin) return;
 
-  const [members, codes] = await Promise.all([
+  const [members, codes, devices] = await Promise.all([
     db.from("members").select("*").order("created_at", { ascending: true }),
-    db.from("member_codes").select("member_id,code")
+    db.from("member_codes").select("member_id,code"),
+    db.from("member_devices").select("*")
   ]);
+
+  // 会員ごとの端末（入室した数・通知の許可・最後に開いた日）
+  const devicesByMember = {};
+  (devices.data || []).forEach(device => {
+    (devicesByMember[device.member_id] ||= []).push(device);
+  });
 
   if (members.error || codes.error) {
     root.innerHTML = '<p class="muted">会員一覧を読み込めませんでした。</p>';
@@ -714,6 +823,7 @@ async function loadMembersAdmin() {
         <div class="member-admin-name">
           <strong>${escapeHTML(member.display_name)}</strong>
           <small>コード：<span class="member-code">${escapeHTML(formatMemberCode(memberCodesForAdmin[member.id]))}</span></small>
+          ${renderMemberStatus(devicesByMember[member.id] || [])}
         </div>
         <select data-member-type="${escapeHTML(member.id)}" aria-label="${escapeHTML(member.display_name)}さんの種類">
           <option value="協働会員" ${member.member_type !== "正会員" ? "selected" : ""}>協働会員</option>
@@ -761,8 +871,9 @@ function buildInviteMessage(name, code, memberType) {
     "",
     "④ 「会員コード」に上のコードを入れて「はじめる」を押します",
     "",
-    "⑤ 「通知を受け取りますか？」と出たら「許可」を押してください",
+    "⑤ 「通知を受け取りますか？」と出たら「受け取る」を押し、続けて出る確認で「許可」を押してください",
     "イベントやお知らせの通知が届くようになります。",
+    "（「あとで」を押した場合も、画面上の「通知を受け取る」ボタンからいつでもONにできます）",
     ...(memberType === "正会員"
       ? ["", "正会員の方は、下のメニューの「正会員」から、事業の進み具合も見られます。"]
       : []),
