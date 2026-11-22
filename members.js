@@ -438,18 +438,6 @@ function renderProjectCard(project) {
     </div>` : "";
 
   // 進捗・予定（段階のチェックと、段階を足す）
-  const stageBox = `
-    <section class="pj-box">
-      ${pjBoxHead(PJ_ICONS.chart, "いまの動き", editable ? "終わったら「済」にチェック。書き直しは鉛筆、消すときは×" : "")}
-      <ul class="pj-checklist">${stageChecklist || '<li class="muted">まだ書かれていません。</li>'}</ul>
-      ${editable ? `
-      <div class="pj-add-stage-head">
-        <label for="pj-new-stage-${escapeHTML(id)}">動きを書き足す</label>
-        <button type="button" class="pj-add-button" data-pj-action="add-stage" data-id="${escapeHTML(id)}">${PJ_ICONS.plus}追加</button>
-      </div>
-      <input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：備えリストメーカー作成中／12/5 ○○で打ち合わせ">` : ""}
-    </section>`;
-
   const reportBox = `
     <section class="pj-box">
       ${pjBoxHead(PJ_ICONS.note, "活動の報告", "")}
@@ -457,12 +445,28 @@ function renderProjectCard(project) {
       ${reportForm}
     </section>`;
 
-  const editBox = editable ? `
+  // 「この事業のようす」：いまの動き＋ひとこと・手伝ってほしいこと・状況をひとつにまとめる
+  const mainBox = `
     <section class="pj-box pj-form-box">
-      ${pjBoxHead(PJ_ICONS.briefcase, "事業情報", "事業の様子を入力してください")}
+      ${pjBoxHead(PJ_ICONS.chart, "この事業のようす", editable ? "担当の方が書き直せます" : "")}
+      <h5 class="pj-sub">いまの動き</h5>
+      <ul class="pj-checklist">${stageChecklist || '<li class="muted">まだ書かれていません。</li>'}</ul>
+      ${editable ? `
+      <div class="pj-add-stage-head">
+        <label for="pj-new-stage-${escapeHTML(id)}">動きを書き足す</label>
+        <button type="button" class="pj-add-button" data-pj-action="add-stage" data-id="${escapeHTML(id)}">${PJ_ICONS.plus}追加</button>
+      </div>
+      <input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：備えリストメーカー作成中／12/5 ○○で打ち合わせ">
+      <p class="form-note">いまの動きは「追加」「済」「鉛筆」「×」を押すとすぐ保存されます。</p>` : ""}
+      ${editable ? `
+      <hr class="pj-sep">
       ${isAdmin ? `
       <label for="pj-name-${escapeHTML(id)}">事業の名前</label>
       <input id="pj-name-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.name || "")}">` : ""}
+      <label for="pj-summary-${escapeHTML(id)}">どんな事業か（ひとこと）</label>
+      <textarea id="pj-summary-${escapeHTML(id)}" rows="2" lang="ja" placeholder="例：家庭の備えをいっしょに考えるリストを作って配る">${escapeHTML(project.summary || "")}</textarea>
+      <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
+      ${pjField(PJ_ICONS.person, `<input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">`)}
       <div class="pj-status-row">
         <label for="pj-status-${escapeHTML(id)}">状況</label>
         <select id="pj-status-${escapeHTML(id)}">
@@ -470,24 +474,16 @@ function renderProjectCard(project) {
             `<option value="${status}" ${status === project.status ? "selected" : ""}>${status}</option>`).join("")}
         </select>
       </div>
-      <label for="pj-next-date-${escapeHTML(id)}">次の予定の日付</label>
-      ${pjField(PJ_ICONS.calendar, `<input id="pj-next-date-${escapeHTML(id)}" type="date" value="${escapeHTML(project.next_date || "")}">`)}
-      <label for="pj-next-plan-${escapeHTML(id)}">次の予定</label>
-      ${pjField(PJ_ICONS.pencil, `<input id="pj-next-plan-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.next_plan || "")}" placeholder="例：打ち合わせ">`)}
-      <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
-      ${pjField(PJ_ICONS.person, `<input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">`)}
-      <label for="pj-summary-${escapeHTML(id)}">どんな事業か（ひとこと）</label>
-      <textarea id="pj-summary-${escapeHTML(id)}" rows="2" lang="ja" placeholder="事業の内容をかんたんに">${escapeHTML(project.summary || "")}</textarea>
       <label class="pj-inline-check">
         <input id="pj-update-notify-${escapeHTML(id)}" type="checkbox" checked> 正会員に通知する
       </label>
-      <button type="button" class="primary-button pj-wide-button" data-pj-action="save-project" data-id="${escapeHTML(id)}">${PJ_ICONS.save}更新する</button>
-    </section>` : "";
+      <button type="button" class="primary-button pj-wide-button" data-pj-action="save-project" data-id="${escapeHTML(id)}">${PJ_ICONS.save}ひとこと・手伝い・状況を保存</button>` : ""}
+    </section>`;
 
   const leadsBox = isAdmin ? `
     <section class="pj-box pj-form-box">
       ${pjBoxHead(PJ_ICONS.person, "担当者", "管理者だけが変更できます")}
-      <p class="form-note">正会員から選んでください。選んだ人がカードに「担当」として出て、この事業の「いまの動き」や「事業情報」を書き直せるようになります。</p>
+      <p class="form-note">正会員から選んでください。選んだ人がカードに「担当」として出て、この事業のようすを書き直せるようになります。</p>
       <div class="pj-lead-options">
         ${fullMembersForAdmin().length
           ? fullMembersForAdmin().map(member => `
@@ -513,6 +509,7 @@ function renderProjectCard(project) {
             <h3 class="pj-name">${escapeHTML(project.name)}</h3>
             <span class="pj-status ${statusClass}">${escapeHTML(project.status)}</span>
           </div>
+          ${project.summary ? `<p class="pj-summary">${escapeHTML(project.summary)}</p>` : ""}
 
           <p class="pj-leads">
             <span class="pj-label">担当</span>
@@ -527,12 +524,6 @@ function renderProjectCard(project) {
           </div>
         </div>
       </div>
-
-      ${project.summary ? `<p class="pj-summary">${escapeHTML(project.summary)}</p>` : ""}
-
-      ${(project.next_date || project.next_plan)
-        ? `<p class="pj-next"><span class="pj-label">次の予定</span>${escapeHTML(formatShortDateJa(project.next_date))} ${escapeHTML(project.next_plan || "")}</p>`
-        : ""}
 
       ${project.help_wanted
         ? `<p class="pj-help">🙋 手伝ってほしいこと：${escapeHTML(project.help_wanted)}</p>`
@@ -549,9 +540,8 @@ function renderProjectCard(project) {
           <span class="pj-sum-close">閉じる</span>
         </summary>
         <div class="pj-detail-body">
-          ${stageBox}
+          ${mainBox}
           ${reportBox}
-          ${editBox}
           ${leadsBox}
           <button type="button" class="pj-close-button" data-pj-action="close-details" data-id="${escapeHTML(id)}">${PJ_ICONS.chevron}閉じる</button>
         </div>
@@ -569,8 +559,6 @@ async function saveProject(id) {
 
   const changes = {
     status: value("status"),
-    next_date: value("next-date") || null,
-    next_plan: value("next-plan").trim() || null,
     help_wanted: value("help").trim() || null,
     summary: value("summary").trim() || null,
     updated_at: new Date().toISOString()
