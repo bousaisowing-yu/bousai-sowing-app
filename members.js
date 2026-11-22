@@ -487,9 +487,7 @@ function renderProjectCard(project) {
   const leadsBox = isAdmin ? `
     <section class="pj-box pj-form-box">
       ${pjBoxHead(PJ_ICONS.person, "担当者", "管理者だけが変更できます")}
-      <label for="pj-lead-names-${escapeHTML(id)}">表示する担当者の名前 <small class="label-note">「、」で区切って何人でも</small></label>
-      ${pjField(PJ_ICONS.person, `<input id="pj-lead-names-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(leadNames.join("、"))}" placeholder="例：山田、佐藤、鈴木">`)}
-      <label>アプリでこの事業を更新できる人 <small class="label-note">正会員から選ぶ</small></label>
+      <p class="form-note">正会員から選んでください。選んだ人がカードに「担当」として出て、この事業の「いまの動き」や「事業情報」を書き直せるようになります。</p>
       <div class="pj-lead-options">
         ${fullMembersForAdmin().length
           ? fullMembersForAdmin().map(member => `
@@ -704,13 +702,13 @@ async function deleteReport(reportId) {
 async function saveLeads(projectId) {
   if (!isAdmin) return;
 
-  const names = ($(`pj-lead-names-${projectId}`)?.value || "")
-    .split(/[、,，\n]/)
-    .map(name => name.trim())
-    .filter(Boolean);
-
   const selected = [...document.querySelectorAll(`input[data-pj-lead="${CSS.escape(String(projectId))}"]:checked`)]
     .map(input => input.value);
+
+  // カードに出す担当者の名前は、選んだ正会員の名前にそろえる
+  const names = selected
+    .map(memberId => allMembersForAdmin.find(member => member.id === memberId)?.display_name)
+    .filter(Boolean);
 
   const { error: nameError } = await db.from("projects")
     .update({ lead_names: names, updated_at: new Date().toISOString() })
