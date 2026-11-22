@@ -470,10 +470,6 @@ function renderProjectCard(project) {
             `<option value="${status}" ${status === project.status ? "selected" : ""}>${status}</option>`).join("")}
         </select>
       </div>
-      <label for="pj-next-date-${escapeHTML(id)}">次の予定の日付</label>
-      ${pjField(PJ_ICONS.calendar, `<input id="pj-next-date-${escapeHTML(id)}" type="date" value="${escapeHTML(project.next_date || "")}">`)}
-      <label for="pj-next-plan-${escapeHTML(id)}">次の予定</label>
-      ${pjField(PJ_ICONS.pencil, `<input id="pj-next-plan-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.next_plan || "")}" placeholder="例：打ち合わせ">`)}
       <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
       ${pjField(PJ_ICONS.person, `<input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">`)}
       <label for="pj-summary-${escapeHTML(id)}">どんな事業か（ひとこと）</label>
@@ -532,10 +528,6 @@ function renderProjectCard(project) {
 
       ${project.summary ? `<p class="pj-summary">${escapeHTML(project.summary)}</p>` : ""}
 
-      ${(project.next_date || project.next_plan)
-        ? `<p class="pj-next"><span class="pj-label">次の予定</span>${escapeHTML(formatShortDateJa(project.next_date))} ${escapeHTML(project.next_plan || "")}</p>`
-        : ""}
-
       ${project.help_wanted
         ? `<p class="pj-help">🙋 手伝ってほしいこと：${escapeHTML(project.help_wanted)}</p>`
         : ""}
@@ -571,8 +563,6 @@ async function saveProject(id) {
 
   const changes = {
     status: value("status"),
-    next_date: value("next-date") || null,
-    next_plan: value("next-plan").trim() || null,
     help_wanted: value("help").trim() || null,
     summary: value("summary").trim() || null,
     updated_at: new Date().toISOString()
