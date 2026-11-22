@@ -777,7 +777,7 @@ function renderMemberStatus(devices) {
     <span class="ms-badge ms-on">入室済み${devices.length > 1 ? `（${devices.length}台）` : ""}</span>
     ${pushKnown
       ? `<span class="ms-badge ${pushOn ? "ms-on" : "ms-warn"}">${pushOn ? "通知ON" : "通知OFF"}</span>`
-      : ""}
+      : '<span class="ms-badge ms-off">通知：まだ分からない</span>'}
     ${lastSeen ? `<small>最後に開いた日：${escapeHTML(formatShortDateJa(lastSeen))}</small>` : ""}
   </span>`;
 }
