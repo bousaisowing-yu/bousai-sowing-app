@@ -2950,6 +2950,7 @@ body.is-typing .page-top-button {
 }
 
 /* 管理者用：会員からの見え方を確かめる */
+.preview-panel { margin-top: 18px; }
 .preview-panel h3 { margin: 0 0 6px; }
 .preview-buttons {
   display: grid;
