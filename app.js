@@ -1290,6 +1290,15 @@ function myMemberName() {
   return (typeof currentMember !== "undefined" && currentMember?.display_name) || "";
 }
 
+// 代わりに登録できる名前：管理者は手で入れる。ほかの人は管理者が決めた名前だけ
+function proxyRule() {
+  if (isAdmin) return { free: true, names: [] };
+  const names = Array.isArray(currentMember?.proxy_names)
+    ? currentMember.proxy_names.map(name => String(name).trim()).filter(Boolean)
+    : [];
+  return { free: false, names };
+}
+
 function closeJoinPanels() {
   document.querySelectorAll(".ec-join-panel").forEach(panel => panel.remove());
 }
@@ -1318,19 +1327,32 @@ function openJoinPanel(id, mode = "self") {
   closeJoinPanels();
   const me = myMemberName();
   const sid = escapeHTML(String(id));
+  const rule = proxyRule();
+  const canProxy = rule.free || rule.names.length > 0;
+  if (!canProxy) mode = "self";
+
+  const proxyHtml = rule.free
+    ? `<p class="ec-join-note">18歳未満の子や、携帯を持っていない人の分を登録できます。</p>
+       <label for="ec-join-name-${sid}">参加する人のお名前</label>
+       <input id="ec-join-name-${sid}" type="text" lang="ja" autocomplete="off" placeholder="例：竹内 たろう">`
+    : `<p class="ec-join-note">参加する人を選んでください（いくつでも）。</p>
+       <div class="ec-proxy-names">
+         ${rule.names.map(name => `
+           <label class="ec-proxy-name"><input type="checkbox" name="ec-proxy-${sid}" value="${escapeHTML(name)}"> ${escapeHTML(name)}</label>`).join("")}
+       </div>`;
 
   const panel = document.createElement("div");
   panel.className = "ec-join-panel";
   panel.innerHTML = `
-    <p class="ec-join-title">だれが参加しますか？</p>
-    <div class="ec-join-switch" role="group" aria-label="参加の登録のしかた">
-      <button type="button" class="${mode === "self" ? "active" : ""}" data-action="join-mode" data-mode="self" data-id="${sid}">自分が参加</button>
-      <button type="button" class="${mode === "proxy" ? "active" : ""}" data-action="join-mode" data-mode="proxy" data-id="${sid}">代わりに登録</button>
-    </div>
+    ${canProxy
+      ? `<p class="ec-join-title">だれが参加しますか？</p>
+         <div class="ec-join-switch" role="group" aria-label="参加の登録のしかた">
+           <button type="button" class="${mode === "self" ? "active" : ""}" data-action="join-mode" data-mode="self" data-id="${sid}">自分が参加</button>
+           <button type="button" class="${mode === "proxy" ? "active" : ""}" data-action="join-mode" data-mode="proxy" data-id="${sid}">代わりに登録</button>
+         </div>`
+      : `<p class="ec-join-title">参加の登録</p>`}
     ${mode === "proxy"
-      ? `<p class="ec-join-note">18歳未満の子や、携帯を持っていない人の分を登録できます。</p>
-         <label for="ec-join-name-${sid}">参加する人のお名前</label>
-         <input id="ec-join-name-${sid}" type="text" lang="ja" autocomplete="off" placeholder="例：竹内 たろう">`
+      ? proxyHtml
       : me
         ? `<p class="ec-join-note"><strong>${escapeHTML(me)} さん</strong>として参加登録します。</p>`
         : `<label for="ec-join-name-${sid}">参加する方のお名前</label>
@@ -1350,21 +1372,32 @@ async function submitJoin(id, mode) {
 
   const me = myMemberName();
   const typed = ($(`ec-join-name-${id}`)?.value || "").trim();
-  let name = "";
+  let people = [];
 
   if (mode === "proxy") {
-    if (!typed) return alert("参加する人のお名前を入れてください。");
-    name = me ? `${typed}${PROXY_SUFFIX(me)}` : typed;
+    const rule = proxyRule();
+    if (rule.free) {
+      if (!typed) return alert("参加する人のお名前を入れてください。");
+      people = [typed];
+    } else {
+      people = [...document.querySelectorAll(`input[name="ec-proxy-${CSS.escape(String(id))}"]:checked`)]
+        .map(input => input.value)
+        .filter(name => rule.names.includes(name));
+      if (!people.length) return alert("参加する人を選んでください。");
+    }
   } else {
-    name = me || typed;
+    const name = me || typed;
     if (!name) return alert("お名前を入れてください。");
+    people = [name];
   }
 
-  const { error } = await db.from("event_responses").upsert({
+  const rows = people.map(person => ({
     event_id: id,
-    member_name: name,
+    member_name: mode === "proxy" && me ? `${person}${PROXY_SUFFIX(me)}` : person,
     attendance: "参加"
-  }, {
+  }));
+
+  const { error } = await db.from("event_responses").upsert(rows, {
     onConflict: "event_id,member_name"
   });
 
@@ -1374,7 +1407,7 @@ async function submitJoin(id, mode) {
   }
 
   closeJoinPanels();
-  alert(mode === "proxy" ? `${typed} さんの参加を登録しました！` : "参加登録しました！");
+  alert(mode === "proxy" ? `${people.join("、")} さんの参加を登録しました！` : "参加登録しました！");
   await loadEvents();
 }
 

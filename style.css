@@ -3119,3 +3119,63 @@ body.is-typing .page-top-button {
   height: 18px;
   flex-shrink: 0;
 }
+
+/* 代わりに登録：名前を選ぶ */
+.ec-proxy-names {
+  display: grid;
+  gap: 6px;
+}
+
+.ec-proxy-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1.5px solid #d3dfd2;
+  border-radius: 12px;
+  background: white;
+  font-weight: 700;
+}
+
+.ec-join-panel .ec-proxy-name input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--green);
+}
+
+/* 管理画面：代わりに登録できる人 */
+.member-admin-name small.member-proxy {
+  color: var(--green);
+}
+
+.member-proxy-editor {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f6faf5;
+}
+
+.member-proxy-editor p {
+  margin: 0 0 8px;
+}
+
+.member-proxy-editor textarea {
+  width: 100%;
+}
+
+.member-proxy-buttons {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.member-admin-actions {
+  flex-wrap: wrap;
+}
+
+.member-admin-actions .pj-mini-button {
+  white-space: nowrap;
+}
