@@ -1095,7 +1095,7 @@ function renderEventCards(events) {
                 ${ICONS.pin}<span>${escapeHTML(event.location)}</span><span class="ec-map-chip">地図</span>
               </a>`
             : `<span class="ec-meta-item">${ICONS.pin}未定</span>`}
-          <span class="ec-meta-item">${ICONS.people}参加 ${members.length}人</span>
+          <span class="ec-meta-item">${ICONS.people}参加 ${members.length}人${event.capacity ? `／募集 ${escapeHTML(String(event.capacity))}人` : ""}</span>
           ${recruitmentEnabled ? renderDeadline(deadlineInfo) : ""}
         </div>
 
@@ -1457,6 +1457,7 @@ function startEditEvent(id) {
   setTimeInputs("event-end", timeParts[1] || "");
 
   $("event-location").value = event.location || "";
+  if ($("event-capacity")) $("event-capacity").value = event.capacity ?? "";
   $("event-description").value = event.description || "";
 
   $("event-is-important").checked = !!event.is_important;
@@ -1510,6 +1511,7 @@ function cancelEditEvent() {
     "event-end-hour",
     "event-end-minute",
     "event-location",
+    "event-capacity",
     "event-description"
   ].forEach(id => {
     if ($(id)) $(id).value = "";
@@ -1572,6 +1574,20 @@ async function addEvent() {
     return;
   }
 
+  // 募集人数（なくてもよい）。全角の数字も受け付ける
+  const capacityText = ($("event-capacity")?.value || "")
+    .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .trim();
+  if (capacityText && !/^\d+$/.test(capacityText)) {
+    showMessage("event-admin-message", "募集人数は数字だけで入れてください。", true);
+    return;
+  }
+  const capacity = capacityText ? Number(capacityText) : null;
+  if (capacity === 0) {
+    showMessage("event-admin-message", "募集人数は1人以上にしてください（なければ空のままで大丈夫です）。", true);
+    return;
+  }
+
   const startResult = getTimeValue("event-start");
 
   if (startResult.error) {
@@ -1628,7 +1644,8 @@ async function addEvent() {
       image_url: imageUrl || null,
       is_important: $("event-is-important").checked,
       recruitment_enabled: $("event-recruitment-enabled").checked,
-      event_tags: selectedTags
+      event_tags: selectedTags,
+      capacity
     };
 
     let error;
@@ -1636,17 +1653,31 @@ async function addEvent() {
     let newEventId = null;
     let notifyNote = "";
 
-    if (editingEventId) {
-      ({ error } = await db.from("events")
-        .update(eventData)
-        .eq("id", editingEventId));
-    } else {
-      let inserted;
-      ({ data: inserted, error } = await db.from("events")
-        .insert(eventData)
-        .select("id")
-        .single());
-      newEventId = inserted?.id ?? null;
+    const saveEvent = async data => {
+      if (editingEventId) {
+        ({ error } = await db.from("events")
+          .update(data)
+          .eq("id", editingEventId));
+      } else {
+        let inserted;
+        ({ data: inserted, error } = await db.from("events")
+          .insert(data)
+          .select("id")
+          .single());
+        newEventId = inserted?.id ?? null;
+      }
+    };
+
+    await saveEvent(eventData);
+
+    // 募集人数の列がまだ Supabase にないとき：人数が空なら、その列なしで保存する
+    if (error && String(error.message || "").includes("capacity")) {
+      if (capacity === null) {
+        const { capacity: _unused, ...withoutCapacity } = eventData;
+        await saveEvent(withoutCapacity);
+      } else {
+        throw new Error("募集人数を保存する場所がまだありません。Supabase の SQL Editor で 008_event_capacity.sql を実行してください。");
+      }
     }
 
     if (error) {

@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=60">
+  <link rel="stylesheet" href="style.css?v=61">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -50,8 +50,8 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=60" defer></script>
-  <script src="members.js?v=60" defer></script>
+  <script src="app.js?v=61" defer></script>
+  <script src="members.js?v=61" defer></script>
 </head>
 
 <body>
@@ -269,6 +269,12 @@
 
             <label for="event-location">開催場所</label>
             <input id="event-location" type="text" lang="ja" autocorrect="on" placeholder="例：蹉跎西校区">
+
+            <label for="event-capacity">募集人数 <small class="label-note">なくてもOK</small></label>
+            <div class="capacity-input">
+              <input id="event-capacity" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="例：10">
+              <span>人</span>
+            </div>
 
             <label for="event-description">イベント内容</label>
             <textarea id="event-description" lang="ja" autocorrect="on" rows="4" placeholder="①②③ で始まる行は番号付きで表示されます"></textarea>

@@ -3002,3 +3002,21 @@ body.is-typing .page-top-button {
   font-weight: 700;
   color: #3d4a3c;
 }
+
+/* イベント登録：募集人数 */
+.capacity-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.capacity-input input {
+  flex: 0 0 auto;
+  width: 7em;
+  margin: 0;
+  text-align: center;
+}
+
+.capacity-input span {
+  font-weight: 700;
+}
