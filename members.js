@@ -42,6 +42,8 @@ const PJ_ICONS = {
   trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 6h17M9 6V3.8h6V6M5.8 6l1 14.2h10.4l1-14.2M10 10.5v6M14 10.5v6"/></svg>',
   save: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 2v4h8V5zm5 8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>',
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path stroke="white" stroke-width="2.4" stroke-linecap="round" d="M12 7.5v9M7.5 12h9"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 7v5l3.5 2"/></svg>',
   chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>'
 };
 
@@ -486,9 +488,11 @@ function renderProjectCard(project) {
       <h5 class="pj-sub">進捗状況</h5>
       <ul class="pj-checklist">${stageChecklist || '<li class="muted">まだ書かれていません。</li>'}</ul>
       ${editable ? `
-      <label for="pj-new-stage-${escapeHTML(id)}">進捗を足す <small class="label-note">日付は予定があるときだけ</small></label>
+      <label for="pj-new-stage-${escapeHTML(id)}">進捗を足す <small class="label-note">日付・時間・場所は予定があるときだけ</small></label>
       ${pjField(PJ_ICONS.calendar, `<input id="pj-new-date-${escapeHTML(id)}" type="date" class="pj-date-input" aria-label="日付（なくてもよい）">`)}
-      ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：香里園で打ち合わせ／備えリストメーカー作成中">`)}
+      ${pjField(PJ_ICONS.clock, `<input id="pj-new-time-${escapeHTML(id)}" type="time" step="300" aria-label="時間（なくてもよい）">`)}
+      ${pjField(PJ_ICONS.pin, `<input id="pj-new-place-${escapeHTML(id)}" type="text" lang="ja" placeholder="場所（例：寝屋川市役所）" aria-label="場所（なくてもよい）">`)}
+      ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="やること（例：打ち合わせ／備えリストメーカー作成中）">`)}
       <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
       ${pjField(PJ_ICONS.person, `<input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">`)}
       <label class="pj-inline-check">
@@ -597,7 +601,10 @@ async function saveProject(id) {
     // 1. 新しい動き（日付があれば頭に付ける）と、前の版の「次の予定」を動きに移す
     const newText = value("new-stage").trim();
     const newDate = value("new-date");
-    const newLine = newText ? `${newDate ? formatShortDateJa(newDate) + " " : ""}${newText}` : "";
+    const newTime = value("new-time");
+    const newPlace = value("new-place").trim();
+    const when = [newDate ? formatShortDateJa(newDate) : "", newTime, newPlace ? `＠${newPlace}` : ""].filter(Boolean).join(" ");
+    const newLine = newText ? `${when ? when + " " : ""}${newText}` : "";
 
     const lines = [];
     if (project?.next_plan || project?.next_date) {
