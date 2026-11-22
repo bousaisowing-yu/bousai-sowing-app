@@ -42,6 +42,8 @@ const PJ_ICONS = {
   trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M3.5 6h17M9 6V3.8h6V6M5.8 6l1 14.2h10.4l1-14.2M10 10.5v6M14 10.5v6"/></svg>',
   save: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2 2v4h8V5zm5 8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>',
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path stroke="white" stroke-width="2.4" stroke-linecap="round" d="M12 7.5v9M7.5 12h9"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7zm0 9.6A2.6 2.6 0 1 1 12 6.4a2.6 2.6 0 0 1 0 5.2z"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 7v5l3.5 2"/></svg>',
   chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>'
 };
 
@@ -54,6 +56,52 @@ function projectIconFor(name) {
   if (/自治会|地域|町内/.test(text)) return PJ_ICONS.people;
   return PJ_ICONS.sprout;
 }
+
+/* 進捗の1行：「12月13日（日） 14:00 ＠寝屋川市役所 打ち合わせ」の形で保存する */
+function buildProgressTitle({ date, time, place, text }) {
+  const head = [
+    date ? formatShortDateJa(date) : "",
+    time || "",
+    place ? `＠${place}` : ""
+  ].filter(Boolean).join(" ");
+  return text ? `${head ? head + " " : ""}${text}` : "";
+}
+
+function parseProgressTitle(title) {
+  let rest = String(title || "").trim();
+  let date = "";
+  let time = "";
+  let place = "";
+
+  const dateMatch = rest.match(/^(\d{1,2})月(\d{1,2})日(?:（.）)?\s*/);
+  if (dateMatch) {
+    const now = new Date();
+    const month = Number(dateMatch[1]);
+    const day = Number(dateMatch[2]);
+    // 年は書いていないので、今日から見て近いほうの年にする
+    let year = now.getFullYear();
+    if (month - (now.getMonth() + 1) > 6) year -= 1;
+    if ((now.getMonth() + 1) - month > 6) year += 1;
+    date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    rest = rest.slice(dateMatch[0].length);
+  }
+
+  const timeMatch = rest.match(/^(\d{1,2}:\d{2})\s*/);
+  if (timeMatch) {
+    time = timeMatch[1].padStart(5, "0");
+    rest = rest.slice(timeMatch[0].length);
+  }
+
+  const placeMatch = rest.match(/^＠(\S+)\s*/);
+  if (placeMatch) {
+    place = placeMatch[1];
+    rest = rest.slice(placeMatch[0].length);
+  }
+
+  return { date, time, place, text: rest };
+}
+
+let editingStageId = null;
 
 function pjField(icon, inputHtml) {
   return `<div class="pj-field"><span class="pj-field-icon">${icon}</span>${inputHtml}</div>`;
@@ -429,7 +477,25 @@ function renderProjectCard(project) {
       </ul>`
     : '<p class="pj-now-empty">まだ書かれていません</p>';
 
-  const stageChecklist = stages.map(stage => `
+  const stageChecklist = stages.map(stage => editable && String(editingStageId) === String(stage.id)
+    ? (() => {
+        const parts = parseProgressTitle(stage.title);
+        const sid = escapeHTML(stage.id);
+        return `
+    <li class="pj-check-row pj-stage-edit">
+      <div class="pj-stage-edit-fields">
+        ${pjField(PJ_ICONS.calendar, `<input id="pj-edit-date-${sid}" type="date" value="${escapeHTML(parts.date)}" aria-label="日付">`)}
+        ${pjField(PJ_ICONS.clock, `<input id="pj-edit-time-${sid}" type="time" step="300" value="${escapeHTML(parts.time)}" aria-label="時間">`)}
+        ${pjField(PJ_ICONS.pin, `<input id="pj-edit-place-${sid}" type="text" lang="ja" value="${escapeHTML(parts.place)}" placeholder="場所" aria-label="場所">`)}
+        ${pjField(PJ_ICONS.pencil, `<input id="pj-edit-text-${sid}" type="text" lang="ja" value="${escapeHTML(parts.text)}" placeholder="やること" aria-label="やること">`)}
+        <div class="pj-stage-edit-buttons">
+          <button type="button" class="secondary-button" data-pj-action="cancel-edit-stage" data-id="${sid}">やめる</button>
+          <button type="button" class="primary-button" data-pj-action="save-edit-stage" data-id="${sid}">${PJ_ICONS.save}保存</button>
+        </div>
+      </div>
+    </li>`;
+      })()
+    : `
     <li class="pj-check-row ${stage.done ? "done" : ""}">
       <span class="pj-check-title">${escapeHTML(stage.title)}</span>
       ${editable ? `
@@ -486,9 +552,11 @@ function renderProjectCard(project) {
       <h5 class="pj-sub">進捗状況</h5>
       <ul class="pj-checklist">${stageChecklist || '<li class="muted">まだ書かれていません。</li>'}</ul>
       ${editable ? `
-      <label for="pj-new-stage-${escapeHTML(id)}">進捗を足す <small class="label-note">日付は予定があるときだけ</small></label>
+      <label for="pj-new-stage-${escapeHTML(id)}">進捗を足す <small class="label-note">日付・時間・場所は予定があるときだけ</small></label>
       ${pjField(PJ_ICONS.calendar, `<input id="pj-new-date-${escapeHTML(id)}" type="date" class="pj-date-input" aria-label="日付（なくてもよい）">`)}
-      ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：香里園で打ち合わせ／備えリストメーカー作成中">`)}
+      ${pjField(PJ_ICONS.clock, `<input id="pj-new-time-${escapeHTML(id)}" type="time" step="300" aria-label="時間（なくてもよい）">`)}
+      ${pjField(PJ_ICONS.pin, `<input id="pj-new-place-${escapeHTML(id)}" type="text" lang="ja" placeholder="場所（例：寝屋川市役所）" aria-label="場所（なくてもよい）">`)}
+      ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="やること（例：打ち合わせ／備えリストメーカー作成中）">`)}
       <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
       ${pjField(PJ_ICONS.person, `<input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">`)}
       <label class="pj-inline-check">
@@ -597,7 +665,13 @@ async function saveProject(id) {
     // 1. 新しい動き（日付があれば頭に付ける）と、前の版の「次の予定」を動きに移す
     const newText = value("new-stage").trim();
     const newDate = value("new-date");
-    const newLine = newText ? `${newDate ? formatShortDateJa(newDate) + " " : ""}${newText}` : "";
+    const newTime = value("new-time");
+    const newLine = buildProgressTitle({
+      date: newDate,
+      time: newTime,
+      place: value("new-place").trim(),
+      text: newText
+    });
 
     const lines = [];
     if (project?.next_plan || project?.next_date) {
@@ -693,13 +767,36 @@ async function addStage(projectId) {
   await loadProjects();
 }
 
-async function editStage(stageId) {
+function editStage(stageId) {
   const stage = projectStages.find(item => String(item.id) === String(stageId));
   if (!stage) return;
-  const title = prompt("書き直してください。", stage.title || "");
-  if (title === null || !title.trim() || title.trim() === stage.title) return;
-  const { error } = await db.from("project_stages").update({ title: title.trim() }).eq("id", stageId);
+  editingStageId = stage.id;
+  openProjectIds.add(String(stage.project_id));
+  renderProjects();
+  $(`pj-edit-text-${stageId}`)?.focus();
+}
+
+function cancelEditStage() {
+  editingStageId = null;
+  renderProjects();
+}
+
+async function saveEditStage(stageId) {
+  const value = key => $(`pj-edit-${key}-${stageId}`)?.value ?? "";
+  const text = value("text").trim();
+  if (!text) return setProjectMessage("やることを入れてください。", true);
+
+  const title = buildProgressTitle({
+    date: value("date"),
+    time: value("time"),
+    place: value("place").trim(),
+    text
+  });
+
+  const { error } = await db.from("project_stages").update({ title }).eq("id", stageId);
   if (error) return setProjectMessage("書き直せませんでした：" + error.message, true);
+
+  editingStageId = null;
   await loadProjects();
 }
 
@@ -1143,6 +1240,8 @@ document.addEventListener("DOMContentLoaded", () => {
       case "add-stage": addStage(id); break;
       case "delete-stage": deleteStage(id); break;
       case "edit-stage": editStage(id); break;
+      case "cancel-edit-stage": cancelEditStage(); break;
+      case "save-edit-stage": saveEditStage(id); break;
       case "add-report": addReport(id, button); break;
       case "delete-report": deleteReport(id); break;
       case "save-leads": saveLeads(id); break;
