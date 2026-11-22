@@ -22,6 +22,12 @@ select json_build_object(
     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
   ),
+  'triggers', (
+    select json_agg(json_build_object('table', event_object_schema || '.' || event_object_table,
+      'name', trigger_name, 'event', event_manipulation, 'action', left(action_statement, 300)))
+    from information_schema.triggers
+    where event_object_schema in ('public', 'storage')
+  ),
   'constraints', (
     select json_agg(json_build_object('table', conrelid::regclass::text, 'name', conname,
       'def', pg_get_constraintdef(oid)))
