@@ -1057,6 +1057,9 @@ async function loadMembersAdmin() {
           <strong>${escapeHTML(member.display_name)}</strong>
           <small>コード：<span class="member-code">${escapeHTML(formatMemberCode(memberCodesForAdmin[member.id]))}</span></small>
           ${renderMemberStatus(devicesByMember[member.id] || [])}
+          ${(member.proxy_names || []).length
+            ? `<small class="member-proxy">代わりに登録：${(member.proxy_names || []).map(escapeHTML).join("、")}</small>`
+            : ""}
         </div>
         <select data-member-type="${escapeHTML(member.id)}" aria-label="${escapeHTML(member.display_name)}さんの種類">
           <option value="協働会員" ${member.member_type !== "正会員" ? "selected" : ""}>協働会員</option>
@@ -1065,6 +1068,7 @@ async function loadMembersAdmin() {
         <div class="member-admin-actions">
           <button type="button" class="pj-mini-button" data-member-action="copy-invite" data-id="${escapeHTML(member.id)}">案内文</button>
           <button type="button" class="pj-mini-button" data-member-action="rename" data-id="${escapeHTML(member.id)}">名前を変える</button>
+          <button type="button" class="pj-mini-button" data-member-action="proxy" data-id="${escapeHTML(member.id)}">代わりの人</button>
           <button type="button" class="pj-mini-button" data-member-action="reset-code" data-id="${escapeHTML(member.id)}">コード作り直し</button>
           <button type="button" class="pj-mini-button" data-member-action="delete" data-id="${escapeHTML(member.id)}">削除</button>
         </div>
@@ -1200,6 +1204,48 @@ async function changeMemberType(memberId, memberType) {
 
   if (error) {
     alert("変更できませんでした：" + error.message);
+  }
+
+  await loadMembersAdmin();
+}
+
+/* 「代わりに登録」できる名前（子どもなど）を会員ごとに決める */
+function openProxyEditor(button) {
+  const member = allMembersForAdmin.find(item => item.id === button.dataset.id);
+  const row = button.closest(".member-admin-row");
+  if (!member || !row) return;
+
+  document.querySelectorAll(".member-proxy-editor").forEach(el => el.remove());
+  const sid = escapeHTML(member.id);
+  const editor = document.createElement("div");
+  editor.className = "member-proxy-editor";
+  editor.innerHTML = `
+    <p><strong>${escapeHTML(member.display_name)} さん</strong>が「代わりに登録」できる人</p>
+    <label for="proxy-names-${sid}">名前（1行に1人）</label>
+    <textarea id="proxy-names-${sid}" rows="3" lang="ja" placeholder="例：中嶋 望">${escapeHTML((member.proxy_names || []).join("\n"))}</textarea>
+    <div class="member-proxy-buttons">
+      <button type="button" class="primary-button" data-member-action="proxy-save" data-id="${sid}">保存</button>
+      <button type="button" class="secondary-button" data-member-action="proxy-close">やめる</button>
+    </div>
+  `;
+  row.appendChild(editor);
+}
+
+async function saveProxyNames(memberId) {
+  const names = [...new Set(($(`proxy-names-${memberId}`)?.value || "")
+    .split(/\n/)
+    .map(name => name.replace(/[\s　]+/g, " ").trim())
+    .filter(Boolean))];
+
+  const { error } = await db.from("members")
+    .update({ proxy_names: names })
+    .eq("id", memberId);
+
+  if (error) {
+    alert(String(error.message || "").includes("proxy")
+      ? "保存する場所がまだありません。Supabase の SQL Editor で 009_proxy_names.sql を実行してください。"
+      : "保存できませんでした：" + error.message);
+    return;
   }
 
   await loadMembersAdmin();
@@ -1455,6 +1501,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const button = event.target.closest("button[data-member-action]");
     if (button?.dataset.memberAction === "delete") deleteMember(button.dataset.id);
     if (button?.dataset.memberAction === "rename") renameMember(button.dataset.id);
+    if (button?.dataset.memberAction === "proxy") openProxyEditor(button);
+    if (button?.dataset.memberAction === "proxy-save") saveProxyNames(button.dataset.id);
+    if (button?.dataset.memberAction === "proxy-close") button.closest(".member-proxy-editor")?.remove();
     if (button?.dataset.memberAction === "reset-code") resetMemberCode(button.dataset.id);
     if (button?.dataset.memberAction === "copy-invite") {
       const member = allMembersForAdmin.find(item => item.id === button.dataset.id);

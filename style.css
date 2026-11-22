@@ -3020,3 +3020,162 @@ body.is-typing .page-top-button {
 .capacity-input span {
   font-weight: 700;
 }
+
+/* 参加登録：自分／代わりに登録 */
+.ec-join-panel {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1.5px solid #d3dfd2;
+  border-radius: 16px;
+  background: #f6faf5;
+}
+
+.ec-join-title {
+  margin: 0 0 10px;
+  font-weight: 700;
+  color: var(--green);
+}
+
+.ec-join-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 4px;
+  border-radius: 999px;
+  background: white;
+  border: 1.5px solid #d3dfd2;
+}
+
+.ec-join-switch button {
+  min-height: 40px;
+  margin: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #3d4a3c;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ec-join-switch button.active {
+  background: var(--green);
+  color: white;
+}
+
+.ec-join-note {
+  margin: 10px 0 6px;
+  font-size: 13px;
+  color: #3d4a3c;
+  line-height: 1.6;
+}
+
+.ec-join-panel label {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ec-join-panel input {
+  width: 100%;
+  margin: 0;
+}
+
+.ec-join-buttons {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ec-join-buttons:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+
+.ec-join-panel .primary-button,
+.ec-join-panel .secondary-button {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  border-radius: 999px;
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.ec-cancel-list {
+  display: grid;
+  gap: 8px;
+}
+
+.ec-cancel-list button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ec-cancel-list button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* 代わりに登録：名前を選ぶ */
+.ec-proxy-names {
+  display: grid;
+  gap: 6px;
+}
+
+.ec-proxy-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1.5px solid #d3dfd2;
+  border-radius: 12px;
+  background: white;
+  font-weight: 700;
+}
+
+.ec-join-panel .ec-proxy-name input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--green);
+}
+
+/* 管理画面：代わりに登録できる人 */
+.member-admin-name small.member-proxy {
+  color: var(--green);
+}
+
+.member-proxy-editor {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f6faf5;
+}
+
+.member-proxy-editor p {
+  margin: 0 0 8px;
+}
+
+.member-proxy-editor textarea {
+  width: 100%;
+}
+
+.member-proxy-buttons {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.member-admin-actions {
+  flex-wrap: wrap;
+}
+
+.member-admin-actions .pj-mini-button {
+  white-space: nowrap;
+}
