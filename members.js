@@ -179,10 +179,21 @@ function linkOneSignal() {
       if (!OneSignal.Notifications.permission) {
         OneSignal.Slidedown.promptPush();
       }
+
+      // 管理画面で「入室済み・通知ON/OFF」が分かるように記録する
+      const report = () => reportMyDevice(!!OneSignal.User?.PushSubscription?.optedIn);
+      report();
+      OneSignal.User?.PushSubscription?.addEventListener?.("change", report);
     } catch (error) {
       console.error("通知の設定ができませんでした:", error);
     }
   });
+}
+
+async function reportMyDevice(pushEnabled) {
+  if (!currentMember) return; // 管理者だけのログインでは記録しない
+  const { error } = await db.rpc("report_my_device", { p_push_enabled: pushEnabled });
+  if (error) console.warn("端末の状態を記録できませんでした:", error.message);
 }
 
 /* -----------------------------
@@ -615,6 +626,28 @@ async function deleteProject(projectId) {
    管理画面：会員
 ----------------------------- */
 
+function renderMemberStatus(devices) {
+  if (!devices.length) {
+    return '<span class="member-status"><span class="ms-badge ms-off">未入室</span></span>';
+  }
+
+  const pushOn = devices.some(device => device.push_enabled === true);
+  const pushKnown = devices.some(device => device.push_enabled !== null && device.push_enabled !== undefined);
+  const lastSeen = devices
+    .map(device => device.last_seen_at || device.created_at)
+    .filter(Boolean)
+    .sort()
+    .pop();
+
+  return `<span class="member-status">
+    <span class="ms-badge ms-on">入室済み${devices.length > 1 ? `（${devices.length}台）` : ""}</span>
+    ${pushKnown
+      ? `<span class="ms-badge ${pushOn ? "ms-on" : "ms-warn"}">${pushOn ? "通知ON" : "通知OFF"}</span>`
+      : ""}
+    ${lastSeen ? `<small>最後に開いた日：${escapeHTML(formatShortDateJa(lastSeen))}</small>` : ""}
+  </span>`;
+}
+
 function fullMembersForAdmin() {
   return allMembersForAdmin.filter(member => member.member_type === "正会員" && member.active !== false);
 }
@@ -627,10 +660,17 @@ async function loadMembersAdmin() {
   const root = $("members-admin-list");
   if (!root || !isAdmin) return;
 
-  const [members, codes] = await Promise.all([
+  const [members, codes, devices] = await Promise.all([
     db.from("members").select("*").order("created_at", { ascending: true }),
-    db.from("member_codes").select("member_id,code")
+    db.from("member_codes").select("member_id,code"),
+    db.from("member_devices").select("*")
   ]);
+
+  // 会員ごとの端末（入室した数・通知の許可・最後に開いた日）
+  const devicesByMember = {};
+  (devices.data || []).forEach(device => {
+    (devicesByMember[device.member_id] ||= []).push(device);
+  });
 
   if (members.error || codes.error) {
     root.innerHTML = '<p class="muted">会員一覧を読み込めませんでした。</p>';
@@ -649,6 +689,7 @@ async function loadMembersAdmin() {
         <div class="member-admin-name">
           <strong>${escapeHTML(member.display_name)}</strong>
           <small>コード：<span class="member-code">${escapeHTML(formatMemberCode(memberCodesForAdmin[member.id]))}</span></small>
+          ${renderMemberStatus(devicesByMember[member.id] || [])}
         </div>
         <select data-member-type="${escapeHTML(member.id)}" aria-label="${escapeHTML(member.display_name)}さんの種類">
           <option value="協働会員" ${member.member_type !== "正会員" ? "selected" : ""}>協働会員</option>
