@@ -1216,6 +1216,20 @@ function changeCalendarMonth(amount) {
    参加登録・キャンセル
 ----------------------------- */
 
+// 会員としてログインしていれば、その名前を自動で使う（確認だけ）
+// ログインしていない（管理者だけ等）ときは、これまで通り名前を入力してもらう
+function askMemberName(confirmText, promptText) {
+  const memberName =
+    typeof currentMember !== "undefined" && currentMember?.display_name;
+
+  if (memberName) {
+    return confirm(`${memberName} さん${confirmText}`) ? memberName : "";
+  }
+
+  const typed = prompt(promptText);
+  return typed ? typed.trim() : "";
+}
+
 async function joinEvent(id) {
   const event = allEvents.find(item =>
     String(item.id) === String(id)
@@ -1233,16 +1247,16 @@ async function joinEvent(id) {
     return;
   }
 
-  const name = prompt(
-    "参加する方のお名前を入力してください。",
-    (typeof currentMember !== "undefined" && currentMember?.display_name) || ""
+  const name = askMemberName(
+    "として参加登録しますか？",
+    "参加する方のお名前を入力してください。"
   );
 
-  if (!name || !name.trim()) return;
+  if (!name) return;
 
   const { error } = await db.from("event_responses").upsert({
     event_id: id,
-    member_name: name.trim(),
+    member_name: name,
     attendance: "参加"
   }, {
     onConflict: "event_id,member_name"
@@ -1268,17 +1282,17 @@ async function cancelEvent(id) {
     return;
   }
 
-  const name = prompt(
-    "参加登録したときのお名前を入力してください。",
-    (typeof currentMember !== "undefined" && currentMember?.display_name) || ""
+  const name = askMemberName(
+    "の参加を取り消しますか？",
+    "参加登録したときのお名前を入力してください。"
   );
 
-  if (!name || !name.trim()) return;
+  if (!name) return;
 
   const { error } = await db.from("event_responses")
     .delete()
     .eq("event_id", id)
-    .eq("member_name", name.trim());
+    .eq("member_name", name);
 
   if (error) {
     alert("参加を取り消せませんでした：" + error.message);
