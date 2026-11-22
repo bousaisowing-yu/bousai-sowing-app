@@ -417,7 +417,6 @@ function renderProjectCard(project) {
   const latest = reports[0];
   const leadNames = (project.lead_names || []).filter(Boolean);
 
-  const statusClass = PROJECT_STATUS_CLASS[project.status] || "pj-status-prep";
 
   // カードに出す「進捗状況」（終わったものは下にうすく、新しい3つまで）
   const recentDone = doneStages.slice(-3).reverse();
@@ -492,13 +491,6 @@ function renderProjectCard(project) {
       ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="例：香里園で打ち合わせ／備えリストメーカー作成中">`)}
       <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
       ${pjField(PJ_ICONS.person, `<input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">`)}
-      <div class="pj-status-row">
-        <label for="pj-status-${escapeHTML(id)}">状況</label>
-        <select id="pj-status-${escapeHTML(id)}">
-          ${PROJECT_STATUSES.map(status =>
-            `<option value="${status}" ${status === project.status ? "selected" : ""}>${status}</option>`).join("")}
-        </select>
-      </div>
       <label class="pj-inline-check">
         <input id="pj-update-notify-${escapeHTML(id)}" type="checkbox" checked> 担当者に通知する
       </label>
@@ -544,7 +536,6 @@ function renderProjectCard(project) {
         <div class="pj-main">
           <div class="pj-head">
             <h3 class="pj-name">${escapeHTML(project.name)}</h3>
-            <span class="pj-status ${statusClass}">${escapeHTML(project.status)}</span>
           </div>
           ${project.summary ? `<p class="pj-summary">${escapeHTML(project.summary)}</p>` : ""}
 
@@ -624,12 +615,10 @@ async function saveProject(id) {
       if (stageError) throw stageError;
     }
 
-    // 2. 手伝ってほしいこと・状況
+    // 2. 手伝ってほしいこと
     const help = value("help").trim() || null;
-    const status = value("status");
 
     const { error } = await db.from("projects").update({
-      status,
       next_date: null,
       next_plan: null,
       help_wanted: help,
@@ -644,7 +633,7 @@ async function saveProject(id) {
       if (help && help !== project?.help_wanted) parts.push(`手伝い募集：${help}`);
       const note = await notifyMembers({
         heading: `${project?.name || "事業"}が更新されました`,
-        message: parts.join("／") || `状況：${status}`,
+        message: parts.join("／") || "様子が更新されました",
         url: `${getAppUrl()}#project-${id}`,
         audience: "leads",
         projectId: id
