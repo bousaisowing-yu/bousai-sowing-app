@@ -344,3 +344,12 @@ begin
   end loop;
 end;
 $$;
+
+-- ─────────────────────────────
+-- 4. アプリから使えるようにする（読み書きの許可。中身の制限は上のルールで守る）
+-- ─────────────────────────────
+grant select, insert, update, delete on public.projects, public.project_stages,
+  public.project_reports, public.project_leads to authenticated;
+grant select, update, delete on public.members to authenticated;
+grant select on public.member_codes to authenticated;
+grant select, delete on public.member_devices to authenticated;
