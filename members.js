@@ -315,6 +315,9 @@ function renderProjectCard(project) {
   const editForm = editable ? `
     <div class="pj-form">
       <h4>様子を更新する</h4>
+      ${isAdmin ? `
+      <label>事業の名前</label>
+      <input id="pj-name-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.name || "")}">` : ""}
       <label>状況</label>
       <select id="pj-status-${escapeHTML(id)}">
         ${PROJECT_STATUSES.map(status =>
@@ -414,14 +417,19 @@ function setProjectMessage(text, error = false) {
 async function saveProject(id) {
   const value = key => $(`pj-${key}-${id}`)?.value ?? "";
 
-  const { error } = await db.from("projects").update({
+  const changes = {
     status: value("status"),
     next_date: value("next-date") || null,
     next_plan: value("next-plan").trim() || null,
     help_wanted: value("help").trim() || null,
     summary: value("summary").trim() || null,
     updated_at: new Date().toISOString()
-  }).eq("id", id);
+  };
+
+  const newName = value("name").trim();
+  if (isAdmin && newName) changes.name = newName;
+
+  const { error } = await db.from("projects").update(changes).eq("id", id);
 
   if (error) return setProjectMessage("更新できませんでした：" + error.message, true);
 
