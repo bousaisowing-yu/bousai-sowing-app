@@ -2194,3 +2194,26 @@ body::after {
   width: 18px;
   height: 18px;
 }
+
+.member-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.member-status small {
+  width: 100%;
+}
+
+.ms-badge {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ms-on { background: var(--green-soft); color: var(--green); }
+.ms-off { background: #eef0f2; color: #5b6670; }
+.ms-warn { background: #fff4d6; color: #8a5a00; }
