@@ -235,6 +235,50 @@ async function ensureUserSession() {
   return currentUser;
 }
 
+/* 管理者ログインの前の「会員としてのログイン」を覚えておき、
+   ログアウトした時にそれに戻す（会員コードを入れ直さなくてよいように） */
+const MEMBER_SESSION_KEY = "bousai-member-session";
+
+async function rememberMemberSession() {
+  try {
+    const { data } = await db.auth.getSession();
+    const session = data?.session;
+    if (session?.user?.is_anonymous && session.refresh_token) {
+      localStorage.setItem(MEMBER_SESSION_KEY, JSON.stringify({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token
+      }));
+    }
+  } catch (error) {
+    console.warn("会員のログインを覚えておけませんでした:", error);
+  }
+}
+
+async function backToMemberSession() {
+  let saved = null;
+  try {
+    saved = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY) || "null");
+  } catch (error) {
+    saved = null;
+  }
+
+  if (saved?.refresh_token) {
+    try {
+      const { data, error } = await db.auth.setSession(saved);
+      if (!error && data?.session?.user) {
+        currentUser = data.session.user;
+        try { localStorage.removeItem(MEMBER_SESSION_KEY); } catch (e) {}
+        return currentUser;
+      }
+    } catch (error) {
+      console.warn("会員のログインに戻れませんでした:", error);
+    }
+    try { localStorage.removeItem(MEMBER_SESSION_KEY); } catch (e) {}
+  }
+
+  return ensureUserSession();
+}
+
 /* -----------------------------
    カレンダー・共通スタイル
 ----------------------------- */
@@ -2075,11 +2119,11 @@ async function updateRecoveredPassword() {
       closePasswordRecovery();
 
       try {
-        await db.auth.signOut();
+        await db.auth.signOut({ scope: "local" });
         currentUser = null;
         isAdmin = false;
 
-        await ensureUserSession();
+        await backToMemberSession();
         await checkAdmin();
 
       } catch (error) {
@@ -2153,6 +2197,8 @@ async function login() {
   $("login-button").disabled = true;
 
   try {
+    await rememberMemberSession();
+
     const { data, error } = await db.auth.signInWithPassword({
       email,
       password
@@ -2165,11 +2211,11 @@ async function login() {
     await checkAdmin();
 
     if (!isAdmin) {
-      await db.auth.signOut();
+      await db.auth.signOut({ scope: "local" });
 
       currentUser = null;
 
-      await ensureUserSession();
+      await backToMemberSession();
       await checkAdmin();
 
       showMessage(
@@ -2205,13 +2251,13 @@ async function login() {
 }
 
 async function logout() {
-  await db.auth.signOut();
+  await db.auth.signOut({ scope: "local" });
 
   currentUser = null;
   isAdmin = false;
 
   try {
-    await ensureUserSession();
+    await backToMemberSession();
   } catch (error) {
     console.error("匿名ログインに失敗しました:", error);
   }
