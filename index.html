@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700&display=swap">
-  <link rel="stylesheet" href="style.css?v=41">
+  <link rel="stylesheet" href="style.css?v=42">
   <link rel="manifest" href="./manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -31,8 +31,8 @@
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=41" defer></script>
-  <script src="members.js?v=41" defer></script>
+  <script src="app.js?v=42" defer></script>
+  <script src="members.js?v=42" defer></script>
 </head>
 
 <body>
@@ -154,9 +154,13 @@
     </section>
 
     <section id="projects-page" class="page" hidden>
-      <div class="panel">
-        <p class="eyebrow">FOR FULL MEMBERS</p>
+      <div class="pj-page-band">
+        <button type="button" class="pj-back-button" id="projects-back-button" aria-label="イベントの画面にもどる">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="m15 5-7 7 7 7"/></svg>
+        </button>
         <h2>事業の進み具合</h2>
+      </div>
+      <div class="panel pj-page-panel">
 
         <div id="projects-area" hidden>
           <p class="muted">正会員のみなさんで進めている事業の様子です。「くわしく見る」を押すと、報告や段階の内容が見られます。</p>
@@ -343,6 +347,11 @@
       </div>
     </section>
   </main>
+
+  <button type="button" id="page-top-button" class="page-top-button" aria-label="ページのいちばん上へ" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>
+    <span>ページトップ</span>
+  </button>
 
   <footer class="site-footer">
     <p>特定非営利活動法人 防災Sowing</p>
