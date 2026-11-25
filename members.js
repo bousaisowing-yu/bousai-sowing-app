@@ -147,6 +147,7 @@ function readProgressTime(valueOf) {
 
 let editingStageId = null;
 let editingAboutId = null;
+const openDoneIds = new Set(); // 「終わったもの」を開いている事業
 const editModeIds = new Set(); // タイトルの「編集」を押して、鉛筆マークを出している事業
 let editingPart = null; // 表紙で鉛筆を押して書いているところ（"事業id:progress" など）
 
@@ -694,16 +695,11 @@ function renderProjectCard(project) {
     : "";
 
   // ---- 進捗状況（表紙）----
-  // 担当者でない人：文だけ（終わったものは新しい3つまで、うすく）
-  const recentDone = doneStages.slice(-3).reverse();
-  const plainList = (activeStages.length || recentDone.length)
-    ? `<ul class="pj-now-list">
-        ${activeStages.map(stage => `
-          <li class="pj-now-item"><span class="pj-now-dot" aria-hidden="true"></span><span>${escapeHTML(stage.title)}</span></li>`).join("")}
-        ${recentDone.map(stage => `
-          <li class="pj-now-item done"><span class="pj-now-check" aria-hidden="true">✓</span><span>${escapeHTML(stage.title)}</span></li>`).join("")}
-      </ul>`
-    : '<p class="pj-now-empty">まだ書かれていません</p>';
+  // まだのものだけをカードに並べ、終わったものは「✓ 終わったもの（n件）」にまとめる
+  const plainRow = stage => `
+          <li class="pj-now-item ${stage.done ? "done" : ""}">${stage.done
+            ? '<span class="pj-now-check" aria-hidden="true">✓</span>'
+            : '<span class="pj-now-dot" aria-hidden="true"></span>'}<span>${escapeHTML(stage.title)}</span></li>`;
 
   // 担当者：チェック（済）を付けられる。鉛筆を押すと、書き直し・消す・足すができる
   const stageRow = stage => {
@@ -726,9 +722,18 @@ function renderProjectCard(project) {
           <p class="pj-now-label">進捗状況</p>
           ${pencil("progress", "進捗を足す")}
         </div>
-        ${editable
-          ? (stages.length ? `<ul class="pj-checklist">${stages.map(stageRow).join("")}</ul>` : '<p class="pj-now-empty">まだ書かれていません</p>')
-          : plainList}
+        ${activeStages.length
+          ? (editable
+            ? `<ul class="pj-checklist">${activeStages.map(stageRow).join("")}</ul>`
+            : `<ul class="pj-now-list">${activeStages.map(plainRow).join("")}</ul>`)
+          : `<p class="pj-now-empty">${doneStages.length ? "いまは、まだのものはありません" : "まだ書かれていません"}</p>`}
+        ${doneStages.length ? `
+        <details class="pj-done-fold" data-done-fold="${sid}" ${openDoneIds.has(id) ? "open" : ""}>
+          <summary><span class="pj-done-fold-label">✓ 終わったもの（${doneStages.length}件）</span><span class="pj-report-chevron">${PJ_ICONS.chevron}</span></summary>
+          ${editable
+            ? `<ul class="pj-checklist">${doneStages.slice().reverse().map(stageRow).join("")}</ul>`
+            : `<ul class="pj-now-list">${doneStages.slice().reverse().map(plainRow).join("")}</ul>`}
+        </details>` : ""}
       </div>`;
 
   // ---- 手伝ってほしいこと（表紙）----
@@ -1685,6 +1690,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // 開いている「くわしく見る」を覚えておく（更新後も開いたままにする）
   projectsRoot?.addEventListener("toggle", event => {
     const details = event.target;
+    if (details.matches?.("details[data-done-fold]")) {
+      if (details.open) openDoneIds.add(details.dataset.doneFold);
+      else openDoneIds.delete(details.dataset.doneFold);
+      return;
+    }
     if (!details.matches?.("details[data-project-id]")) return;
     if (details.open) openProjectIds.add(details.dataset.projectId);
     else openProjectIds.delete(details.dataset.projectId);
