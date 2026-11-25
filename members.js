@@ -147,6 +147,7 @@ function readProgressTime(valueOf) {
 
 let editingStageId = null;
 let editingAboutId = null;
+const editModeIds = new Set(); // タイトルの「編集」を押して、鉛筆マークを出している事業
 let editingPart = null; // 表紙で鉛筆を押して書いているところ（"事業id:progress" など）
 
 function isEditingPart(id, part) {
@@ -570,7 +571,7 @@ function renderProjectModal() {
         <button type="button" class="pj-modal-delete" data-pj-action="delete-stage" data-id="${stId}">${PJ_ICONS.trash}この進捗を消す</button>
       </div>`;
   } else if (editingAboutId) {
-    title = "事業の説明と色";
+    title = isAdmin ? "事業の名前・説明・色" : "事業の説明と色";
     inner = `
           <div class="pj-modal-form pj-about-edit">
             ${isAdmin ? `
@@ -590,7 +591,28 @@ function renderProjectModal() {
               <button type="button" class="secondary-button" data-pj-action="cancel-about" data-id="${escapeHTML(id)}">やめる</button>
               <button type="button" class="primary-button" data-pj-action="save-about" data-id="${escapeHTML(id)}">${PJ_ICONS.save}保存</button>
             </div>
+            ${isAdmin ? `<button type="button" class="pj-modal-delete" data-pj-action="delete-project" data-id="${escapeHTML(id)}">${PJ_ICONS.trash}この事業を削除</button>` : ""}
           </div>`;
+  } else if (isEditingPart(id, "leads") && isAdmin) {
+    title = "担当者";
+    inner = `
+      <div class="pj-modal-form">
+        <p class="pj-modal-note">正会員から選んでください。選んだ人がカードに「担当」として出て、この事業を書き直せるようになります。</p>
+        <div class="pj-lead-options">
+          ${fullMembersForAdmin().length
+            ? fullMembersForAdmin().map(member => `
+            <label class="pj-lead-pill">
+              <input type="checkbox" data-pj-lead="${sid}" value="${escapeHTML(member.id)}"
+                ${projectLeads.some(lead => String(lead.project_id) === id && lead.member_id === member.id) ? "checked" : ""}>
+              <span>${escapeHTML(member.display_name)}</span>
+            </label>`).join("")
+            : '<p class="pj-modal-note">正会員がまだいません。「会員」の画面で正会員にすると、ここに出ます。</p>'}
+        </div>
+        <div class="pj-about-buttons">
+          <button type="button" class="secondary-button" data-pj-action="close-modal" data-id="${sid}">やめる</button>
+          <button type="button" class="primary-button" data-pj-action="save-leads" data-id="${sid}">${PJ_ICONS.save}保存</button>
+        </div>
+      </div>`;
   } else if (isEditingPart(id, "progress")) {
     title = "進捗を足す";
     inner = `
@@ -758,31 +780,13 @@ function renderProjectCard(project) {
       <ul class="pj-report-items">${olderReports.map(reportItem).join("")}</ul>
     </section>` : "";
 
-  const leadsBox = isAdmin ? `
-    <section class="pj-box pj-form-box">
-      ${pjBoxHead(PJ_ICONS.person, "担当者", "管理者だけが変更できます")}
-      <p class="form-note">正会員から選んでください。選んだ人がカードに「担当」として出て、この事業のようすを書き直せるようになります。</p>
-      <div class="pj-lead-options">
-        ${fullMembersForAdmin().length
-          ? fullMembersForAdmin().map(member => `
-            <label class="pj-lead-pill">
-              <input type="checkbox" data-pj-lead="${escapeHTML(id)}" value="${escapeHTML(member.id)}"
-                ${projectLeads.some(lead => String(lead.project_id) === id && lead.member_id === member.id) ? "checked" : ""}>
-              <span>${escapeHTML(member.display_name)}</span>
-            </label>`).join("")
-          : '<p class="form-note">正会員がまだいません。「会員」の画面で正会員にすると、ここに出ます。</p>'}
-      </div>
-    </section>
-    <div class="pj-bottom-buttons">
-      <button type="button" class="secondary-button danger-button" data-pj-action="delete-project" data-id="${escapeHTML(id)}">${PJ_ICONS.trash}この事業を削除</button>
-      <button type="button" class="primary-button" data-pj-action="save-leads" data-id="${escapeHTML(id)}">${PJ_ICONS.save}担当者を保存</button>
-    </div>` : "";
 
   // 事業名と説明（説明は鉛筆マークで、その場で書き直す）
   const color = projectColorFor(project);
   const aboutHtml = `
           <div class="pj-head">
             <h3 class="pj-name">${escapeHTML(project.name)}</h3>
+            ${editable ? `<button type="button" class="pj-edit-toggle" data-pj-action="toggle-edit" data-id="${sid}" aria-pressed="${editModeIds.has(id)}">${editModeIds.has(id) ? "✓ 編集をおわる" : `${PJ_ICONS.pencil}編集`}</button>` : ""}
           </div>
           ${(project.summary || editable) ? `
           <div class="pj-summary-row">
@@ -792,10 +796,10 @@ function renderProjectCard(project) {
             ${editable ? `<button type="button" class="pj-pencil-button" data-pj-action="edit-about" data-id="${escapeHTML(id)}" aria-label="事業の説明と色を書き直す">${PJ_ICONS.pencil}</button>` : ""}
           </div>` : ""}`;
 
-  const detailInner = `${olderBox}${leadsBox}`;
+  const detailInner = olderBox;
 
   return `
-    <article class="project-card pj-color-${color.key}" id="project-${sid}" style="--pj-bg:${color.bg};--pj-border:${color.border};--pj-accent:${color.accent};--pj-soft:${color.soft}">
+    <article class="project-card pj-color-${color.key} ${editModeIds.has(id) ? "pj-edit-on" : ""}" id="project-${sid}" style="--pj-bg:${color.bg};--pj-border:${color.border};--pj-accent:${color.accent};--pj-soft:${color.soft}">
       <div class="pj-top">
         <span class="pj-icon">${projectIconFor(project.name)}</span>
         <div class="pj-main">
@@ -806,6 +810,7 @@ function renderProjectCard(project) {
             ${leadNames.length
               ? leadNames.map(name => `<span class="pj-lead-chip">${escapeHTML(name)}</span>`).join("")
               : '<span class="pj-undecided">未定</span>'}
+            ${isAdmin ? `<button type="button" class="pj-pencil-button pj-leads-pencil" data-pj-action="edit-part" data-part="leads" data-id="${sid}" aria-label="担当者を変える">${PJ_ICONS.pencil}</button>` : ""}
           </p>
         </div>
       </div>
@@ -1133,7 +1138,7 @@ async function saveLeads(projectId) {
     if (insertError) return setProjectMessage("担当者を保存できませんでした：" + insertError.message, true);
   }
 
-  alert("担当者を保存しました。");
+  editingPart = null;
   await loadProjects();
 }
 
@@ -1164,6 +1169,7 @@ async function deleteProject(projectId) {
   if (error) return setProjectMessage("削除できませんでした：" + error.message, true);
 
   openProjectIds.delete(String(projectId));
+  editingAboutId = null;
   await loadProjects();
 }
 
@@ -1639,6 +1645,11 @@ document.addEventListener("DOMContentLoaded", () => {
       case "save-help": saveHelp(id); break;
       case "edit-part": editPart(id, button.dataset.part); break;
       case "close-part":
+      case "toggle-edit":
+        if (editModeIds.has(String(id))) editModeIds.delete(String(id));
+        else editModeIds.add(String(id));
+        renderProjects();
+        break;
       case "close-modal":
       case "cancel-about":
       case "cancel-edit-stage": closePart(); break;

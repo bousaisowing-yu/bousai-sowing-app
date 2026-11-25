@@ -3738,3 +3738,53 @@ body.pj-modal-open {
   width: 18px;
   height: 18px;
 }
+
+/* 担当の横の鉛筆（管理者だけ） */
+.pj-leads {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.pj-leads-pencil {
+  margin-left: auto;
+}
+
+.pj-modal .pj-lead-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 鉛筆マークは、タイトルの「編集」を押したときだけ出す */
+.project-card:not(.pj-edit-on) .pj-pencil-button,
+.project-card:not(.pj-edit-on) [data-pj-action="edit-stage"] {
+  display: none !important;
+}
+
+.pj-edit-toggle {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--pj-border, var(--border));
+  border-radius: 999px;
+  background: white;
+  color: var(--pj-accent, var(--green));
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pj-edit-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pj-edit-on .pj-edit-toggle {
+  border-color: var(--pj-accent, var(--green));
+  background: var(--pj-accent, var(--green));
+  color: white;
+}
