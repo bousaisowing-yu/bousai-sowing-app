@@ -3738,3 +3738,21 @@ body.pj-modal-open {
   width: 18px;
   height: 18px;
 }
+
+/* 担当の横の鉛筆（管理者だけ） */
+.pj-leads {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.pj-leads-pencil {
+  margin-left: auto;
+}
+
+.pj-modal .pj-lead-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
