@@ -3788,3 +3788,38 @@ body.pj-modal-open {
   background: var(--pj-accent, var(--green));
   color: white;
 }
+
+/* 終わった進捗は「✓ 終わったもの（n件）」にまとめる */
+.pj-done-fold {
+  margin-top: 8px;
+  border-top: 1.5px dashed var(--pj-border, var(--border));
+}
+
+.pj-done-fold summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 2px 4px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.pj-done-fold summary::-webkit-details-marker {
+  display: none;
+}
+
+.pj-done-fold-label {
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pj-done-fold[open] .pj-report-chevron {
+  transform: rotate(180deg);
+}
+
+.pj-done-fold .pj-checklist,
+.pj-done-fold .pj-now-list {
+  margin-top: 4px;
+}
