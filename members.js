@@ -146,6 +146,24 @@ function readProgressTime(valueOf) {
 }
 
 let editingStageId = null;
+let editingAboutId = null; // 事業名の下の「説明」を鉛筆で書き直している事業
+
+/* 事業ごとの背景の色（保存されていなければ、並び順で自動に色を付ける） */
+const PJ_COLORS = [
+  { key: "green",  label: "みどり",   bg: "#e4f3e0", border: "#b9dbb3", accent: "#155b38", soft: "#dcefd8" },
+  { key: "blue",   label: "あお",     bg: "#e0eefa", border: "#b3d3ea", accent: "#1d5f8f", soft: "#d6e9f6" },
+  { key: "orange", label: "オレンジ", bg: "#fde8d4", border: "#f0c9a2", accent: "#a5531a", soft: "#fadfc6" },
+  { key: "pink",   label: "ピンク",   bg: "#fbe1ea", border: "#efbccd", accent: "#a33a62", soft: "#f8d6e2" },
+  { key: "purple", label: "むらさき", bg: "#ece5f8", border: "#cdbfe8", accent: "#5d4495", soft: "#e2d9f4" },
+  { key: "yellow", label: "きいろ",   bg: "#fbf2c6", border: "#ebd98f", accent: "#7d6410", soft: "#f6ecbb" }
+];
+
+function projectColorFor(project) {
+  const saved = PJ_COLORS.find(color => color.key === project?.color);
+  if (saved) return saved;
+  const index = Math.max(0, allProjects.findIndex(item => String(item.id) === String(project?.id)));
+  return PJ_COLORS[index % PJ_COLORS.length];
+}
 
 function pjField(icon, inputHtml) {
   return `<div class="pj-field"><span class="pj-field-icon">${icon}</span>${inputHtml}</div>`;
@@ -578,9 +596,9 @@ function renderProjectCard(project) {
     : '<li class="muted">まだ報告はありません。</li>';
 
   const reportForm = editable ? `
-    <div class="pj-form">
-      <label for="pj-report-${escapeHTML(id)}">報告を書く</label>
-      <textarea id="pj-report-${escapeHTML(id)}" rows="3" lang="ja" placeholder="例：11/20 に打ち合わせをして、会場が決まりました。"></textarea>
+    <div class="pj-form pj-input-box">
+      <div class="pj-input-head">${PJ_ICONS.pencil}<div><h4>報告を書く</h4></div></div>
+      <textarea id="pj-report-${escapeHTML(id)}" rows="3" lang="ja" aria-label="報告" placeholder="例：11/20 に打ち合わせをして、会場が決まりました。"></textarea>
       <input id="pj-report-image-${escapeHTML(id)}" type="file" accept="image/*">
       <label class="pj-inline-check">
         <input id="pj-report-notify-${escapeHTML(id)}" type="checkbox" checked> 正会員に通知する
@@ -596,13 +614,17 @@ function renderProjectCard(project) {
       ${reportForm}
     </section>`;
 
-  // 「この事業のようす」：進捗状況・次の予定・手伝ってほしいことを一度に入れて保存（担当者に通知）
+  // 「進捗状況」を見るところ（書き直しは鉛筆マーク）
   const mainBox = `
-    <section class="pj-box pj-form-box">
-      ${pjBoxHead(PJ_ICONS.chart, "この事業のようす", editable ? "まとめて入れて「保存」を押すと、担当者に通知されます" : "")}
-      <h5 class="pj-sub">進捗状況</h5>
+    <section class="pj-box">
+      ${pjBoxHead(PJ_ICONS.chart, "進捗状況", "")}
       <ul class="pj-checklist">${stageChecklist || '<li class="muted">まだ書かれていません。</li>'}</ul>
-      ${editable ? `
+    </section>`;
+
+  // 書きこむところ：進捗・手伝ってほしいことを一度に入れて保存（担当者に通知）
+  const inputBox = editable ? `
+    <section class="pj-box pj-form-box pj-input-box">
+      <div class="pj-input-head">${PJ_ICONS.pencil}<div><h4>ここから書きこむ</h4><p>入れて「まとめて保存」を押すと、担当者に通知されます</p></div></div>
       <label for="pj-new-stage-${escapeHTML(id)}">進捗を足す <small class="label-note">日付・時間・場所は予定があるときだけ</small></label>
       ${pjField(PJ_ICONS.calendar, `<input id="pj-new-date-${escapeHTML(id)}" type="date" class="pj-date-input" aria-label="日付（なくてもよい）">`)}
       ${pjField(PJ_ICONS.clock, progressTimeFieldsHtml(key => `pj-new-${key}-${escapeHTML(id)}`, ""))}
@@ -613,19 +635,7 @@ function renderProjectCard(project) {
       <label class="pj-inline-check">
         <input id="pj-update-notify-${escapeHTML(id)}" type="checkbox" checked> 担当者に通知する
       </label>
-      <button type="button" class="primary-button pj-wide-button" data-pj-action="save-project" data-id="${escapeHTML(id)}">${PJ_ICONS.save}まとめて保存</button>` : ""}
-    </section>`;
-
-  // 事業の説明（ふだんは変えない）
-  const aboutBox = editable ? `
-    <section class="pj-box pj-form-box">
-      ${pjBoxHead(PJ_ICONS.briefcase, "事業の説明", "")}
-      ${isAdmin ? `
-      <label for="pj-name-${escapeHTML(id)}">事業の名前</label>
-      <input id="pj-name-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.name || "")}">` : ""}
-      <label for="pj-summary-${escapeHTML(id)}">どんな事業か</label>
-      <textarea id="pj-summary-${escapeHTML(id)}" rows="2" lang="ja" placeholder="例：家庭の備えをいっしょに考えるリストを作って配る">${escapeHTML(project.summary || "")}</textarea>
-      <button type="button" class="secondary-button pj-wide-button" data-pj-action="save-about" data-id="${escapeHTML(id)}">${PJ_ICONS.save}説明を保存</button>
+      <button type="button" class="primary-button pj-wide-button" data-pj-action="save-project" data-id="${escapeHTML(id)}">${PJ_ICONS.save}まとめて保存</button>
     </section>` : "";
 
   const leadsBox = isAdmin ? `
@@ -648,15 +658,48 @@ function renderProjectCard(project) {
       <button type="button" class="primary-button" data-pj-action="save-leads" data-id="${escapeHTML(id)}">${PJ_ICONS.save}担当者を保存</button>
     </div>` : "";
 
-  return `
-    <article class="project-card" id="project-${escapeHTML(id)}">
-      <div class="pj-top">
-        <span class="pj-icon">${projectIconFor(project.name)}</span>
-        <div class="pj-main">
+  // 事業名と説明（説明は鉛筆マークで、その場で書き直す）
+  const color = projectColorFor(project);
+  const aboutHtml = editable && String(editingAboutId) === id
+    ? `
+          <div class="pj-about-edit">
+            ${isAdmin ? `
+            <label for="pj-name-${escapeHTML(id)}">事業の名前</label>
+            <input id="pj-name-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.name || "")}">` : `
+            <h3 class="pj-name">${escapeHTML(project.name)}</h3>`}
+            <label for="pj-summary-${escapeHTML(id)}">どんな事業か</label>
+            <textarea id="pj-summary-${escapeHTML(id)}" rows="3" lang="ja" placeholder="例：家庭の備えをいっしょに考えるリストを作って配る">${escapeHTML(project.summary || "")}</textarea>
+            <p class="pj-about-label">カードの色</p>
+            <div class="pj-color-options" role="radiogroup" aria-label="カードの色">
+              ${PJ_COLORS.map(option => `
+              <label class="pj-color-pill" style="--swatch:${option.bg};--swatch-border:${option.border};--swatch-accent:${option.accent}">
+                <input type="radio" name="pj-color-${escapeHTML(id)}" value="${option.key}" ${option.key === color.key ? "checked" : ""}>
+                <span>${option.label}</span>
+              </label>`).join("")}
+            </div>
+            <div class="pj-about-buttons">
+              <button type="button" class="secondary-button" data-pj-action="cancel-about" data-id="${escapeHTML(id)}">やめる</button>
+              <button type="button" class="primary-button" data-pj-action="save-about" data-id="${escapeHTML(id)}">${PJ_ICONS.save}保存</button>
+            </div>
+          </div>`
+    : `
           <div class="pj-head">
             <h3 class="pj-name">${escapeHTML(project.name)}</h3>
           </div>
-          ${project.summary ? `<p class="pj-summary">${escapeHTML(project.summary)}</p>` : ""}
+          ${(project.summary || editable) ? `
+          <div class="pj-summary-row">
+            ${project.summary
+              ? `<p class="pj-summary">${escapeHTML(project.summary)}</p>`
+              : '<p class="pj-summary pj-summary-empty">事業の説明はまだありません</p>'}
+            ${editable ? `<button type="button" class="pj-pencil-button" data-pj-action="edit-about" data-id="${escapeHTML(id)}" aria-label="事業の説明と色を書き直す">${PJ_ICONS.pencil}</button>` : ""}
+          </div>` : ""}`;
+
+  return `
+    <article class="project-card pj-color-${color.key}" id="project-${escapeHTML(id)}" style="--pj-bg:${color.bg};--pj-border:${color.border};--pj-accent:${color.accent};--pj-soft:${color.soft}">
+      <div class="pj-top">
+        <span class="pj-icon">${projectIconFor(project.name)}</span>
+        <div class="pj-main">
+          ${aboutHtml}
 
           <p class="pj-leads">
             <span class="pj-label">担当</span>
@@ -681,7 +724,11 @@ function renderProjectCard(project) {
         : ""}
 
       ${latest
-        ? `<p class="pj-latest"><span class="pj-label">最新の報告</span>${escapeHTML(formatShortDateJa(latest.created_at))} ${escapeHTML(latest.body.length > 60 ? latest.body.slice(0, 60) + "…" : latest.body)}</p>`
+        ? `<div class="pj-latest">
+            <h4 class="pj-latest-title">${PJ_ICONS.note}最新の報告</h4>
+            <p class="pj-latest-date">${escapeHTML(formatShortDateJa(latest.created_at))}${latest.author_name ? `　${escapeHTML(latest.author_name)}` : ""}</p>
+            <p class="pj-latest-body">${escapeHTML(latest.body.length > 60 ? latest.body.slice(0, 60) + "…" : latest.body)}</p>
+          </div>`
         : ""}
 
       <details class="pj-details" data-project-id="${escapeHTML(id)}" ${openProjectIds.has(id) ? "open" : ""}>
@@ -692,8 +739,8 @@ function renderProjectCard(project) {
         </summary>
         <div class="pj-detail-body">
           ${mainBox}
+          ${inputBox}
           ${reportBox}
-          ${aboutBox}
           ${leadsBox}
           <button type="button" class="pj-close-button" data-pj-action="close-details" data-id="${escapeHTML(id)}">${PJ_ICONS.chevron}閉じる</button>
         </div>
@@ -789,12 +836,31 @@ async function saveAbout(id) {
   };
   const newName = value("name").trim();
   if (isAdmin && newName) changes.name = newName;
+  const picked = document.querySelector(`input[name="pj-color-${CSS.escape(String(id))}"]:checked`)?.value;
+  if (picked) changes.color = picked;
 
-  const { error } = await db.from("projects").update(changes).eq("id", id);
+  let { error } = await db.from("projects").update(changes).eq("id", id);
+  if (error && changes.color && /color/i.test(error.message || "")) {
+    // 色の欄がまだない（SQL 010 をまだ実行していない）ときは、説明だけ保存する
+    delete changes.color;
+    ({ error } = await db.from("projects").update(changes).eq("id", id));
+    if (!error) alert("説明は保存しました。色を保存するには、Supabase で「010_事業の色.sql」を一度実行してください。");
+  }
   if (error) return setProjectMessage("保存できませんでした：" + error.message, true);
 
-  openProjectIds.add(String(id));
+  editingAboutId = null;
   await loadProjects();
+}
+
+function editAbout(id) {
+  editingAboutId = String(id);
+  renderProjects();
+  $(`pj-summary-${id}`)?.focus();
+}
+
+function cancelEditAbout() {
+  editingAboutId = null;
+  renderProjects();
 }
 
 async function toggleStage(stageId, done) {
@@ -1458,6 +1524,8 @@ document.addEventListener("DOMContentLoaded", () => {
     switch (button.dataset.pjAction) {
       case "save-project": saveProject(id); break;
       case "save-about": saveAbout(id); break;
+      case "edit-about": editAbout(id); break;
+      case "cancel-about": cancelEditAbout(); break;
       case "add-stage": addStage(id); break;
       case "delete-stage": deleteStage(id); break;
       case "edit-stage": editStage(id); break;
