@@ -2438,7 +2438,8 @@ body::after {
   font-size: 12px;
 }
 
-.pj-box label:not(.pj-inline-check):not(.pj-lead-pill) {
+.pj-box label:not(.pj-inline-check):not(.pj-lead-pill),
+.pj-edit-zone label:not(.pj-inline-check):not(.pj-lead-pill) {
   display: block;
   margin: 10px 0 4px;
   font-size: 14px;
@@ -2448,7 +2449,11 @@ body::after {
 .pj-box input[type="text"],
 .pj-box input[type="date"],
 .pj-box select,
-.pj-box textarea {
+.pj-box textarea,
+.pj-edit-zone input[type="text"],
+.pj-edit-zone input[type="date"],
+.pj-edit-zone select,
+.pj-edit-zone textarea {
   width: 100%;
   border: 1.5px solid #d3dfd2;
   border-radius: 12px;
@@ -2480,7 +2485,8 @@ body::after {
   height: 20px;
 }
 
-.pj-box .pj-field input {
+.pj-box .pj-field input,
+.pj-edit-zone .pj-field input {
   flex: 1;
   min-width: 0;
   margin: 0;
@@ -2494,7 +2500,8 @@ body::after {
   gap: 14px;
 }
 
-.pj-box .pj-status-row label:not(.pj-inline-check) {
+.pj-box .pj-status-row label:not(.pj-inline-check),
+.pj-edit-zone .pj-status-row label:not(.pj-inline-check) {
   margin: 0;
   flex-shrink: 0;
   width: 3.5em;
@@ -2531,7 +2538,8 @@ body::after {
   height: 20px;
 }
 
-.pj-box .pj-inline-check input {
+.pj-box .pj-inline-check input,
+.pj-edit-zone .pj-inline-check input {
   width: 22px;
   height: 22px;
   accent-color: var(--green);
@@ -2544,7 +2552,8 @@ body::after {
 }
 
 .pj-box button svg,
-.pj-bottom-buttons button svg {
+.pj-bottom-buttons button svg,
+.pj-edit-zone button svg {
   width: 20px;
   height: 20px;
 }
@@ -2799,7 +2808,8 @@ body.is-typing .page-top-button {
   gap: 6px;
 }
 
-.pj-box .pj-done-toggle {
+.pj-box .pj-done-toggle,
+.pj-edit-zone .pj-done-toggle {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -2843,7 +2853,8 @@ body.is-typing .page-top-button {
   font-size: 14px;
 }
 
-.pj-box .pj-field + .pj-field {
+.pj-box .pj-field + .pj-field,
+.pj-edit-zone .pj-field + .pj-field {
   margin-top: 6px;
 }
 
@@ -2858,7 +2869,8 @@ body.is-typing .page-top-button {
   width: 100%;
 }
 
-.pj-box .pj-stage-edit-fields .pj-field + .pj-field {
+.pj-box .pj-stage-edit-fields .pj-field + .pj-field,
+.pj-edit-zone .pj-stage-edit-fields .pj-field + .pj-field {
   margin-top: 0;
 }
 
@@ -2895,7 +2907,8 @@ body.is-typing .page-top-button {
   color: #3d4a3c;
 }
 
-.pj-box .pj-field .pj-time input {
+.pj-box .pj-field .pj-time input,
+.pj-edit-zone .pj-field .pj-time input {
   flex: 0 0 auto;
   width: 2.3em;
   margin: 0 2px;
@@ -3425,4 +3438,174 @@ body.is-typing .page-top-button {
 
 .project-card .pj-now-dot {
   box-shadow: 0 0 0 3px var(--pj-soft, #d6ead0);
+}
+
+/* ==========================================
+   表紙で鉛筆を押して、その場で書く
+   ========================================== */
+.project-card > .pj-now {
+  margin-top: 12px;
+}
+
+.pj-part-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pj-part-head .pj-now-label {
+  margin: 0;
+  font-size: 16px;
+}
+
+.pj-part-head .pj-latest-title {
+  margin: 0;
+}
+
+.pj-editing {
+  border: 2px dashed var(--pj-accent, var(--green));
+  background: white !important;
+}
+
+.pj-inline-form {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1.5px dashed var(--pj-border, var(--border));
+}
+
+.pj-inline-title {
+  margin: 0;
+  color: var(--pj-accent, var(--green));
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pj-inline-form textarea,
+.pj-help.pj-editing input[type="text"] {
+  width: 100%;
+  font-family: inherit;
+}
+
+.pj-inline-form textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.pj-edit-zone .pj-checklist {
+  margin: 6px 0 0;
+}
+
+.pj-edit-zone .pj-checklist .pj-check-row {
+  padding: 8px 0;
+}
+
+.pj-help {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.pj-help.pj-editing {
+  display: grid;
+  padding: 12px;
+}
+
+.pj-help-text {
+  flex: 1;
+  margin: 0;
+}
+
+/* 最新の報告：項目を押すと中身が開く */
+.pj-report-items {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pj-report-item {
+  border: 1px solid var(--pj-border, var(--border));
+  border-radius: 12px;
+  background: white;
+}
+
+.pj-report-item summary {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  padding: 8px 12px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.pj-report-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.pj-report-when {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pj-report-first {
+  grid-column: 1;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 15px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pj-report-chevron {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  display: inline-flex;
+  color: var(--pj-accent, var(--green));
+  transition: transform 0.2s;
+}
+
+.pj-report-chevron svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pj-report-item[open] .pj-report-chevron {
+  transform: rotate(180deg);
+}
+
+.pj-report-item[open] .pj-report-first {
+  display: none;
+}
+
+.pj-report-full {
+  padding: 0 12px 10px;
+}
+
+.pj-report-full p {
+  margin: 0 0 6px;
+  font-size: 15px;
+  white-space: pre-wrap;
+}
+
+.pj-report-more {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.pj-card-end {
+  height: 12px;
+}
+
+.pj-edit-zone .pj-checklist .pj-check-row:last-child {
+  border-bottom: none;
 }

@@ -146,7 +146,12 @@ function readProgressTime(valueOf) {
 }
 
 let editingStageId = null;
-let editingAboutId = null; // 事業名の下の「説明」を鉛筆で書き直している事業
+let editingAboutId = null;
+let editingPart = null; // 表紙で鉛筆を押して書いているところ（"事業id:progress" など）
+
+function isEditingPart(id, part) {
+  return editingPart === `${id}:${part}`;
+} // 事業名の下の「説明」を鉛筆で書き直している事業
 
 /* 事業ごとの背景の色（保存されていなければ、並び順で自動に色を付ける） */
 const PJ_COLORS = [
@@ -526,18 +531,24 @@ function renderProjects() {
 
 function renderProjectCard(project) {
   const id = String(project.id);
+  const sid = escapeHTML(id);
   const stages = projectStages.filter(stage => String(stage.project_id) === id);
   const reports = projectReports.filter(report => String(report.project_id) === id);
   const activeStages = stages.filter(stage => !stage.done);
   const doneStages = stages.filter(stage => stage.done);
   const editable = canEditProject(id);
-  const latest = reports[0];
   const leadNames = (project.lead_names || []).filter(Boolean);
+  const editingProgress = editable && isEditingPart(id, "progress");
+  const editingHelp = editable && isEditingPart(id, "help");
+  const writingReport = editable && isEditingPart(id, "report");
+  const pencil = (part, label) => editable
+    ? `<button type="button" class="pj-pencil-button" data-pj-action="edit-part" data-part="${part}" data-id="${sid}" aria-label="${label}">${PJ_ICONS.pencil}</button>`
+    : "";
 
-
-  // カードに出す「進捗状況」（終わったものは下にうすく、新しい3つまで）
+  // ---- 進捗状況（表紙）----
+  // 担当者でない人：文だけ（終わったものは新しい3つまで、うすく）
   const recentDone = doneStages.slice(-3).reverse();
-  const nowList = (activeStages.length || recentDone.length)
+  const plainList = (activeStages.length || recentDone.length)
     ? `<ul class="pj-now-list">
         ${activeStages.map(stage => `
           <li class="pj-now-item"><span class="pj-now-dot" aria-hidden="true"></span><span>${escapeHTML(stage.title)}</span></li>`).join("")}
@@ -546,96 +557,141 @@ function renderProjectCard(project) {
       </ul>`
     : '<p class="pj-now-empty">まだ書かれていません</p>';
 
-  const stageChecklist = stages.map(stage => editable && String(editingStageId) === String(stage.id)
-    ? (() => {
-        const parts = parseProgressTitle(stage.title);
-        const sid = escapeHTML(stage.id);
-        return `
+  // 担当者：チェック（済）を付けられる。鉛筆を押すと、書き直し・消す・足すができる
+  const stageRow = stage => {
+    const stId = escapeHTML(stage.id);
+    if (editingProgress && String(editingStageId) === String(stage.id)) {
+      const parts = parseProgressTitle(stage.title);
+      return `
     <li class="pj-check-row pj-stage-edit">
       <div class="pj-stage-edit-fields">
-        ${pjField(PJ_ICONS.calendar, `<input id="pj-edit-date-${sid}" type="date" value="${escapeHTML(parts.date)}" aria-label="日付">`)}
-        ${pjField(PJ_ICONS.clock, progressTimeFieldsHtml(key => `pj-edit-${key}-${sid}`, parts.time))}
-        ${pjField(PJ_ICONS.pin, `<input id="pj-edit-place-${sid}" type="text" lang="ja" value="${escapeHTML(parts.place)}" placeholder="場所" aria-label="場所">`)}
-        ${pjField(PJ_ICONS.pencil, `<input id="pj-edit-text-${sid}" type="text" lang="ja" value="${escapeHTML(parts.text)}" placeholder="やること" aria-label="やること">`)}
+        ${pjField(PJ_ICONS.calendar, `<input id="pj-edit-date-${stId}" type="date" value="${escapeHTML(parts.date)}" aria-label="日付">`)}
+        ${pjField(PJ_ICONS.clock, progressTimeFieldsHtml(key => `pj-edit-${key}-${stId}`, parts.time))}
+        ${pjField(PJ_ICONS.pin, `<input id="pj-edit-place-${stId}" type="text" lang="ja" value="${escapeHTML(parts.place)}" placeholder="場所" aria-label="場所">`)}
+        ${pjField(PJ_ICONS.pencil, `<input id="pj-edit-text-${stId}" type="text" lang="ja" value="${escapeHTML(parts.text)}" placeholder="やること" aria-label="やること">`)}
         <div class="pj-stage-edit-buttons">
-          <button type="button" class="secondary-button" data-pj-action="cancel-edit-stage" data-id="${sid}">やめる</button>
-          <button type="button" class="primary-button" data-pj-action="save-edit-stage" data-id="${sid}">${PJ_ICONS.save}保存</button>
+          <button type="button" class="secondary-button" data-pj-action="cancel-edit-stage" data-id="${stId}">やめる</button>
+          <button type="button" class="primary-button" data-pj-action="save-edit-stage" data-id="${stId}">${PJ_ICONS.save}保存</button>
         </div>
       </div>
     </li>`;
-      })()
-    : `
+    }
+    return `
     <li class="pj-check-row ${stage.done ? "done" : ""}">
       <span class="pj-check-title">${escapeHTML(stage.title)}</span>
-      ${editable ? `
       <span class="pj-check-tools">
         <label class="pj-done-toggle">
-          <input type="checkbox" data-pj-stage="${escapeHTML(stage.id)}" ${stage.done ? "checked" : ""}>
+          <input type="checkbox" data-pj-stage="${stId}" ${stage.done ? "checked" : ""}>
           <span>済</span>
         </label>
-        <button type="button" class="pj-mini-button" data-pj-action="edit-stage" data-id="${escapeHTML(stage.id)}" aria-label="書き直す">${PJ_ICONS.pencil}</button>
-        <button type="button" class="pj-mini-button" data-pj-action="delete-stage" data-id="${escapeHTML(stage.id)}" aria-label="消す">×</button>
-      </span>` : (stage.done ? '<span class="pj-now-done-tag">済</span>' : "")}
-    </li>`).join("")
+        ${editingProgress ? `
+        <button type="button" class="pj-mini-button" data-pj-action="edit-stage" data-id="${stId}" aria-label="書き直す">${PJ_ICONS.pencil}</button>
+        <button type="button" class="pj-mini-button" data-pj-action="delete-stage" data-id="${stId}" aria-label="消す">×</button>` : ""}
+      </span>
+    </li>`;
+  };
 
-  const reportList = reports.length
-    ? reports.map(report => `
-      <li class="pj-report">
-        <div class="pj-report-head">
-          <span>${escapeHTML(formatShortDateJa(report.created_at))}</span>
-          ${report.author_name ? `<span>${escapeHTML(report.author_name)}</span>` : ""}
+  const addProgressForm = editingProgress ? `
+      <div class="pj-inline-form">
+        <p class="pj-inline-title">進捗を足す <small class="label-note">日付・時間・場所は予定があるときだけ</small></p>
+        ${pjField(PJ_ICONS.calendar, `<input id="pj-new-date-${sid}" type="date" class="pj-date-input" aria-label="日付（なくてもよい）">`)}
+        ${pjField(PJ_ICONS.clock, progressTimeFieldsHtml(key => `pj-new-${key}-${sid}`, ""))}
+        ${pjField(PJ_ICONS.pin, `<input id="pj-new-place-${sid}" type="text" lang="ja" placeholder="場所（例：寝屋川市役所）" aria-label="場所（なくてもよい）">`)}
+        ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${sid}" type="text" lang="ja" placeholder="やること（例：打ち合わせ／備えリストメーカー作成中）" aria-label="やること">`)}
+        <label class="pj-inline-check">
+          <input id="pj-update-notify-${sid}" type="checkbox" checked> 担当者に通知する
+        </label>
+        <div class="pj-about-buttons">
+          <button type="button" class="secondary-button" data-pj-action="close-part" data-id="${sid}">閉じる</button>
+          <button type="button" class="primary-button" data-pj-action="save-progress" data-id="${sid}">${PJ_ICONS.save}足す</button>
         </div>
-        <div class="pj-report-body">${escapeHTML(report.body)}</div>
-        ${report.image_url
-          ? `<a href="${escapeHTML(report.image_url)}" target="_blank" rel="noopener"><img class="pj-report-image" src="${escapeHTML(report.image_url)}" alt="報告の写真" loading="lazy"></a>`
-          : ""}
-        ${(isAdmin || (!previewState && currentUser && report.created_by === currentUser.id))
-          ? `<button type="button" class="pj-mini-button" data-pj-action="delete-report" data-id="${escapeHTML(report.id)}">この報告を消す</button>`
-          : ""}
-      </li>`).join("")
-    : '<li class="muted">まだ報告はありません。</li>';
+      </div>` : "";
 
-  const reportForm = editable ? `
-    <div class="pj-form pj-input-box">
-      <div class="pj-input-head">${PJ_ICONS.pencil}<div><h4>報告を書く</h4></div></div>
-      <textarea id="pj-report-${escapeHTML(id)}" rows="3" lang="ja" aria-label="報告" placeholder="例：11/20 に打ち合わせをして、会場が決まりました。"></textarea>
-      <input id="pj-report-image-${escapeHTML(id)}" type="file" accept="image/*">
-      <label class="pj-inline-check">
-        <input id="pj-report-notify-${escapeHTML(id)}" type="checkbox" checked> 正会員に通知する
-      </label>
-      <button type="button" class="primary-button" data-pj-action="add-report" data-id="${escapeHTML(id)}">報告を載せる</button>
-    </div>` : "";
+  const progressHtml = `
+      <div class="pj-now pj-edit-zone ${editingProgress ? "pj-editing" : ""}">
+        <div class="pj-part-head">
+          <p class="pj-now-label">進捗状況</p>
+          ${editingProgress ? "" : pencil("progress", "進捗状況を足す・書き直す")}
+        </div>
+        ${editable
+          ? (stages.length ? `<ul class="pj-checklist">${stages.map(stageRow).join("")}</ul>` : '<p class="pj-now-empty">まだ書かれていません</p>')
+          : plainList}
+        ${addProgressForm}
+      </div>`;
 
-  // 進捗・予定（段階のチェックと、段階を足す）
-  const reportBox = `
+  // ---- 手伝ってほしいこと（表紙）----
+  const helpHtml = editingHelp ? `
+      <div class="pj-help pj-edit-zone pj-editing">
+        <p class="pj-inline-title">🙋 手伝ってほしいこと <small class="label-note">なければ空のまま</small></p>
+        ${pjField(PJ_ICONS.person, `<input id="pj-help-${sid}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名" aria-label="手伝ってほしいこと">`)}
+        <label class="pj-inline-check">
+          <input id="pj-help-notify-${sid}" type="checkbox" checked> 担当者に通知する
+        </label>
+        <div class="pj-about-buttons">
+          <button type="button" class="secondary-button" data-pj-action="close-part" data-id="${sid}">やめる</button>
+          <button type="button" class="primary-button" data-pj-action="save-help" data-id="${sid}">${PJ_ICONS.save}保存</button>
+        </div>
+      </div>`
+    : (project.help_wanted || editable) ? `
+      <div class="pj-help">
+        <p class="pj-help-text">🙋 手伝ってほしいこと：${project.help_wanted ? escapeHTML(project.help_wanted) : '<span class="pj-summary-empty">いまはありません</span>'}</p>
+        ${pencil("help", "手伝ってほしいことを書き直す")}
+      </div>` : "";
+
+  // ---- 最新の報告（表紙）：新しい3つ。押すと中身が開く ----
+  const reportItem = report => `
+        <li>
+          <details class="pj-report-item">
+            <summary>
+              <span class="pj-report-when">${escapeHTML(formatShortDateJa(report.created_at))}${report.author_name ? `　${escapeHTML(report.author_name)}` : ""}</span>
+              <span class="pj-report-first">${escapeHTML(report.body.split("\n")[0])}</span>
+              <span class="pj-report-chevron">${PJ_ICONS.chevron}</span>
+            </summary>
+            <div class="pj-report-full">
+              <p>${escapeHTML(report.body)}</p>
+              ${report.image_url
+                ? `<a href="${escapeHTML(report.image_url)}" target="_blank" rel="noopener"><img class="pj-report-image" src="${escapeHTML(report.image_url)}" alt="報告の写真" loading="lazy"></a>`
+                : ""}
+              ${(isAdmin || (!previewState && currentUser && report.created_by === currentUser.id))
+                ? `<button type="button" class="pj-mini-button" data-pj-action="delete-report" data-id="${escapeHTML(report.id)}">この報告を消す</button>`
+                : ""}
+            </div>
+          </details>
+        </li>`;
+
+  const reportForm = writingReport ? `
+        <div class="pj-inline-form">
+          <p class="pj-inline-title">報告を書く</p>
+          <textarea id="pj-report-${sid}" rows="3" lang="ja" aria-label="報告" placeholder="例：11/20 に打ち合わせをして、会場が決まりました。"></textarea>
+          <input id="pj-report-image-${sid}" type="file" accept="image/*" aria-label="写真（なくてもよい）">
+          <label class="pj-inline-check">
+            <input id="pj-report-notify-${sid}" type="checkbox" checked> 正会員に通知する
+          </label>
+          <div class="pj-about-buttons">
+            <button type="button" class="secondary-button" data-pj-action="close-part" data-id="${sid}">やめる</button>
+            <button type="button" class="primary-button" data-pj-action="add-report" data-id="${sid}">報告を載せる</button>
+          </div>
+        </div>` : "";
+
+  const latestHtml = (reports.length || editable) ? `
+      <div class="pj-latest pj-edit-zone ${writingReport ? "pj-editing" : ""}">
+        <div class="pj-part-head">
+          <h4 class="pj-latest-title">${PJ_ICONS.note}最新の報告</h4>
+          ${writingReport ? "" : pencil("report", "報告を書く")}
+        </div>
+        ${reportForm}
+        ${reports.length
+          ? `<ul class="pj-report-items">${reports.slice(0, 3).map(reportItem).join("")}</ul>
+             ${reports.length > 3 ? '<p class="pj-report-more">前の報告は「くわしく見る」にあります</p>' : ""}`
+          : '<p class="pj-now-empty">まだ報告はありません</p>'}
+      </div>` : "";
+
+  // ---- くわしく見る：前の報告と、管理者の設定 ----
+  const olderReports = reports.slice(3);
+  const olderBox = olderReports.length ? `
     <section class="pj-box">
-      ${pjBoxHead(PJ_ICONS.note, "活動の報告", "")}
-      <ul class="pj-reports">${reportList}</ul>
-      ${reportForm}
-    </section>`;
-
-  // 「進捗状況」を見るところ（書き直しは鉛筆マーク）
-  const mainBox = `
-    <section class="pj-box">
-      ${pjBoxHead(PJ_ICONS.chart, "進捗状況", "")}
-      <ul class="pj-checklist">${stageChecklist || '<li class="muted">まだ書かれていません。</li>'}</ul>
-    </section>`;
-
-  // 書きこむところ：進捗・手伝ってほしいことを一度に入れて保存（担当者に通知）
-  const inputBox = editable ? `
-    <section class="pj-box pj-form-box pj-input-box">
-      <div class="pj-input-head">${PJ_ICONS.pencil}<div><h4>ここから書きこむ</h4><p>入れて「まとめて保存」を押すと、担当者に通知されます</p></div></div>
-      <label for="pj-new-stage-${escapeHTML(id)}">進捗を足す <small class="label-note">日付・時間・場所は予定があるときだけ</small></label>
-      ${pjField(PJ_ICONS.calendar, `<input id="pj-new-date-${escapeHTML(id)}" type="date" class="pj-date-input" aria-label="日付（なくてもよい）">`)}
-      ${pjField(PJ_ICONS.clock, progressTimeFieldsHtml(key => `pj-new-${key}-${escapeHTML(id)}`, ""))}
-      ${pjField(PJ_ICONS.pin, `<input id="pj-new-place-${escapeHTML(id)}" type="text" lang="ja" placeholder="場所（例：寝屋川市役所）" aria-label="場所（なくてもよい）">`)}
-      ${pjField(PJ_ICONS.pencil, `<input id="pj-new-stage-${escapeHTML(id)}" type="text" lang="ja" placeholder="やること（例：打ち合わせ／備えリストメーカー作成中）">`)}
-      <label for="pj-help-${escapeHTML(id)}">手伝ってほしいこと <small class="label-note">なければ空のまま</small></label>
-      ${pjField(PJ_ICONS.person, `<input id="pj-help-${escapeHTML(id)}" type="text" lang="ja" value="${escapeHTML(project.help_wanted || "")}" placeholder="例：当日の受付をしてくれる人を2名">`)}
-      <label class="pj-inline-check">
-        <input id="pj-update-notify-${escapeHTML(id)}" type="checkbox" checked> 担当者に通知する
-      </label>
-      <button type="button" class="primary-button pj-wide-button" data-pj-action="save-project" data-id="${escapeHTML(id)}">${PJ_ICONS.save}まとめて保存</button>
+      ${pjBoxHead(PJ_ICONS.note, "前の報告", "")}
+      <ul class="pj-report-items">${olderReports.map(reportItem).join("")}</ul>
     </section>` : "";
 
   const leadsBox = isAdmin ? `
@@ -694,8 +750,10 @@ function renderProjectCard(project) {
             ${editable ? `<button type="button" class="pj-pencil-button" data-pj-action="edit-about" data-id="${escapeHTML(id)}" aria-label="事業の説明と色を書き直す">${PJ_ICONS.pencil}</button>` : ""}
           </div>` : ""}`;
 
+  const detailInner = `${olderBox}${leadsBox}`;
+
   return `
-    <article class="project-card pj-color-${color.key}" id="project-${escapeHTML(id)}" style="--pj-bg:${color.bg};--pj-border:${color.border};--pj-accent:${color.accent};--pj-soft:${color.soft}">
+    <article class="project-card pj-color-${color.key}" id="project-${sid}" style="--pj-bg:${color.bg};--pj-border:${color.border};--pj-accent:${color.accent};--pj-soft:${color.soft}">
       <div class="pj-top">
         <span class="pj-icon">${projectIconFor(project.name)}</span>
         <div class="pj-main">
@@ -707,44 +765,31 @@ function renderProjectCard(project) {
               ? leadNames.map(name => `<span class="pj-lead-chip">${escapeHTML(name)}</span>`).join("")
               : '<span class="pj-undecided">未定</span>'}
           </p>
-
-          <div class="pj-now">
-            <p class="pj-now-label">進捗状況</p>
-            ${nowList}
-          </div>
         </div>
       </div>
+
+      ${progressHtml}
 
       ${(project.next_date || project.next_plan)
         ? `<p class="pj-next"><span class="pj-label">予定</span>${escapeHTML(formatShortDateJa(project.next_date))} ${escapeHTML(project.next_plan || "")}</p>`
         : ""}
 
-      ${project.help_wanted
-        ? `<p class="pj-help">🙋 手伝ってほしいこと：${escapeHTML(project.help_wanted)}</p>`
-        : ""}
+      ${helpHtml}
 
-      ${latest
-        ? `<div class="pj-latest">
-            <h4 class="pj-latest-title">${PJ_ICONS.note}最新の報告</h4>
-            <p class="pj-latest-date">${escapeHTML(formatShortDateJa(latest.created_at))}${latest.author_name ? `　${escapeHTML(latest.author_name)}` : ""}</p>
-            <p class="pj-latest-body">${escapeHTML(latest.body.length > 60 ? latest.body.slice(0, 60) + "…" : latest.body)}</p>
-          </div>`
-        : ""}
+      ${latestHtml}
 
-      <details class="pj-details" data-project-id="${escapeHTML(id)}" ${openProjectIds.has(id) ? "open" : ""}>
+      ${detailInner.trim() ? `
+      <details class="pj-details" data-project-id="${sid}" ${openProjectIds.has(id) ? "open" : ""}>
         <summary>
           <span class="pj-sum-chevron">${PJ_ICONS.chevron}</span>
           <span class="pj-sum-open">くわしく見る</span>
           <span class="pj-sum-close">閉じる</span>
         </summary>
         <div class="pj-detail-body">
-          ${mainBox}
-          ${inputBox}
-          ${reportBox}
-          ${leadsBox}
-          <button type="button" class="pj-close-button" data-pj-action="close-details" data-id="${escapeHTML(id)}">${PJ_ICONS.chevron}閉じる</button>
+          ${detailInner}
+          <button type="button" class="pj-close-button" data-pj-action="close-details" data-id="${sid}">${PJ_ICONS.chevron}閉じる</button>
         </div>
-      </details>
+      </details>` : '<div class="pj-card-end"></div>'}
     </article>`;
 }
 
@@ -753,79 +798,100 @@ function setProjectMessage(text, error = false) {
   if (error) alert(text);
 }
 
-async function saveProject(id) {
+async function saveProgress(id) {
   const value = key => $(`pj-${key}-${id}`)?.value ?? "";
   const project = allProjects.find(item => String(item.id) === String(id));
-  const button = document.querySelector(`[data-pj-action="save-project"][data-id="${CSS.escape(String(id))}"]`);
+  const button = document.querySelector(`[data-pj-action="save-progress"][data-id="${CSS.escape(String(id))}"]`);
+
+  const newTime = readProgressTime(key => value(`new-${key}`));
+  if (newTime === null) {
+    return setProjectMessage("時間の数字を見直してください（時は0〜23、分は0〜59。始まりの時から入れてください）。", true);
+  }
+  const newLine = buildProgressTitle({
+    date: value("new-date"),
+    time: newTime,
+    place: value("new-place").trim(),
+    text: value("new-stage").trim()
+  });
+  if (!newLine) return setProjectMessage("やることを入れてください。", true);
+
   if (button) button.disabled = true;
-
   try {
-    // 1. 新しい動き（日付があれば頭に付ける）と、前の版の「次の予定」を動きに移す
-    const newText = value("new-stage").trim();
-    const newDate = value("new-date");
-    const newTime = readProgressTime(key => value(`new-${key}`));
-    if (newTime === null) {
-      if (button) button.disabled = false;
-      return setProjectMessage("時間の数字を見直してください（時は0〜23、分は0〜59。始まりの時から入れてください）。", true);
-    }
-    const newLine = buildProgressTitle({
-      date: newDate,
-      time: newTime,
-      place: value("new-place").trim(),
-      text: newText
-    });
-
+    // 前の版の「次の予定」が残っていたら、進捗に移す
     const lines = [];
     if (project?.next_plan || project?.next_date) {
       lines.push(`${formatShortDateJa(project.next_date)} ${project.next_plan || ""}`.trim());
     }
-    if (newLine) lines.push(newLine);
+    lines.push(newLine);
 
     let maxOrder = Math.max(0, ...projectStages
       .filter(stage => String(stage.project_id) === String(id))
       .map(stage => stage.sort_order || 0));
     for (const title of lines.filter(Boolean)) {
-      const { error: stageError } = await db.from("project_stages").insert({
-        project_id: id, title, sort_order: ++maxOrder
-      });
-      if (stageError) throw stageError;
+      const { error } = await db.from("project_stages").insert({ project_id: id, title, sort_order: ++maxOrder });
+      if (error) throw error;
     }
-
-    // 2. 手伝ってほしいこと
-    const help = value("help").trim() || null;
 
     const { error } = await db.from("projects").update({
       next_date: null,
       next_plan: null,
-      help_wanted: help,
       updated_at: new Date().toISOString()
     }).eq("id", id);
     if (error) throw error;
 
-    // 3. 担当者に通知
-    if ($(`pj-update-notify-${id}`)?.checked) {
-      const parts = [];
-      if (newLine) parts.push(newLine);
-      if (help && help !== project?.help_wanted) parts.push(`手伝い募集：${help}`);
-      const note = await notifyMembers({
-        heading: `${project?.name || "事業"}が更新されました`,
-        message: parts.join("／") || "様子が更新されました",
-        url: `${getAppUrl()}#project-${id}`,
-        audience: "leads",
-        projectId: id
-      });
-      if (note.includes("送れませんでした")) alert("保存しました。" + note);
-    }
+    if ($(`pj-update-notify-${id}`)?.checked) await notifyLeads(project, id, newLine);
 
-    openProjectIds.add(String(id));
+    // 続けて足せるように、鉛筆の枠は開いたままにする
     await loadProjects();
-
   } catch (error) {
     console.error(error);
     setProjectMessage("保存できませんでした：" + error.message, true);
   } finally {
     if (button) button.disabled = false;
   }
+}
+
+async function saveHelp(id) {
+  const project = allProjects.find(item => String(item.id) === String(id));
+  const help = ($(`pj-help-${id}`)?.value ?? "").trim() || null;
+  const notify = $(`pj-help-notify-${id}`)?.checked;
+
+  const { error } = await db.from("projects").update({
+    help_wanted: help,
+    updated_at: new Date().toISOString()
+  }).eq("id", id);
+  if (error) return setProjectMessage("保存できませんでした：" + error.message, true);
+
+  if (notify && help && help !== project?.help_wanted) await notifyLeads(project, id, `手伝い募集：${help}`);
+
+  editingPart = null;
+  await loadProjects();
+}
+
+async function notifyLeads(project, id, message) {
+  const note = await notifyMembers({
+    heading: `${project?.name || "事業"}が更新されました`,
+    message: message || "様子が更新されました",
+    url: `${getAppUrl()}#project-${id}`,
+    audience: "leads",
+    projectId: id
+  });
+  if (note.includes("送れませんでした")) alert("保存しました。" + note);
+}
+
+function editPart(id, part) {
+  editingPart = `${id}:${part}`;
+  editingStageId = null;
+  editingAboutId = null;
+  renderProjects();
+  const focusId = { progress: `pj-new-stage-${id}`, help: `pj-help-${id}`, report: `pj-report-${id}` }[part];
+  $(focusId)?.focus();
+}
+
+function closePart() {
+  editingPart = null;
+  editingStageId = null;
+  renderProjects();
 }
 
 async function saveAbout(id) {
@@ -854,6 +920,7 @@ async function saveAbout(id) {
 
 function editAbout(id) {
   editingAboutId = String(id);
+  editingPart = null;
   renderProjects();
   $(`pj-summary-${id}`)?.focus();
 }
@@ -892,7 +959,6 @@ function editStage(stageId) {
   const stage = projectStages.find(item => String(item.id) === String(stageId));
   if (!stage) return;
   editingStageId = stage.id;
-  openProjectIds.add(String(stage.project_id));
   renderProjects();
   $(`pj-edit-text-${stageId}`)?.focus();
 }
@@ -969,7 +1035,7 @@ async function addReport(projectId, button) {
       });
     }
 
-    openProjectIds.add(String(projectId));
+    editingPart = null;
     await loadProjects();
 
     if (note.includes("送れませんでした")) alert("報告を載せました。" + note);
@@ -1522,7 +1588,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const id = button.dataset.id;
 
     switch (button.dataset.pjAction) {
-      case "save-project": saveProject(id); break;
+      case "save-progress": saveProgress(id); break;
+      case "save-help": saveHelp(id); break;
+      case "edit-part": editPart(id, button.dataset.part); break;
+      case "close-part": closePart(); break;
       case "save-about": saveAbout(id); break;
       case "edit-about": editAbout(id); break;
       case "cancel-about": cancelEditAbout(); break;
