@@ -701,7 +701,7 @@ function renderProjectCard(project) {
         ${activeStages.map(stage => `
           <li class="pj-now-item"><span class="pj-now-dot" aria-hidden="true"></span><span>${escapeHTML(stage.title)}</span></li>`).join("")}
         ${recentDone.map(stage => `
-          <li class="pj-now-item done"><span class="pj-now-check" aria-hidden="true">✓</span><span>${escapeHTML(stage.title)}</span><span class="pj-now-done-tag">済</span></li>`).join("")}
+          <li class="pj-now-item done"><span class="pj-now-check" aria-hidden="true">✓</span><span>${escapeHTML(stage.title)}</span></li>`).join("")}
       </ul>`
     : '<p class="pj-now-empty">まだ書かれていません</p>';
 
@@ -713,8 +713,7 @@ function renderProjectCard(project) {
       <span class="pj-check-title">${escapeHTML(stage.title)}</span>
       <span class="pj-check-tools">
         <label class="pj-done-toggle">
-          <input type="checkbox" data-pj-stage="${stId}" ${stage.done ? "checked" : ""}>
-          <span>済</span>
+          <input type="checkbox" data-pj-stage="${stId}" ${stage.done ? "checked" : ""} aria-label="終わったらチェック">
         </label>
         <button type="button" class="pj-mini-button" data-pj-action="edit-stage" data-id="${stId}" aria-label="この進捗を書き直す">${PJ_ICONS.pencil}</button>
       </span>
