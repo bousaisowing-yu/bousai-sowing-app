@@ -147,6 +147,7 @@ function readProgressTime(valueOf) {
 
 let editingStageId = null;
 let editingAboutId = null;
+const editModeIds = new Set(); // タイトルの「編集」を押して、鉛筆マークを出している事業
 let editingPart = null; // 表紙で鉛筆を押して書いているところ（"事業id:progress" など）
 
 function isEditingPart(id, part) {
@@ -785,6 +786,7 @@ function renderProjectCard(project) {
   const aboutHtml = `
           <div class="pj-head">
             <h3 class="pj-name">${escapeHTML(project.name)}</h3>
+            ${editable ? `<button type="button" class="pj-edit-toggle" data-pj-action="toggle-edit" data-id="${sid}" aria-pressed="${editModeIds.has(id)}">${editModeIds.has(id) ? "✓ 編集をおわる" : `${PJ_ICONS.pencil}編集`}</button>` : ""}
           </div>
           ${(project.summary || editable) ? `
           <div class="pj-summary-row">
@@ -797,7 +799,7 @@ function renderProjectCard(project) {
   const detailInner = olderBox;
 
   return `
-    <article class="project-card pj-color-${color.key}" id="project-${sid}" style="--pj-bg:${color.bg};--pj-border:${color.border};--pj-accent:${color.accent};--pj-soft:${color.soft}">
+    <article class="project-card pj-color-${color.key} ${editModeIds.has(id) ? "pj-edit-on" : ""}" id="project-${sid}" style="--pj-bg:${color.bg};--pj-border:${color.border};--pj-accent:${color.accent};--pj-soft:${color.soft}">
       <div class="pj-top">
         <span class="pj-icon">${projectIconFor(project.name)}</span>
         <div class="pj-main">
@@ -1643,6 +1645,11 @@ document.addEventListener("DOMContentLoaded", () => {
       case "save-help": saveHelp(id); break;
       case "edit-part": editPart(id, button.dataset.part); break;
       case "close-part":
+      case "toggle-edit":
+        if (editModeIds.has(String(id))) editModeIds.delete(String(id));
+        else editModeIds.add(String(id));
+        renderProjects();
+        break;
       case "close-modal":
       case "cancel-about":
       case "cancel-edit-stage": closePart(); break;
