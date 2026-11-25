@@ -3179,3 +3179,250 @@ body.is-typing .page-top-button {
 .member-admin-actions .pj-mini-button {
   white-space: nowrap;
 }
+
+/* ==========================================
+   正会員ページ：事業ごとの色・最新の報告・説明の鉛筆
+   ========================================== */
+.project-card {
+  background: var(--pj-bg, white);
+  border-color: var(--pj-border, #cfe0cc);
+}
+
+.project-card .pj-icon {
+  background: var(--pj-soft, var(--green-soft));
+  color: var(--pj-accent, var(--green));
+}
+
+.project-card .pj-name {
+  color: var(--pj-accent, var(--green));
+}
+
+.project-card .pj-now {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.project-card .pj-now-label {
+  color: var(--pj-accent, var(--green));
+}
+
+.project-card .pj-details,
+.project-card .pj-details summary {
+  border-color: var(--pj-border, var(--border));
+}
+
+.project-card .pj-detail-body {
+  background: rgba(255, 255, 255, 0.55);
+  border-top-color: var(--pj-border, var(--border));
+}
+
+/* 事業名の下の説明と鉛筆マーク */
+.pj-summary-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pj-summary-row .pj-summary {
+  flex: 1;
+  margin: 0;
+}
+
+.pj-summary-empty {
+  color: var(--muted) !important;
+}
+
+.pj-pencil-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--pj-border, var(--border));
+  border-radius: 50%;
+  background: white;
+  color: var(--pj-accent, var(--green));
+}
+
+.pj-pencil-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* 説明を書き直すところ */
+.pj-about-edit {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 2px solid var(--pj-border, var(--border));
+  border-radius: 14px;
+  background: white;
+}
+
+.pj-about-edit label,
+.pj-about-label {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pj-about-edit input[type="text"],
+.pj-about-edit textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.pj-color-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pj-color-pill {
+  position: relative;
+  margin: 0 !important;
+}
+
+.pj-color-pill input {
+  position: absolute;
+  opacity: 0;
+}
+
+.pj-color-pill span {
+  display: inline-block;
+  padding: 6px 12px;
+  border: 2px solid var(--swatch-border);
+  border-radius: 999px;
+  background: var(--swatch);
+  color: var(--swatch-accent);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pj-color-pill input:checked + span {
+  border-color: var(--swatch-accent);
+  box-shadow: 0 0 0 2px var(--swatch-accent);
+}
+
+.pj-color-pill input:checked + span::before {
+  content: "✓ ";
+}
+
+.pj-about-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pj-about-buttons button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pj-about-buttons button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* 最新の報告（見出しを大きく） */
+.pj-latest {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+}
+
+.pj-latest-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 4px;
+  color: var(--pj-accent, var(--green));
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.pj-latest-title svg {
+  width: 20px;
+  height: 20px;
+}
+
+.pj-latest-date {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pj-latest-body {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: 15px;
+}
+
+/* くわしく見る：見るところと、書きこむところを分ける */
+.pj-input-box {
+  border: 2px dashed var(--pj-border, #b9dbb3) !important;
+  background: #fffdf6 !important;
+}
+
+.pj-box .pj-form.pj-input-box {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.pj-input-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--pj-accent, var(--green));
+}
+
+.pj-input-head > svg {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+}
+
+.pj-input-head h4 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.pj-input-head p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.project-card .pj-lead-chip {
+  background: white;
+}
+
+.project-card .pj-now-dot {
+  background: var(--pj-accent, var(--green));
+}
+
+.project-card .pj-box-head h4,
+.project-card .pj-box .pj-sub {
+  color: var(--pj-accent, var(--green));
+}
+
+.project-card .pj-now-dot {
+  box-shadow: 0 0 0 3px var(--pj-soft, #d6ead0);
+}
